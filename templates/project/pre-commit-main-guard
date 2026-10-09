@@ -1,0 +1,10 @@
+#!/bin/sh
+# Jacquard: nobody commits on the main branch; work reaches it by integrating a branch.
+# The first commit of a new repository is allowed.
+main="{{MAIN}}"
+branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
+if [ "$branch" = "$main" ] && git rev-parse --verify -q HEAD >/dev/null; then
+  echo "Jacquard: commits on '$main' are not allowed. Create a branch: git switch -c <id-short-name>" >&2
+  exit 1
+fi
+exit 0

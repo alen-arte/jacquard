@@ -26,7 +26,7 @@ Universal rules: `~/.claude/jacquard/core/work-modes.md`. This file only adds.
 ## Collaborators
 
 - Areas owned by others and the boundary: see `project.md` › People and boundaries
-- Notes for collaborators go to: {{NOTES_LOCATION}} (as in `project.md`) and to the Away report, section 6
+- Notes for collaborators go to: {{NOTES_LOCATION, default "only in reports"}} (as in `project.md`) and to the Away report, section 6
 
 ## Extra hard limits
 

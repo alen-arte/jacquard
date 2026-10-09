@@ -61,7 +61,7 @@ No rule wins for being older or newer. When two rules conflict: note it, show bo
 
 ## Boundaries with other people's areas
 
-Areas owned by collaborators are listed in `project.md`. Connecting your work to their code is allowed (a mount, a prop, a call). Changing what their code does is not: write a self-contained note for the owner instead, where `project.md` says. The user hands it over, so a ready note goes under **I need your OK**. Never ask the user to decide on someone else's domain; state its constraints as inputs.
+Areas owned by collaborators are listed in `project.md`. Connecting your work to their code is allowed (a mount, a prop, a call). Changing what their code does is not: write a self-contained note for the owner instead, where `project.md` says. The user hands it over, so a ready note goes under **I need your OK** (in the Away report: listed in section 1, full text in section 6). Never ask the user to decide on someone else's domain; state its constraints as inputs.
 
 ## Local-only files
 

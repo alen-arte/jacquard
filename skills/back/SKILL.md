@@ -4,7 +4,7 @@ description: "End Away mode and get the report."
 disable-model-invocation: true
 ---
 
-End **Away mode** now. If "Jacquard core standards" is not in your context, stop: say the project does not use Jacquard (suggest `/kickoff`) or its imports were not approved (check `/context`, then restart the session and approve). If Away is not active in this session, say so and stop.
+End **Away mode** now. If "Jacquard core standards" and this project's index were not loaded at session start (via `CLAUDE.local.md`), stop: say the project does not use Jacquard (suggest `/kickoff`), its imports were not approved, or kickoff ran in this same session (check `/context`; restart the session and approve). If Away is not active in this session, say so and stop.
 
 1. Stop starting new work. Finish or safely revert what is in progress so the branch is clean and known.
 2. Run the final checks (project `Commands` and Away profile) and the review block if it has not run (`~/.claude/jacquard/core/work-modes.md` section 8). If there is no room left, list the rest as "to test together".

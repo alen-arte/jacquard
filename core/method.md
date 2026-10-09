@@ -13,7 +13,7 @@ A default, not a cage: phases overlap, repeat and adapt to the project. What is 
 |---|---|---|---|
 | **A** | New project from scratch | Full interview | Phase 1 |
 | **B** | New project with prior material (ideas, docs, designs, roadmap) | Reads the material, asks only for gaps | Phase 1, with a head start |
-| **C** | Existing project owned by the user | Adopt mode: reads the repo, runs the initial audit | The phase that fits |
+| **C** | Existing project owned by the user | Adopt mode: reads the repo, offers the initial audit | The phase that fits |
 | **D** | Someone else's project where the user has a specific role | Adopt mode with boundaries; external planning is read-only | The phase of that project |
 
 ## Phases

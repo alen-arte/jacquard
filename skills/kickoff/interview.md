@@ -2,9 +2,9 @@
 
 Rules:
 - Ask only what cannot be read from the repo or the material. Skip blocks and questions that do not apply.
-- At most three questions per screen. Tappable options; every question has a marked default.
+- At most three questions per screen. Tappable options; every question with options has a marked default.
 - "Block n of N": block 0 has no count; N counts only the blocks that apply after it, numbered in order.
-- With `technical_depth: plain`, say "review: light / normal / hardened" instead of `-s / -ss / -sss`, and "publish to the main version" instead of "push to main".
+- With `technical_depth: plain`, say "review: light / normal / hardened" instead of `-s / -ss / -sss`, and "publish to the main version" instead of "push to main". With `technical`, use the flags and git terms.
 - What the user does not cover, Claude's roles build; the user decides. Say so once, in block 1.
 
 ## Block 0 · Starting point (always)
@@ -55,12 +55,12 @@ The stack is proposed once, in the proposal screen.
 ## Block 5 · Verification
 
 *C, D: read build, test and preview commands from the repo and confirm them in one line.*
-- **Review:** light · normal (default) · hardened
+- **Review:** light · normal · hardened (default: `default_intensity` from preferences, normal if unset)
 - **Checks that need a person** (camera, hardware, real payments, a real phone…)? None (default) · Describe
 
 What is irreversible here is derived from the stack and the domain risks and confirmed in the proposal.
 
 ## Block 6 · Aesthetics
 
-*A, B:* **Direction in a few words, and references you like** (optional). **Is the experience the product?** Yes → minimal manual in phase 2 · No → manual in phase 4 (default from block 2)
+*A, B:* **Direction in a few words, and references you like** (optional). **Is the experience the product?** Yes → minimal manual in phase 2 · No → manual in phase 4 (default: Yes if the user described the experience as the product, else No)
 *C, D:* **Is there a design system or manual?** Where · None (default)

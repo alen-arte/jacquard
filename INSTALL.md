@@ -70,11 +70,23 @@ In a project folder, run `/kickoff`. Then start a new session there (the new `CL
 When a new release is tagged, and no Away block is running in any project:
 
 ```bash
-git -C ~/repos/jacquard fetch --tags        # skip if you tagged it in this clone
+git -C ~/.claude/jacquard fetch --tags      # skip if you tagged it in your working clone
 git -C ~/.claude/jacquard checkout --detach v0.1.3
 ```
 
-New sessions use it. Then run `/kit-update` in each project to bring its files up to date, piece by piece.
+New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/kit-update` in each project to bring its files up to date, piece by piece.
+
+### Upgrading from 0.1.1
+
+0.1.1 linked `~/.claude/jacquard` to the working repo and kept the personal layer in `~/.claude/jacquard-personal/`. Once, with your OK for each step:
+
+```bash
+mv ~/.claude/jacquard-personal ~/repos/jacquard-personal
+rm ~/.claude/jacquard                       # the link, not the repo
+git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.1.2
+```
+
+Then step 4 (permissions), and `/kit-update` in each project: it re-points `<local>` and the imports in `CLAUDE.local.md`, and brings the permissions and the pre-commit guard up to date.
 
 ## Publishing changes to the kit
 

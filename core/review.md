@@ -11,7 +11,7 @@ Risk levels (0, 1, 2) and the floor for level 2 are in core standards.
 
 ## Intensity (the user chooses)
 
-Default `-ss`. The most specific setting wins: per message > per Away block (`/away -s 2h | …`) > per session (`/rigor -sss`) > the project default (`index.md`) > `-ss`.
+Default `-ss`. The most specific setting wins: per message > per Away block (`/away -s 2h | …`) > per session (`/rigor -sss`) > the project default (`index.md`) > `default_intensity` in preferences (`-ss`).
 
 | Check | `-s` light | `-ss` normal | `-sss` hardened |
 |---|---|---|---|
@@ -25,7 +25,7 @@ Default `-ss`. The most specific setting wins: per message > per Away block (`/a
 
 **Always, at every level:** the builder checks visual work in a real render. That is verification, not review.
 
-**Missing role:** if the project has no file for a reviewer this table or the floor calls for, run it from the kit's role file (`~/.claude/jacquard/roles/review/`). The floor never drops.
+**Missing role:** if the project has no file for a reviewer this table or the floor calls for, run it from the kit's role file (`~/.claude/jacquard/roles/review/`). The floor never drops. A domain advisor that was never created is not improvised: say "no domain review".
 
 ## Batches
 
@@ -37,7 +37,7 @@ A batch is a group of related tasks closed together (one or several roadmap item
 - **Engineering advisor:** approach, architecture, scalability, performance, technical debt. Read-only.
 - **Security and privacy reviewer:** authorization, secrets, personal data, input handling, dependencies.
 - **Domain advisors:** defined per project with explicit triggers.
-- **Full audit:** when adopting a project, before the first release, and every few milestones. Engineers audit their areas; QA reviews the audit.
+- **Full audit:** when adopting a project (offered by kickoff, with its own OK), before the first release, and every few milestones. Engineers audit their areas; QA reviews the audit.
 
 ## Running a review
 
