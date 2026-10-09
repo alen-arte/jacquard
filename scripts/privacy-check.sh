@@ -11,8 +11,8 @@
 #       against each parent); each tag's message. Used by scripts/hooks/pre-push.
 #
 # terms_file: $JACQUARD_PRIVACY_TERMS, else ~/repos/jacquard-personal/privacy-terms.txt.
-#   One term per line; "# ..." comments. A line "!text" allows that exact text (e.g. your public
-#   commit identity); it must contain one of your terms and be longer than it.
+#   One term per line; "# ..." comments. A line "!Name <email>" allows that exact commit identity
+#   (e.g. your public no-reply identity); it must be a full identity and contain one of your terms.
 # Matching ignores case and accents (both sides folded to ASCII with iconv; required).
 # Not covered: encoded content (UTF-16, compressed, base64). LICENSE's copyright line is allowed.
 # Findings name terms by number (their order in the terms file), never by text.
@@ -44,18 +44,19 @@ label() { L="$1" awk '{print ENVIRON["L"] $0}'; }
 [ -f "$terms_file" ] && [ -r "$terms_file" ] || fail "no readable terms file at $terms_file"
 sed -e '1s/^\xEF\xBB\xBF//' -e 's/\r$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -- "$terms_file" \
   | grep -v -e '^$' -e '^#' > "$tmp/raw" || fail "the terms file has no terms"
-grep -v '^!' "$tmp/raw" > "$tmp/terms" || fail "the terms file has no terms"
+grep -v '^!' "$tmp/raw" | awk '!seen[tolower($0)]++' > "$tmp/terms" || fail "the terms file has no terms"
 fold < "$tmp/terms" > "$tmp/terms.f"
 grep '^!' "$tmp/raw" | cut -c2- | fold > "$tmp/allow" || true
 nterms=$(wc -l < "$tmp/terms")
-# An allow line must contain one of the terms and be longer than it.
+# An allow line must be a full identity, "Name <user@host>", and contain one of the terms.
 while IFS= read -r a; do
+  printf '%s\n' "$a" | grep -q -E '^[^ <>][^<>]* <[^<>@ ]+@[^<>@ ]+\.[^<>@ ]+>$' || fail "an allow line (!...) must be a full identity: !Name <user@host>"
   ok=0; la=$(printf '%s' "$a" | tr '[:upper:]' '[:lower:]')
   while IFS= read -r t; do
     lt=$(printf '%s' "$t" | tr '[:upper:]' '[:lower:]')
     case "$la" in *"$lt"*) [ "${#la}" -gt "${#lt}" ] && ok=1 ;; esac
   done < "$tmp/terms.f"
-  [ "$ok" -eq 1 ] || fail "an allow line (!...) must contain one of your terms and be longer than it"
+  [ "$ok" -eq 1 ] || fail "an allow line (!...) must contain one of your terms"
 done < "$tmp/allow"
 
 # One stream of labelled lines with everything that would be published.
@@ -65,7 +66,8 @@ emit_file() { # path as listed by git
   printf '%s: (path)\n' "$f" | label "" >> "$out"
   if [ -L "$f" ]; then printf '(link to) %s\n' "$(readlink -- "$f")" | label "$f: " >> "$out"; return; fi
   [ -f "$f" ] || return 0
-  tr -d '\000' < "$f" | label "$f: " >> "$out"
+  [ -r "$f" ] || fail "cannot read $f"
+  tr -d '\000' < "$f" | label "$f: " >> "$out" || fail "cannot read $f"
 }
 emit_commit() { # commit id
   local c="$1"

@@ -90,6 +90,10 @@
       "Bash(git add *-fA*)",
       "Bash(git show *--output*)",
       "Bash(gh repo edit*)",
+      "Bash(git commit *-an*)",
+      "Bash(git commit *-na*)",
+      "Bash(git add *-vf*)",
+      "Bash(git add *-fv*)",
       "{{PROJECT_DENY_RULES, e.g. push to a shared main}}"
     ]
   }

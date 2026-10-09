@@ -21,7 +21,7 @@ The user may not be an engineer: choose branches and messages yourself and expla
 
 ## Integration
 
-A branch is integrated when its checks are green, its reviews per `review.md` are done, and the user says OK. Prefer `git merge --ff-only`; if it refuses because the target moved, stop and explain the options. Delete the branch afterwards with `git branch -d` (safe delete).
+A branch is integrated when its checks are green, its reviews per `review.md` are done, and the user says OK. Prefer `git merge --ff-only`; if it refuses because the target moved, stop and explain the options (a merge commit, or bringing the branch up to date first). Finishing a merge is allowed by the guard; a plain commit on `main` is not. Delete the branch afterwards with `git branch -d` (safe delete).
 
 ## Push
 

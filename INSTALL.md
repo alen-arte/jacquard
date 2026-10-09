@@ -82,11 +82,12 @@ New sessions use it. Run step 2 again (it links new commands and skips existing 
 
 ```bash
 mv ~/.claude/jacquard-personal ~/repos/jacquard-personal
+ln -s ~/repos/jacquard-personal ~/.claude/jacquard-personal   # temporary, so 0.1.1 projects still load
 rm ~/.claude/jacquard                       # the link, not the repo
 git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.1.2
 ```
 
-Then step 4 (permissions), and `/kit-update` in each project: it re-points `<local>` and the imports in `CLAUDE.local.md`, and brings the permissions and the pre-commit guard up to date.
+Then step 4 (permissions), the hooks in "Publishing changes to the kit" (they replace the 0.1.1 pre-push hook), and `/kit-update` in each project: it re-points `<local>` and the imports in `CLAUDE.local.md`, and brings the permissions and the pre-commit guard up to date. When every project is updated, remove the temporary link: `rm ~/.claude/jacquard-personal`.
 
 ## Publishing changes to the kit
 

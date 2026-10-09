@@ -49,7 +49,7 @@ Wait for the OK. Apply changes the user asks for and show only what changed.
 2. From `~/.claude/jacquard/templates/project/`: `index.md`, `project.md`, `away-profile.md` filled from the summary; `CLAUDE.local.md` at the repo root (if one exists, add the imports and keep its content); append `git-exclude.txt` lines to `.git/info/exclude` (no duplicates); `.claude/settings.local.json` merged with any existing file, never overwritten.
    - A placeholder the summary does not cover takes the default written inside it, or "none".
    - In `settings.local.json`, replace each `{{…}}` entry with real rules or delete it. Never leave a placeholder there.
-3. If `git rev-parse --git-path hooks` is `.git/hooks` and it has no `pre-commit`, copy `~/.claude/jacquard/templates/project/pre-commit-guard` there as `pre-commit` (executable), with the main branch from `project.md` and `<local>`. It refuses commits on the main branch (except the first commit of a new repo) and commits that include the local files. Otherwise say the repo has its own hooks and rely on the rule.
+3. If `git rev-parse --git-path hooks` is `.git/hooks` and it has no `pre-commit`, copy `~/.claude/jacquard/templates/project/pre-commit-guard` there as `pre-commit` (executable), filling `{{MAIN}}` with the main branch from `project.md` and `{{LOCAL_FOLDER_REGEX}}` with `<local>` with its dots escaped (`\.jacquard`). It refuses commits on the main branch (except the first commit of a new repo) and commits that include the local files. Otherwise say the repo has its own hooks and rely on the rule.
 4. Roles: from `~/.claude/jacquard/roles/`, filled with the placeholders described in `roles/README.md`, into `<local>/roles/`.
 5. Documents to create now, from `~/.claude/jacquard/templates/docs/`, into `<local>/docs/`, in `docs_language`. Only those.
 6. Write the kit version (from `~/.claude/jacquard/CHANGELOG.md`) in `index.md`.
@@ -59,7 +59,7 @@ Wait for the OK. Apply changes the user asks for and show only what changed.
 Adoption touches **only the working-system files** (roles, rules, memories, commands, guiding documents the user chooses). Product code is never changed by kickoff.
 
 **Return point first, before any change:**
-- Tracked files: if the tree has uncommitted changes, offer a checkpoint commit on a new branch (`checkpoint/before-jacquard`, never on the main branch) and wait for the OK (C only). In someone else's repository (D), never create commits for this.
+- Tracked files: if the tree has uncommitted changes, offer a checkpoint commit on a new branch (`checkpoint/before-jacquard`, never on the main branch) and wait for the OK (C only); say that the user's work continues on that branch. In someone else's repository (D), never create commits for this.
 - Untracked files that will change (role or rule folders, the project's memories, personal commands): copy them into one dated archive in `~/jacquard-backups/` and show the exact command to restore it.
 
 - Map every existing rule, role, memory, command and document to its place in Jacquard: kept as is, moved, merged, replaced by the core, or retired.
@@ -72,7 +72,7 @@ Adoption touches **only the working-system files** (roles, rules, memories, comm
 ## 7. Verify
 
 - `git status --porcelain` shows no new or modified tracked file; `git check-ignore -v` confirms `<local>`, `CLAUDE.local.md` and `.claude/settings.local.json` are excluded.
-- `.claude/settings.local.json` is valid JSON and has no `{{`.
+- `.claude/settings.local.json` is valid JSON, and neither it nor the pre-commit guard has a `{{` left.
 - The files that load at session start are only `CLAUDE.local.md` and its imports (core standards, personal preferences, project index): list them with their line counts.
 - Tell the user: the new `CLAUDE.local.md` loads from the next session; approve the external imports dialog then, and check with `/context`. Without that approval nothing from Jacquard loads, and the other commands (`/away`, `/rigor`…) work only from that next session.
 - The project's checks still pass.

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Jacquard pre-commit: checks what the next commit would record.
 # Install as a stub that runs the installed kit's copy (see INSTALL.md).
-here="$(dirname "$(readlink -f "$0")")" || exit 2
+here="$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" || exit 2
 check="$here/../privacy-check.sh"
 [ -x "$check" ] || { echo "✗ Privacy check not found at $check: commit refused." >&2; exit 2; }
 exec "$check" --staged "$(git rev-parse --show-toplevel)"
