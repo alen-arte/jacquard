@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git add *)",
+      "Bash(git commit -m *)",
+      "Bash(git switch -c away/*)",
+      "Bash(git revert *)",
+      "Bash(date*)",
+      "{{CHECK_COMMANDS_AS_BASH_RULES}}"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git merge *)",
+      "Bash(git rebase *)",
+      "Bash(git pull*)",
+      "Bash(git branch -D *)",
+      "Bash(git tag *)",
+      "{{PACKAGE_INSTALL_AS_BASH_RULES}}",
+      "{{DEPLOY_CLI_AS_BASH_RULES}}"
+    ],
+    "deny": [
+      "Bash(git push *--force*)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean *)",
+      "Bash(git commit --amend*)",
+      "Bash(git filter-branch*)",
+      "Bash(git config *)",
+      "{{PROJECT_DENY_RULES_E_G_PUSH_TO_MAIN}}"
+    ]
+  }
+}

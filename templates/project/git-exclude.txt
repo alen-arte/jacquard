@@ -1,0 +1,4 @@
+# Jacquard: personal files, never committed (appended to .git/info/exclude)
+/{{LOCAL_FOLDER}}
+/CLAUDE.local.md
+/.claude/settings.local.json

@@ -1,0 +1,2 @@
+# One term per line. Case-insensitive. Lines starting with # are ignored.
+# Your name, handles, collaborators' names, project names, private URLs.
