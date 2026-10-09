@@ -31,7 +31,6 @@
       "Bash(git stash *)",
       "Bash(git rm *)",
       "Bash(git remote *)",
-      "Bash(git -C*)",
       "Bash(git branch -D *)",
       "Bash(git branch --delete*)",
       "Bash(git branch -m*)",
@@ -77,6 +76,20 @@
       "Bash(git diff *--output*)",
       "Bash(gh gist *)",
       "Bash(gh repo create*)",
+      "Bash(git -C*)",
+      "Bash(git push -uf*)",
+      "Bash(git push *-uf*)",
+      "Bash(git push *-fu*)",
+      "Bash(git commit *--am*)",
+      "Bash(git commit *--no-v*)",
+      "Bash(git commit * -n*)",
+      "Bash(git commit -n*)",
+      "Bash(git add *--f*)",
+      "Bash(git add * -f*)",
+      "Bash(git add *-Af*)",
+      "Bash(git add *-fA*)",
+      "Bash(git show *--output*)",
+      "Bash(gh repo edit*)",
       "{{PROJECT_DENY_RULES, e.g. push to a shared main}}"
     ]
   }

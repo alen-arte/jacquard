@@ -49,7 +49,7 @@ Wait for the OK. Apply changes the user asks for and show only what changed.
 2. From `~/.claude/jacquard/templates/project/`: `index.md`, `project.md`, `away-profile.md` filled from the summary; `CLAUDE.local.md` at the repo root (if one exists, add the imports and keep its content); append `git-exclude.txt` lines to `.git/info/exclude` (no duplicates); `.claude/settings.local.json` merged with any existing file, never overwritten.
    - A placeholder the summary does not cover takes the default written inside it, or "none".
    - In `settings.local.json`, replace each `{{…}}` entry with real rules or delete it. Never leave a placeholder there.
-3. If `git rev-parse --git-path hooks` is `.git/hooks` and it has no `pre-commit`, copy `~/.claude/jacquard/templates/project/pre-commit-main-guard` there as `pre-commit` (executable), with the main branch from `project.md`. It refuses commits on the main branch except the first commit of a new repo. Otherwise say the repo has its own hooks and rely on the rule.
+3. If `git rev-parse --git-path hooks` is `.git/hooks` and it has no `pre-commit`, copy `~/.claude/jacquard/templates/project/pre-commit-guard` there as `pre-commit` (executable), with the main branch from `project.md` and `<local>`. It refuses commits on the main branch (except the first commit of a new repo) and commits that include the local files. Otherwise say the repo has its own hooks and rely on the rule.
 4. Roles: from `~/.claude/jacquard/roles/`, filled with the placeholders described in `roles/README.md`, into `<local>/roles/`.
 5. Documents to create now, from `~/.claude/jacquard/templates/docs/`, into `<local>/docs/`, in `docs_language`. Only those.
 6. Write the kit version (from `~/.claude/jacquard/CHANGELOG.md`) in `index.md`.

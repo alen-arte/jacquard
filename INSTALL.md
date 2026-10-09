@@ -90,11 +90,13 @@ Then step 4 (permissions), and `/kit-update` in each project: it re-points `<loc
 
 ## Publishing changes to the kit
 
-Install the privacy hooks in your clone of the kit. The pre-commit hook checks what each commit records; the pre-push hook checks every commit and tag the push would publish (content, paths, messages, author), not just the current files:
+Install the privacy hooks in your clone of the kit. The pre-commit hook checks what each commit records; the pre-push hook checks every commit and tag the push would publish to that remote (content, paths, messages, author), not just the current files. They are small stubs that run the installed kit's copy, so a branch without the scripts, or with changed ones, cannot skip or alter the check:
 
 ```bash
-ln -s ../../scripts/hooks/pre-commit ~/repos/jacquard/.git/hooks/pre-commit
-ln -s ../../scripts/hooks/pre-push ~/repos/jacquard/.git/hooks/pre-push
+for h in pre-commit pre-push; do
+  printf '#!/bin/sh\nexec "$HOME/.claude/jacquard/scripts/hooks/%s" "$@"\n' "$h" > ~/repos/jacquard/.git/hooks/$h
+  chmod +x ~/repos/jacquard/.git/hooks/$h
+done
 ```
 
-Both fail closed: without your terms file nothing is published. Your commit identity is checked too; to keep your email private, use your host's no-reply address in this repo, and list it as allowed in `privacy-terms.txt` with a leading `!`.
+Both fail closed: without the installed kit, `iconv`, or your terms file, nothing is committed or published. Your commit identity is checked too; to keep your email private, use your host's no-reply address in this repo, and list it as allowed in `privacy-terms.txt` with a leading `!`.

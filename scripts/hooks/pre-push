@@ -1,12 +1,17 @@
 #!/bin/sh
-# Jacquard pre-push: checks what this push would publish (commits and tags not on any remote yet).
+# Jacquard pre-push: checks what this push would publish to this remote (commits and tags it lacks).
+# Install as a stub that runs the installed kit's copy (see INSTALL.md), so it never depends on the branch checked out.
+here="$(dirname "$(readlink -f "$0")")" || exit 2
+check="$here/../privacy-check.sh"
+[ -x "$check" ] || { echo "✗ Privacy check not found at $check: push refused." >&2; exit 2; }
+remote="$1"
 root="$(git rev-parse --show-toplevel)" || exit 2
 ids="$(mktemp)" || exit 2
 trap 'rm -f "$ids"' EXIT
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$local_sha" in *[!0]*) ;; *) continue ;; esac   # deleting a remote ref publishes nothing
   [ "$(git cat-file -t "$local_sha")" = tag ] && echo "$local_sha" >> "$ids"
-  git rev-list "$local_sha" --not --remotes >> "$ids"
+  git rev-list "$local_sha^{}" --not --remotes="$remote" >> "$ids" || { echo "✗ Cannot list commits to push: push refused." >&2; exit 2; }
 done
 [ -s "$ids" ] || exit 0
-sort -u "$ids" | "$root/scripts/privacy-check.sh" --objects "$root"
+sort -u "$ids" | "$check" --objects "$root"
