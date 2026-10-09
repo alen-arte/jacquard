@@ -2,14 +2,15 @@
 # Jacquard pre-commit guard (local, untracked):
 # 1. nobody commits on the main branch; work reaches it by integrating a branch (the first commit of a new repo is allowed);
 # 2. the personal local files never enter the index, whatever command staged them.
+# {{LOCAL_FOLDER_REGEX}}: the local folder name with dots escaped, e.g. \.jacquard
 main="{{MAIN}}"
 branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
 if [ "$branch" = "$main" ] && git rev-parse --verify -q HEAD >/dev/null; then
   echo "Jacquard: commits on '$main' are not allowed. Create a branch: git switch -c <id-short-name>" >&2
   exit 1
 fi
-if git diff --cached --name-only | grep -q -E '^({{LOCAL_FOLDER}}(/|$)|CLAUDE\.local\.md$|\.claude/settings\.local\.json$)'; then
-  echo "Jacquard: personal local files are staged ({{LOCAL_FOLDER}}, CLAUDE.local.md, .claude/settings.local.json). Unstage them: git restore --staged <path>" >&2
+if git diff --cached --name-only | grep -q -E '^({{LOCAL_FOLDER_REGEX}}(/|$)|CLAUDE\.local\.md$|\.claude/settings\.local\.json$)'; then
+  echo "Jacquard: personal local files are staged (the local folder, CLAUDE.local.md, .claude/settings.local.json). Unstage them: git restore --staged <path>" >&2
   exit 1
 fi
 exit 0
