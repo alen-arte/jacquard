@@ -1,2 +1,6 @@
 # Windows download markers (they contain local paths)
 *:Zone.Identifier
+# Jacquard local files, in case this repo is cloned elsewhere
+/.jacquard
+/CLAUDE.local.md
+/.claude/settings.local.json

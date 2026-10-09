@@ -40,9 +40,9 @@ Sensitive work (data, money, auth, privacy, irreversible) always gets its review
 
 | Place | What |
 |---|---|
-| `~/.claude/jacquard/` | The kit (core, roles, templates, commands) |
-| `~/.claude/jacquard-personal/` | Your preferences and each project's files (private repo) |
-| `<project>/.jacquard/` | Link to the project's files: index, project facts, roles, Away profile, documents, Away reports |
+| `~/.claude/jacquard/` | The kit (core, roles, templates, commands), pinned to a release |
+| `~/repos/jacquard-personal/` | Your preferences and each project's files (private repo) |
+| `<project>/.jacquard/` (default name) | Link to the project's files: index, project facts, roles, Away profile, documents, Away reports |
 | `<project>/CLAUDE.local.md` | Imports the core, your preferences and the project index. Never tracked |
 
 ## Phases (default)

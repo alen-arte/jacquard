@@ -17,7 +17,7 @@ description: "Present (default) and Away (a delegated block of hours or overnigh
 
 **Project layer.** Before anything else, read the project's Away profile (`<local>/away-profile.md`). It may only **add** limits and specifics (commands, collaborators, what counts as structural there, which roles review). It can never loosen this file. If a profile line seems to loosen a rule here, treat it as a rule conflict.
 
-All Away files live in `<local>/away/` (`<local>` = the project's local folder, excluded from git).
+All Away files live in `<local>/away/` (`<local>`: see core standards): the brief, the journal, the report draft and the reports. Parked items live in the journal and the report draft.
 
 ## 1. Pre-flight: a fast gate, then an explicit start
 
@@ -25,26 +25,26 @@ The user must always know whether work has begun. Two messages, and **nothing st
 
 **Message 1, the gate** (fast, short, in the reply language). Do not analyse every task or propose designs here. Run `date` and `git status`, read the brief once and write:
 - **Understood:** the scope in 2–4 lines and the tasks in order, each tagged `DEP` (something builds on it) or `ISO` (isolated), with its risk level. If the brief cites roadmap IDs, use them. If it says "everything you can", pick from the roadmap's Now and Next. If the brief looks bigger than one session, one line saying so.
-- **Needs you first:** roadmap items in scope marked `⏸ decision` or `🔑 permission`, and anything the brief explicitly assigns that needs a permission (a migration, a dependency). Each with a default.
-- **Time, branch, intensity:** start time, end time, branch `away/<current-branch>` (add `-2` if it exists; never on `main`), intensity (from the arguments, else the project default).
+- **Needs you first:** roadmap items in scope marked `⏸` (decision) or `🔑` (permission), and anything the brief explicitly assigns that needs a permission (a migration, a dependency). Each with a default.
+- **Time, branch, intensity:** start time, end time, the away branch (`core/git.md`), intensity (`core/review.md`: arguments, else session, else project default).
+- **Permission check:** append `GATE HH:MM` to the journal now, so any permission prompt for `<local>/away/` appears while the user is still here.
 - **Only if real:** a conflict (the brief contradicts itself or a confirmed decision; uncommitted changes in the tree) or something genuinely unclear about what the user wants, each with a default. What the brief leaves open ("you decide", "propose") is not a question: decide it during the work and report it.
 - **Last line, always the same meaning:** "I haven't started yet. Give me the OK and I'll start." No question mark, no alternatives.
 
-**Message 2, the start** (right after the OK): apply any answers, then one line "Started at HH:MM." and write `START HH:MM` as the first journal line.
+**Message 2, the start** (right after the OK): apply any answers, save the brief to `<local>/away/brief-YYYY-MM-DD.md`, then one line "Started at HH:MM." and write `START HH:MM` in the journal.
 
 **Design-manual pass** (after the OK, part of the work): if the brief has visual or interaction work, one subagent reads the system manual (`docs/system-manual.md`, by the sections that apply) and the design decisions in `decisions.md`, plus the brief, and returns a one-page digest per task: decisions (`D#`), tokens, shape grammar, open items, conflicts. It goes at the top of the journal. A conflict found now is not a reason to stop: the brief wins; if it truly can't be resolved, park that decision and continue.
 
 ## 2. Commits and safety rails
 
-- Commit after every completed task or logical change, on the away branch only, message starting with the ID.
-- Never rewrite history. Undo with `git revert`. A known-good commit before any risky step.
+- Commits follow `core/git.md`, on the away branch only.
 - If checks fail and about three reasonable attempts don't fix it: revert to the last good commit, log it, move on.
 - Verify before moving on: the project's checks (`project.md`) and a real render for visual work. Checks that need a person (the profile lists them) are logged as pending for the user.
 - Never invent scope to fill the time. Finishing early is fine.
 
 ## 3. What Away decides with autonomy (and reports)
 
-Autonomy, not arbitrariness: every decision coherent with the product, the manual and recorded decisions; new ideas when they serve that direction, never just because.
+Core standards › Decisions apply. Within them, and within where the Away profile says Away works:
 
 - **New elements:** their visual design, motion, copy, states and layout within a screen, built from the design standards and the system manual.
 - **Interaction details** of what is being created, within existing flows.
@@ -71,13 +71,14 @@ Decisions the user must see before they exist:
 - Pushing to any remote, merging into any non-away branch, deploying, tagging releases
 - Force operations and history rewriting; deleting branches or commits
 - Deleting or overwriting data
-- Data migrations, **except** a migration the brief explicitly assigns as a task: then only on a non-production environment, after confirming a backup or rollback path, and reported with both
+- Data migrations, **except** a migration the brief explicitly assigns as a task: then only on a non-production environment, after a backup made right before it, and reported with where the backup is and how to restore it
 - Secrets, credentials, environment variables, auth and permissions
 - Anything that costs money or touches paid services, billing or accounts
-- Sending anything to anyone (messages, emails, PR or issue comments, sharing an artifact). Publishing the Away report as a **private** artifact is allowed when preferences enable it; sharing it is the user's call
+- Sending anything to anyone (messages, emails, PR or issue comments, sharing an artifact). Publishing or refreshing **private** artifacts (the Away report, document views) is allowed when preferences enable it; sharing is the user's call
 - Touching files outside the project (except the project's own local folder), installing global software, changing system or git configuration
 - Disabling or weakening tests, linters or safety checks to make something pass
-- Writing into shared planning files or other people's documents, except what the Away profile explicitly allows
+- Writing into shared planning files or other people's documents, except the notes file named in `project.md` and the shared files the user approved in the Away profile
+- Putting local paths, private links or personal-layer content into anything shared (notes, commits, shared files)
 
 ## 6. When to park
 
@@ -110,15 +111,15 @@ Reviews follow `core/review.md` with the session's intensity and the floor for l
 - **`DEP` task:** its review runs right after the commit, before anything builds on it.
 - **`ISO` task:** added to `QA-pending` (task, commit, what to verify, how) for the review block.
 - **Review block:** QA over `QA-pending`, then the advisors the profile and intensity call for, as separate subagents. Verdicts go into the report, unresolved ones included.
-- **If the session ends first,** whatever is still pending appears in the report as "to test together", with what to check and how. Never present unreviewed work as reviewed.
+- **If the session ends first,** whatever is still pending appears in the report as "to test together", with what to check and how.
 
 ## 9. The Away report
 
 **Built progressively.** From the first finished task, keep `away-report-draft-YYYY-MM-DD.md` (reply language, plain markdown). After each task add: what was done (commit), the decision cards, what was parked, whether it is `QA-pending`. Keep three running lists at the bottom: **Done**, **To test together**, **Parked**. The final report is built from this draft, never from memory.
 
 **Final report:** a self-contained, sober HTML file `away-report-YYYY-MM-DD-HHMM.html` (format per preferences), generated once at the end of the build block and updated in place after the review block; published as a private artifact when preferences allow; plus a short summary in chat on return. Sections:
-1. **Summary:** what was asked, done, not done, time used
-2. **Needs your OK:** parked items first, each with options and a recommendation
+1. **Needs your OK:** parked items first, each with options and a recommendation
+2. **Summary:** what was asked, done, not done, time used
 3. **Decisions I made:** one card each: the decision, why, alternatives and why not, impact, how to reverse it (commit)
 4. **State:** branch, commits, check results
 5. **Reviews:** verdicts
@@ -132,4 +133,4 @@ Be honest: failures, reverts and uncertainty are reported. Parked or failed item
 
 `/back` ends the mode: stop new work, close safely, run the pending reviews if there is room, finish the report, return to Present and present what needs the user first.
 
-Integration happens in Present, only with the user's explicit OK, following `core/git.md`: rejected decisions are undone with `git revert` on the away branch; then `git switch <current-branch>`, `git merge --ff-only away/<current-branch>`, `git branch -d away/<current-branch>`. If `--ff-only` refuses, stop and explain the options. To discard everything: switch back and, with the user's OK, `git branch -D away/<current-branch>`.
+Integration happens in Present, only with the user's explicit OK: rejected decisions are first undone with `git revert` on the away branch, then the away branch is integrated into the branch it came from per `core/git.md`. To discard everything: switch back and, with the user's OK, `git branch -D away/<current-branch>`.

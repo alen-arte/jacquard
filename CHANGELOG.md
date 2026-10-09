@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2
+- **Privacy lock:** the check fails closed (missing, empty or unreadable terms file), reads terms written on Windows, ignores case and accents, scans file names, link targets and files with non-ASCII names, and judges each email on its own. New hooks: pre-commit checks what a commit records; pre-push checks every commit and tag a push would publish (content, paths, messages, author), not just the current files. `!text` in the terms file allows an exact text such as a public commit identity.
+- **Project permissions:** the template blocks adding the local files to git, force-push in every form, skipping hooks, history rewriting, git configuration and publishing with `gh`; resets, restores, stashes, remotes and recursive deletes ask; writes to the local folder are allowed. Kickoff adds a local hook against commits on the main branch where the repo has none.
+- **Install:** the installed kit is pinned to a release tag (editing the kit no longer changes running sessions); the personal layer moves to `~/repos/jacquard-personal/` because Claude Code protects `~/.claude/`; read permissions for the kit; the skill links step checks before linking.
+- **Commands:** every command stops when Jacquard is not loaded (not a Jacquard project, or imports not approved); `/back` stops when Away is not active; `/kit-update` can move a plain local folder into the personal repo.
+- **Kickoff:** reads the personal preferences itself; stops if local files are already tracked; the interview has a default for every question, counts blocks consistently, uses plain words for review and publishing, and proposes the stack once; the proposal adds name, hosting, irreversibles and where Away works; placeholders always resolve; the initial audit for adopted projects is offered; stricter verification.
+- **Consistency with agreed decisions:** the Away report puts "Needs your OK" first; an Away profile only narrows (where Away works, publishing off, shared files as the core's single exception); migrations need a fresh backup; nobody commits on `main`.
+- **One rule in one place:** risk levels and the floor move to core standards; `<local>` is defined once; duplicated git, review and loading rules now point to their source; intensity precedence and notes for collaborators are defined; reviews still run when a role was not created.
+
 ## 0.1.1
 - Privacy check now scans files that look binary (a NUL byte) instead of skipping them silently; script is executable.
 - `.gitignore` for Windows download markers (`*:Zone.Identifier`), which carry local paths.

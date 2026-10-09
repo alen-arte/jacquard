@@ -1,0 +1,12 @@
+#!/bin/sh
+# Jacquard pre-push: checks what this push would publish (commits and tags not on any remote yet).
+root="$(git rev-parse --show-toplevel)" || exit 2
+ids="$(mktemp)" || exit 2
+trap 'rm -f "$ids"' EXIT
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_sha" in *[!0]*) ;; *) continue ;; esac   # deleting a remote ref publishes nothing
+  [ "$(git cat-file -t "$local_sha")" = tag ] && echo "$local_sha" >> "$ids"
+  git rev-list "$local_sha" --not --remotes >> "$ids"
+done
+[ -s "$ids" ] || exit 0
+sort -u "$ids" | "$root/scripts/privacy-check.sh" --objects "$root"

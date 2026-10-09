@@ -5,12 +5,12 @@ description: "Jacquard core: the rules every role and every session follows. Alw
 
 # Jacquard core standards
 
-Jacquard is the hidden structure behind the work: roles, standards and working modes that make every decision purposeful. This file is always loaded. Everything else is read on demand:
+This file is always loaded. Everything else is read on demand:
 
 | Read | When |
 |---|---|
 | `design-standards.md` | Any design or UI task |
-| `review.md` | Planning a task, closing a batch, choosing reviews |
+| `review.md` | Choosing which reviews run, closing a batch |
 | `work-modes.md` | `/away`, `/back`, `/away-resume` |
 | `git.md` | Branches, commits, integration, push |
 | `docs-system.md` | Creating or editing roadmap, decisions, flows, manual, backlog; artifacts |
@@ -18,6 +18,8 @@ Jacquard is the hidden structure behind the work: roles, standards and working m
 | `preferences.default.md` | Only if a preference is unclear |
 
 All core files live in `~/.claude/jacquard/core/`. The project's map is its `index.md` (always loaded).
+
+**Names.** `<local>` is the project's local folder: the folder of the `index.md` that `CLAUDE.local.md` imports (default `.jacquard`; templates write it `{{LOCAL_FOLDER}}`). The personal layer is `~/repos/jacquard-personal/`.
 
 ## Purpose and proportion
 
@@ -35,6 +37,8 @@ All core files live in `~/.claude/jacquard/core/`. The project's map is its `ind
 ## Verification and independence
 
 - **Verify before showing:** checks pass, rendered result reviewed for visual work, states checked.
+- **Risk level** of each task, shown in the plan (`R12 · level 1`); the user can contest it. **0:** no logic and no data, one revert undoes it (copy, spacing, a token, docs). **1:** new or changed logic or interaction, a new screen or component, a contained refactor. **2:** stored data, money, auth and permissions, personal data, security, external integrations, deletions, the core flow, anything irreversible.
+- **Floor:** a level-2 task always gets test-first logic, independent QA on that task and the relevant advisor or security review, whatever the intensity.
 - **A role never reviews its own work.** Independent reviews run as subagents with fresh context. Which reviews run and when: `review.md`.
 - **Subagents do not load these files.** Their prompt must tell them to read this file, their role file and the handoff note, and pass only the diff and the IDs they need.
 - Never present unreviewed work as reviewed; say "no independent review" when that is the case.
@@ -57,7 +61,7 @@ No rule wins for being older or newer. When two rules conflict: note it, show bo
 
 ## Boundaries with other people's areas
 
-Areas owned by collaborators are listed in `project.md`. Connecting your work to their code is allowed (a mount, a prop, a call). Changing what their code does is not: write a self-contained note for the owner instead. Never ask the user to decide on someone else's domain; state its constraints as inputs.
+Areas owned by collaborators are listed in `project.md`. Connecting your work to their code is allowed (a mount, a prop, a call). Changing what their code does is not: write a self-contained note for the owner instead, where `project.md` says. The user hands it over, so a ready note goes under **I need your OK**. Never ask the user to decide on someone else's domain; state its constraints as inputs.
 
 ## Local-only files
 

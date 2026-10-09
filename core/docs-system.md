@@ -10,7 +10,7 @@ description: "How guiding documents work: markdown as source of truth, artifacts
 - The `.md` file is the **source of truth**: flat, easy to search and filter. Templates live in `~/.claude/jacquard/templates/docs/`.
 - An artifact (a page the user reads comfortably) is a **view generated from the markdown**, refreshed at checkpoints: end of an Away block, close of a milestone, or when the user asks. Never edit an artifact directly.
 - One artifact per document, updated in place at the same link. Before updating, read it and save its current version to `<local>/artifact-backups/<doc>-YYYY-MM-DD-HHMM.html`. Never publish a parallel copy unless the user asks.
-- Publishing is optional per project (preferences); without it, the markdown is the document.
+- Publishing follows `publish_artifacts` in preferences; a project may turn it off in its index rules. Without it, the markdown is the document.
 
 ## IDs
 
@@ -27,7 +27,7 @@ IDs are stable and never reused. Origin (user or Claude) is a field, not part of
 
 ## Loading levels
 
-- **Always:** core `standards.md` and the project `index.md`. Keep both short.
+- **Always:** core `standards.md`, the personal preferences and the project `index.md`. Keep them short.
 - **Per task:** the role file of the role acting, and the document sections cited by ID.
 - **Rarely:** whole documents, archives, audits, old reports.
 
@@ -45,4 +45,4 @@ At each phase or milestone close, finished roadmap items move to `roadmap-done.m
 
 ## Language
 
-Documents use the project's documents language (preferences). IDs, file names and code stay in English.
+Documents use `docs_language` (preferences), headings included. IDs, file names, code and the status markers `⏸` and `🔑` stay as they are.

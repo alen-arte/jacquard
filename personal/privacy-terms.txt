@@ -1,2 +1,4 @@
 # One term per line. Case-insensitive. Lines starting with # are ignored.
 # Your name, handles, collaborators' names, project names, private URLs.
+# A line starting with ! allows that exact text, e.g. your public commit identity:
+# !Your Name <you@example.com>

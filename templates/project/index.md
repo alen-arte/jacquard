@@ -9,7 +9,7 @@ description: "Map of this project for Claude: where things are, who acts when, w
 
 - **Starting point:** {{A|B|C|D}} · **Phase:** {{PHASE}} · **Default intensity:** {{INTENSITY}} · **Kit version:** {{KIT_VERSION}}
 - **The user here:** {{USER_ROLE_ONE_LINE}}
-- **Now:** see `roadmap.md` › Now ({{NOW_IDS}})
+- **Now:** {{NOW: IDs from `docs/roadmap.md` › Now, or the current phase step, e.g. "framing (phase 1)"}}
 
 ## Where things are (read only when needed)
 

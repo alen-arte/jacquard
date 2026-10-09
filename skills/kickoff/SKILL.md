@@ -7,11 +7,12 @@ disable-model-invocation: true
 
 Run the Jacquard kickoff for the project in the current directory. Context from the user: $ARGUMENTS
 
-Read first: `~/.claude/jacquard/core/standards.md`, `~/.claude/jacquard/core/method.md`, and the interview in `${CLAUDE_SKILL_DIR}/interview.md`. The local folder name comes from preferences (`local_folder`, default `.jacquard`); below it is `<local>`.
+Read first: `~/.claude/jacquard/core/standards.md`, `~/.claude/jacquard/core/method.md`, the interview in `${CLAUDE_SKILL_DIR}/interview.md`, and the personal preferences `~/repos/jacquard-personal/preferences.md` if it exists (else `~/.claude/jacquard/core/preferences.default.md`): they set the reply language, the technical depth and `local_folder`. Names used below: `<local>` = `local_folder` (default `.jacquard`); `<project-slug>` = the repo folder name in lowercase kebab-case (templates write `{{PROJECT_SLUG}}`).
 
 ## 0. Check
 
 - If `<local>/index.md` already exists, this project already uses Jacquard: stop and suggest `/kit-update`.
+- If `CLAUDE.local.md`, `.claude/settings.local.json` or `<local>` is already tracked by git (`git ls-files --error-unmatch <path>`), stop: excluding it would not work and personal files would reach the repo. Explain and ask how to proceed.
 - `git status`: if the tree has uncommitted changes, say so; kickoff only writes files excluded from git, but the user should know.
 
 ## 1. Starting point
@@ -27,27 +28,31 @@ Read-only scan, nothing is changed:
 
 ## 3. Interview
 
-Blocks 1–6 of `interview.md`, skipping what does not apply or was already read. At most three questions per screen, tappable options with a marked default (use the interactive question tool when available), "Block n of N" in each screen. Stack questions (A, B): propose the stack with reasons and alternatives, **checking current stable versions in official documentation now**, never from memory.
+The blocks of `interview.md` that apply, by its rules. Keep the answers in a running summary in this conversation; step 5 writes them to `project.md`. Without the interactive question tool, use numbered options with the default marked.
 
 ## 4. Proposal (one screen, one OK)
 
-- Starting point and phase
+- Project name and slug; starting point and phase
 - Roles to create, each with one line of why; domain fluency per role; domain advisors with their triggers; roles not created and why
-- Stack (A, B) with versions and the date checked
-- Boundaries with collaborators, push policy, default intensity
+- Stack (A, B), proposed once, here: the latest stable versions that work together, **checked in official documentation now**, never from memory, with the date; flag any release younger than 30 days; hosting and environments. Without web access, mark versions "unverified".
+- What is irreversible here: derived from the stack and the domain risks; the user confirms
+- Boundaries with collaborators, push policy (A, B with no remote and no collaborators: stated, not asked), default intensity
 - Documents created now and documents that come later (`core/method.md`)
-- Away profile highlights
+- Away profile: where Away works (default: the whole product), checks that need a person, advisors for the review block
 - For C and D: the **adoption plan** (section 6)
 
 Wait for the OK. Apply changes the user asks for and show only what changed.
 
 ## 5. Generate
 
-1. Create `<local>/`. If the personal repo exists (`~/.claude/jacquard-personal/`), create `projects/<project-slug>/` there and make `<local>` a link to it; otherwise a plain folder, and say so.
-2. From `~/.claude/jacquard/templates/project/`: `index.md`, `project.md`, `away-profile.md` filled in; `CLAUDE.local.md` at the repo root (if one exists, add the imports and keep its content); append `git-exclude.txt` lines to `.git/info/exclude` (no duplicates); `.claude/settings.local.json` merged with any existing file, never overwritten.
-3. Roles: from `~/.claude/jacquard/roles/`, filled with the placeholders described in `roles/README.md`, into `<local>/roles/`.
-4. Documents to create now, from `~/.claude/jacquard/templates/docs/`, into `<local>/docs/`. Only those.
-5. Write the kit version (from `~/.claude/jacquard/CHANGELOG.md`) in `index.md`.
+1. Create `<local>/`. If the personal repo exists (`~/repos/jacquard-personal/`), create `projects/<project-slug>/` there and make `<local>` a link to it. Otherwise a plain folder: say so, and write "local folder not in the personal repo yet" in the index rules (`/kit-update` moves it later).
+2. From `~/.claude/jacquard/templates/project/`: `index.md`, `project.md`, `away-profile.md` filled from the summary; `CLAUDE.local.md` at the repo root (if one exists, add the imports and keep its content); append `git-exclude.txt` lines to `.git/info/exclude` (no duplicates); `.claude/settings.local.json` merged with any existing file, never overwritten.
+   - A placeholder the summary does not cover takes the default written inside it, or "none".
+   - In `settings.local.json`, replace each `{{…}}` entry with real rules or delete it. Never leave a placeholder there.
+3. If the repo has no hooks of its own (no `.git/hooks/pre-commit`, `core.hooksPath` unset), add a local `.git/hooks/pre-commit` that refuses commits when the current branch is the main branch. Otherwise say the repo has its own hooks and rely on the rule.
+4. Roles: from `~/.claude/jacquard/roles/`, filled with the placeholders described in `roles/README.md`, into `<local>/roles/`.
+5. Documents to create now, from `~/.claude/jacquard/templates/docs/`, into `<local>/docs/`, in `docs_language`. Only those.
+6. Write the kit version (from `~/.claude/jacquard/CHANGELOG.md`) in `index.md`.
 
 ## 6. Adoption (C, D)
 
@@ -62,14 +67,15 @@ Adoption touches **only the working-system files** (roles, rules, memories, comm
 - Nothing is deleted: copies of everything replaced go to `<local>/migration-backup/YYYY-MM-DD/` first. Files outside the project (old memories, old commands) are only touched with the user's explicit OK per file.
 - Converting existing guiding documents to the Jacquard format (IDs, data lines, archive of finished items), or extracting the markdown source of an artifact-only document, is **optional**: ask per document. If converted, keep the original as backup.
 - D: the other person's planning and rules stay read-only; their areas become boundaries in `project.md`; nothing of Jacquard is referenced from tracked files.
+- **Initial audit** (`core/method.md`): offer it, with its own OK, once the files exist: a full audit per `core/review.md`. Its findings become roadmap items or `RF#`.
 
 ## 7. Verify
 
-- `git status` shows nothing new tracked; `.git/info/exclude` has the lines.
+- `git status --porcelain` shows no new or modified tracked file; `git check-ignore -v` confirms `<local>`, `CLAUDE.local.md` and `.claude/settings.local.json` are excluded.
+- `.claude/settings.local.json` is valid JSON and has no `{{`.
 - The files that load at session start are only `CLAUDE.local.md` and its imports (core standards, personal preferences, project index): list them with their line counts.
 - Tell the user: the new `CLAUDE.local.md` loads from the next session; approve the external imports dialog then, and check with `/context`. Without that approval nothing from Jacquard loads.
 - The project's checks still pass.
-- `scripts/privacy-check.sh` is not needed here (the project is not the public kit).
 
 ## 8. Report
 

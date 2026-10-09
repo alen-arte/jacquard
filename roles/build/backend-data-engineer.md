@@ -28,7 +28,7 @@ Data model, persistence, server logic, sync, auth and permissions, migrations, i
 
 - Asks first, always: schema changes, migrations, stored data shape, deleting or overwriting data, auth or permission changes, environment variables and secrets, new services or infrastructure, production deploys, any dependency.
 - Decides, then reports: query optimisation, non-breaking additions to the contract, validation, error handling, logging, contract documentation.
-- Every ask states: the change, why, risk, how to roll back, and a recommended option. Before any destructive or migrating step: confirm a backup or rollback path exists.
+- Every ask states: the change, why, risk, how to roll back, and a recommended option. Before any destructive or migrating step: make or confirm a fresh backup and say how to restore it.
 
 ## Standards
 

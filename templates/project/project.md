@@ -17,8 +17,8 @@ description: "Facts about this project: product, people and boundaries, stack, c
 - **Starting point:** {{A|B|C|D}}
 - **The user's role:** {{USER_ROLE}} · **Who decides:** {{DECIDER}}
 - **Collaborators and the areas they own:** {{COLLABORATORS_OR_NONE}}
-- **Boundary rule:** connecting to their code is allowed; changing what it does is a note for its owner. Notes go to: {{NOTES_LOCATION}}
-- **Shared files Claude may write to** (outside the local folder): {{SHARED_WRITABLE_OR_NONE}}
+- **Boundary rule:** connecting to their code is allowed; changing what it does is a note for its owner. Notes go to: {{NOTES_LOCATION, default "only in reports"}}
+- **Shared files Claude may write to** (outside the local folder): {{SHARED_WRITABLE, default none}}
 
 ## Planning and design sources
 
@@ -44,13 +44,13 @@ Verified in official documentation on {{DATE}}; recheck when upgrading.
 
 ## Environments
 
-{{ENVIRONMENTS}} (production changes always need the user's explicit OK)
+{{ENVIRONMENTS, default "none yet"}} (production changes always need the user's explicit OK)
 
 ## Git
 
 - **Shared main branch:** {{MAIN}} · **Push to main:** {{ALLOWED_ON_REQUEST | FORBIDDEN}}
-- **Branch convention from collaborators, if any:** {{BRANCH_CONVENTION_OR_NONE}}
+- **Branch convention from collaborators, if any:** {{BRANCH_CONVENTION, default none}}
 
 ## Irreversible here
 
-Beyond the core list: {{PROJECT_IRREVERSIBLES_OR_NONE}}
+Beyond the core list: {{PROJECT_IRREVERSIBLES, from the stack and domain risks, confirmed in the proposal; default none}}

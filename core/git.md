@@ -9,7 +9,7 @@ The user may not be an engineer: choose branches and messages yourself and expla
 
 ## Branches
 
-- **`main` always works.** Nobody works directly on it, neither the user nor Claude.
+- **`main` always works.** Nobody commits on it directly, neither the user nor Claude: work reaches `main` only by integrating a branch.
 - One short-lived branch per roadmap item or batch, named after the ID: `r12-tag-filter`. Short means days, not weeks; long branches collect conflicts.
 - Away works on `away/<current-branch>` (add `-2` if it exists). Never on `main`.
 
@@ -28,7 +28,7 @@ A branch is integrated when its checks are green, its reviews per `review.md` ar
 - Only in Present, only when the user asks in writing for that specific push. One OK does not cover the next.
 - Before pushing, say in one line which branch goes to which remote branch and how many commits.
 - Never force-push. Never push in Away.
-- Pushing `main` is allowed unless the project forbids it in `project.md`.
+- Pushing an integrated `main` is allowed unless the project forbids it in `project.md`.
 
 ## Syncing with collaborators (Present only)
 
@@ -36,4 +36,4 @@ At the start of a Present session in which code will change, fetch and say in on
 
 ## Technical backstop
 
-The project's `.claude/settings.local.json` (excluded from git) puts pushes, merges, rebases, pulls and branch deletion behind a confirmation, and denies force-push, history rewriting and git configuration changes. Instructions are the rule; permissions are the safety net.
+The project's `.claude/settings.local.json` (excluded from git) puts pushes, merges, rebases, pulls, resets, restores, stashes, remote changes, branch deletion and `gh` behind a confirmation, and denies force-push, skipping hooks, history rewriting, git configuration changes and adding the local files (`<local>`, `CLAUDE.local.md`, local settings) to git. Where the repo has no hooks of its own, kickoff adds a local pre-commit hook that refuses commits on the main branch. Instructions are the rule; permissions are the safety net: a variant of a command can escape a pattern.

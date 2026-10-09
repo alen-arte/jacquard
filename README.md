@@ -18,9 +18,9 @@ The Jacquard loom wove flowers and figures from punched cards: a hidden pattern 
 
 | Layer | Where | Public |
 |---|---|---|
-| Core, roles, templates, commands | this repo → `~/.claude/jacquard/` | Yes |
-| Personal preferences and project files | your private repo → `~/.claude/jacquard-personal/` | No |
-| Project local folder | `<repo>/.jacquard` → link to your private repo | No, excluded from git |
+| Core, roles, templates, commands | this repo → `~/.claude/jacquard/` (pinned to a release) | Yes |
+| Personal preferences and project files | your private repo → `~/repos/jacquard-personal/` | No |
+| Project local folder | `<repo>/.jacquard` (default name) → link to your private repo | No, excluded from git |
 
 ## Structure
 
@@ -30,7 +30,7 @@ roles/        role library and role template
 skills/       commands: /kickoff, /away, /back, /away-resume, /rigor, /kit-update
 templates/    project files and guiding documents
 personal/     template for your private layer
-scripts/      privacy check for publishing
+scripts/      privacy check and git hooks for publishing
 docs/         guide
 ```
 
@@ -41,7 +41,7 @@ docs/         guide
 
 ## Status
 
-Version 0.1: complete first version, in validation on real projects.
+Version 0.1 (see `CHANGELOG.md`): complete first version, in validation on real projects.
 
 ## Feedback
 

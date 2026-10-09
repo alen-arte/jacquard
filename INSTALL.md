@@ -1,6 +1,6 @@
 # Installing Jacquard
 
-Written so you can hand it to Claude Code as-is: "Install Jacquard following INSTALL.md".
+Written so you can hand it to Claude Code as-is: "Install Jacquard following INSTALL.md". Each step that writes outside the current folder needs your OK.
 
 ## Before anything: verify against current docs
 
@@ -12,50 +12,77 @@ Claude Code evolves fast. Check the official documentation and adapt these steps
 
 Last verified with Claude Code 2.1.295 (2026-10-09). Worth knowing:
 - Imports outside the project, including through a link such as `.jacquard`, load **only after the approval dialog is accepted**. Until then nothing from Jacquard loads, silently.
+- `~/.claude/` is a protected folder: writes there always ask, whatever the rules say. That is why the personal layer, which projects write into, lives in `~/repos/`.
+- Permission rules on a link must match both the link and its target to allow; either one to deny.
 - `CLAUDE.local.md` is not ignored by git on its own; kickoff excludes it in `.git/info/exclude`.
 - `/memory` does not list imported files; `/context` does.
 - When a skill and a command share a name, the skill wins for project commands; for `~/.claude/commands/` it is undocumented, hence the stop rule in step 2.
-- Deny rules are a safety net, not a wall: the docs note that variants such as `git -C . push` can escape a pattern.
+- Deny rules are a safety net, not a wall: a variant such as `git -C . push` can escape a pattern.
 
 ## 1. The kit
 
+Your working copy, and an installed copy pinned to a release, so editing the kit never changes the rules of a running session:
+
 ```bash
 git clone https://github.com/<you>/jacquard ~/repos/jacquard
-ln -s ~/repos/jacquard ~/.claude/jacquard
+git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.1.2   # the latest release tag
 ```
 
-A working clone plus a link means edits to the kit apply immediately.
+Only using the kit, never editing it: `git clone --branch v0.1.2 https://github.com/<you>/jacquard ~/.claude/jacquard` is enough.
 
 ## 2. Commands
 
-For each folder in `~/.claude/jacquard/skills/`, link it into `~/.claude/skills/`:
+Link each skill into `~/.claude/skills/`, stopping at any name already taken:
 
 ```bash
 mkdir -p ~/.claude/skills
-for s in ~/.claude/jacquard/skills/*/; do ln -s "$s" ~/.claude/skills/"$(basename "$s")"; done
+for s in ~/.claude/jacquard/skills/*/; do
+  n=$(basename "$s")
+  if [ -e ~/.claude/skills/"$n" ] || [ -e ~/.claude/commands/"$n".md ]; then echo "skip $n: already exists"; continue; fi
+  ln -s "${s%/}" ~/.claude/skills/"$n"
+done
 ```
 
-If a skill or a command with the same name already exists (`~/.claude/skills/<name>` or `~/.claude/commands/<name>.md`), stop: back it up and ask before replacing it.
+For each name skipped: back up the existing skill or command and ask before replacing it.
 
 ## 3. Your personal layer (private)
 
 1. Create a **private** repository from the `personal/` folder of this kit.
-2. Clone it to `~/.claude/jacquard-personal/`.
+2. Clone it to `~/repos/jacquard-personal/` (not under `~/.claude/`: see above).
 3. Fill `preferences.md` (only the keys you want to change) and `privacy-terms.txt` (your name, handles, collaborators, project names).
 
-## 4. First use
+## 4. Permissions
+
+Let commands read the kit and your preferences without asking each time. Add to `permissions.allow` in `~/.claude/settings.json`:
+
+```json
+"Read(~/.claude/jacquard/**)", "Read(~/repos/jacquard-personal/**)"
+```
+
+Each project's own rules (writes to its local folder, git safety net) come from kickoff.
+
+## 5. First use
 
 In a project folder, run `/kickoff`. Then start a new session there (the new `CLAUDE.local.md` loads at session start) and approve the external imports dialog. Check with `/context` that `CLAUDE.local.md`, the core standards, your preferences and the project index are loaded, and nothing else from Jacquard.
 
-## Publishing changes to the kit
+## Updating the installed kit
 
-Install the privacy check as a pre-push hook in your clone of the kit:
+When a new release is tagged, and no Away block is running in any project:
 
 ```bash
-cat > ~/repos/jacquard/.git/hooks/pre-push <<'HOOK'
-#!/bin/sh
-root="$(git rev-parse --show-toplevel)"
-exec "$root/scripts/privacy-check.sh" "$root"
-HOOK
-chmod +x ~/repos/jacquard/.git/hooks/pre-push
+git -C ~/repos/jacquard fetch --tags        # skip if you tagged it in this clone
+git -C ~/.claude/jacquard checkout --detach v0.1.3
 ```
+
+New sessions use it. Then run `/kit-update` in each project to bring its files up to date, piece by piece.
+
+## Publishing changes to the kit
+
+Install the privacy hooks in your clone of the kit. The pre-commit hook checks what each commit records; the pre-push hook checks every commit and tag the push would publish (content, paths, messages, author), not just the current files:
+
+```bash
+ln -s ../../scripts/hooks/pre-commit ~/repos/jacquard/.git/hooks/pre-commit
+ln -s ../../scripts/hooks/pre-push ~/repos/jacquard/.git/hooks/pre-push
+```
+
+Both fail closed: without your terms file nothing is published. Your commit identity is checked too; to keep your email private, use your host's no-reply address in this repo, and list it as allowed in `privacy-terms.txt` with a leading `!`.

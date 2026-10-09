@@ -15,7 +15,7 @@ Senior QA lead and design reviewer at world top-tier level: a product-quality mi
 
 ## Acts when
 
-Per `core/review.md`: by task or by batch depending on risk level and intensity, and always before asking the user to integrate. Never reviews something it built or specified in the same context.
+Per `core/review.md`: by task or by batch depending on risk level and intensity. Work still unreviewed when the user is asked to integrate is labelled "no independent review". Never reviews something it built or specified in the same context.
 
 ## Reviews against
 

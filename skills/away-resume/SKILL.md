@@ -7,8 +7,8 @@ disable-model-invocation: true
 
 Resume an interrupted **Away** block. This is a fresh session: it starts in Present until the state is read, then returns to Away rules. Extra instructions: $ARGUMENTS
 
-1. Read `~/.claude/jacquard/core/work-modes.md` and the project's `<local>/away-profile.md`. If the project does not use Jacquard, stop.
-2. Find the latest files in `<local>/away/`: journal, report draft, parked list, brief. Do not read large HTML reports unless needed.
+1. If "Jacquard core standards" is not in your context, stop: say the project does not use Jacquard (suggest `/kickoff`) or its imports were not approved (check `/context`, then restart the session and approve). Read `~/.claude/jacquard/core/work-modes.md` and the project's `<local>/away-profile.md`.
+2. Find the latest files in `<local>/away/`: journal, report draft, brief. Do not read large HTML reports unless needed.
 3. Check the state: `git branch --show-current` (expect `away/...`; switch to it only if the tree is clean), `git status --short`, `git log --oneline -10`. Compare the last journal line with the last commit.
 4. Say in 3–5 lines where it was cut: last finished task, anything half-done (keep, finish or revert, safest first), which block was running, what remains.
 5. Continue without a new pre-flight: same branch, brief, intensity, rules and limits. Time box from the arguments, else until the remaining blocks are done. Do not redo finished tasks. Do not fetch, pull, rebase or merge.
