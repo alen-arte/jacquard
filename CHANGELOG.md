@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.3
+- Away runs in auto mode: the gate reminds the user (Shift+Tab); the install notes explain that permission modes change prompts, not Jacquard's rules.
+
 ## 0.1.2
 - **Privacy lock:** the check fails closed (missing, empty or unreadable terms file, missing tools, unreadable history), reads terms written on Windows, ignores case and accents, scans file names, link targets and any file name, and judges each email on its own. New hooks: pre-commit checks what a commit records; pre-push checks every commit and tag a push would publish to that remote (content, paths, messages, author, merges), not just the current files. Hooks are installed as stubs that run the installed kit's copy. `!Name <email>` in the terms file allows an exact commit identity such as a public no-reply one; it must be a full identity containing a term. Findings name terms by number.
 - **Project permissions:** the template blocks adding the local files to git, force-push in every form, skipping hooks, history rewriting, git configuration and publishing with `gh`; resets, restores, stashes, remotes and recursive deletes ask; writes to the local folder are allowed. Kickoff adds a local pre-commit guard (no commits on the main branch, no local files in a commit) where the repo has no hooks of its own.

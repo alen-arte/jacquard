@@ -18,6 +18,7 @@ Last verified with Claude Code 2.1.295 (2026-10-09). Worth knowing:
 - `/memory` does not list imported files; `/context` does.
 - When a skill and a command share a name, the skill wins for project commands; for `~/.claude/commands/` it is undocumented, hence the stop rule in step 2.
 - Deny rules are a safety net, not a wall: a variant such as `git -C . push` can escape a pattern.
+- Permission modes decide whether Claude Code asks before each action, not what Claude decides or reports. Away needs **auto** mode (Shift+Tab): the default mode asks before every edit and an unattended block stalls. Deny rules apply in every mode.
 
 ## 1. The kit
 
