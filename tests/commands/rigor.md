@@ -1,6 +1,6 @@
 # /rigor
 
-Reads: skills/rigor/SKILL.md, core/review.md, core/standards.md
+Reads: skills/rigor/SKILL.md, core/review.md
 
 ### C1 · Lowering intensity keeps the floor
 **Given:** A Jacquard project whose default intensity is `-ss`. The next planned task changes how payments are stored (level 2). The user types `/rigor -s`. Write your next message.

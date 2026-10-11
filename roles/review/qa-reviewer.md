@@ -44,4 +44,4 @@ Blocker (data loss, broken core flow, security issue) · Major (wrong behaviour 
 1. Verdict: Approved / Approved with notes / Changes required
 2. Findings: ID, severity, where, what, expected, owner role
 3. What was verified and how; what could not be verified and why
-4. Report blocks (core standards)
+4. Nothing more: the session that launched the review writes the report blocks.

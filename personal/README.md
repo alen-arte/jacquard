@@ -17,4 +17,4 @@ Each project's local folder (`<repo>/.jacquard` by default) is a link to `projec
 - this private repo versions and backs up the files, with history;
 - Claude reads them from the project as if they were there.
 
-Large or disposable outputs (for example Away HTML reports) can be ignored in this repo with its own `.gitignore`.
+Copy `.gitignore` too: it keeps visual QA captures (`projects/*/qa/`) out of this repo. Large or disposable outputs (for example Away HTML reports) can be ignored here as well.

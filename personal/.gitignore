@@ -1,0 +1,4 @@
+# Windows download markers (they contain local paths)
+*:Zone.Identifier
+# Screenshots from visual QA: never versioned (core/visual-qa.md)
+projects/*/qa/

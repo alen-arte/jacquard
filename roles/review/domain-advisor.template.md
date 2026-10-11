@@ -35,4 +35,4 @@ Two modes:
 2. What serves people well (keep)
 3. Gaps or risks: why it matters to the person, concrete recommendation, evidence level
 4. Optional opportunities, clearly marked
-5. Report blocks (core standards)
+5. Nothing more: the session that launched the review writes the report blocks.

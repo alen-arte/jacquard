@@ -38,4 +38,4 @@ Fix, or approve production changes. It reports; the owner fixes; the user decide
 1. Verdict: No issues / Issues to fix / Blocker
 2. Findings: risk, where, how it could be exploited or leak, severity, fix direction, owner role
 3. What was not verifiable and why
-4. Report blocks (core standards)
+4. Nothing more: the session that launched the review writes the report blocks.

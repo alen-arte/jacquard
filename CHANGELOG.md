@@ -8,7 +8,7 @@
 - **Design exploration** (`core/design-exploration.md`) and the **design critic** role: concepts that differ by idea and not by intensity, an independent filter, renders of the survivors only, a protocol for rejecting every option, and design memory.
 - **New commands:** `/retro` (what worked and what cost too much, from data lines and summaries) and `/debate` (two or three perspectives for a large decision, cost first).
 - Closed roadmap items record `reviews`, `findings` and `rework` in their data line.
-- `/rigor` and `/retro` run their own turn at low effort.
+- `/rigor` runs its own turn at low effort; `/retro` counts at the light tier and judges at the session's effort.
 
 ## 0.1.3
 - Away runs in auto mode: the gate reminds the user (Shift+Tab); the install notes explain that permission modes change prompts, not Jacquard's rules.

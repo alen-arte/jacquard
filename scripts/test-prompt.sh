@@ -1,22 +1,27 @@
 #!/usr/bin/env bash
-# Prints the prompt for one Jacquard test file: the preamble, the files to read
-# and each case's ID and "Given" text. Case titles and the pass and fail criteria
-# are never printed, so the subagent under test cannot see the expected answer.
-# Usage: scripts/test-prompt.sh tests/<group>/<name>.md
+# Prints the prompt for one or more Jacquard test files: the preamble once, then
+# for each file its name, the files to read and each case's ID and "Given" text.
+# Case titles and the pass and fail criteria are never printed, so the subagent
+# under test cannot see the expected answer.
+# Usage: scripts/test-prompt.sh tests/<group>/<name>.md [more test files]
 set -euo pipefail
 
-file="${1:?usage: test-prompt.sh tests/<group>/<name>.md}"
-[ -f "$file" ] || { echo "no such test file: $file" >&2; exit 1; }
+[ "$#" -gt 0 ] || { echo "usage: test-prompt.sh tests/<group>/<name>.md [more test files]" >&2; exit 1; }
+for file in "$@"; do
+  [ -f "$file" ] || { echo "no such test file: $file" >&2; exit 1; }
+done
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
 cat <<EOF
 Dry run of the Jacquard kit. Kit root: $root
 Read the files listed under "Reads", from the kit root. Where any kit file names ~/.claude/jacquard/, read that path from the kit root instead.
 Ignore any project index already in your context: the project is the one each case describes. Assume the core standards (core/standards.md) and that project's index were loaded at session start, unless a case says otherwise. You may only read files; never write, edit, run commands or launch agents.
-For each case, reply with the exact next message you would send or the action you would take, under 120 words, headed by the case ID. Do not explain the rules back.
+For each case, reply with the exact next message you would send or the action you would take, under 120 words, headed by the file name and the case ID. Do not explain the rules back.
 
 EOF
 
+for file in "$@"; do
+printf '=== %s\n' "$file"
 awk '
   /^Reads:/                 { print; print ""; next }
   /^### /                   { print $1, $2; keep = 0; next }
@@ -24,3 +29,5 @@ awk '
   /^[ \t]*\*\*(Pass|Fail) if:\*\*/ { keep = 0 }
   keep                      { print }
 ' "$file"
+echo
+done

@@ -43,4 +43,4 @@ Architecture and separation of concerns, duplication, hardcoded values, how desi
 3. Alternatives considered (when recommending a change)
 4. New `RF#` entries proposed for the refactor backlog
 5. What it could not verify, and why
-6. Report blocks (core standards)
+6. Nothing more: the session that launched the review writes the report blocks.

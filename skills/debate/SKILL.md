@@ -15,6 +15,6 @@ For decisions that are irreversible, structural or about the product's direction
 2. **Perspectives:** two or three that genuinely pull apart, from the project's roles (e.g. designer and engineering advisor) or as positions (for and against). One line each on why it is in the room.
 3. **Cost first:** "≈ N subagent runs at the strong tier" (`~/.claude/jacquard/core/economy.md`). Wait for the OK.
 4. **Round 1:** one subagent per perspective, at the strong tier, with the brief and its role file only: its position, the best case for it, what it costs and what would prove it wrong.
-5. **Round 2:** each one receives the others' positions and answers them: what it concedes, what it still holds and why. No third round.
+5. **Round 2:** the same subagents, continued when the environment allows it, each receive the others' positions and answer them: what it concedes, what it still holds and why. No third round.
 6. **Synthesis (this session):** where they agree, where they truly differ, a recommendation with its confidence, and what new fact would change it.
 7. The user decides. Record the decision as a `D#` with the alternatives and why they were set aside. Report blocks.

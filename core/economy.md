@@ -29,15 +29,16 @@ What the kit controls: the model and effort of each **subagent** it launches (se
 
 ## Budget profile
 
-`budget` sets how the table is applied. Intensity (`review.md`) decides **how often** reviews run; budget decides **how much each step costs**. They never override each other. `lean` and `balanced` pick the same tiers: lean saves by asking before expensive steps and by taking the cheapest form of each step its file defines.
+`budget` sets how the table is applied. Intensity (`review.md`) decides **how often** reviews run; budget decides **how much each step costs**. They never override each other. `lean` and `balanced` pick the same tiers; lean differs in two things only: it asks before expensive steps, and a design exploration searches references only after an option set was rejected.
 
 | | lean | balanced (default) | generous |
 |---|---|---|---|
 | Strong tier | only in the rows that name it | same | also for QA of level-2 work |
-| Before `-sss`, a debate, or a design exploration's references or second round | say the estimated cost and wait for the OK | say it in the plan | not needed |
+| Before `-sss`, or a design exploration's references or second round | say the estimated cost and wait for the OK | say it in the plan | not needed |
+| Design references (`design-exploration.md` step 4) | only after a rejection | at high impact or after a rejection | same |
 | Screenshots (`visual-qa.md`) | only what changed, plus the sweeps `visual-qa.md` requires | same | also a full sweep at batch close |
 
-In Away, a cost estimated at the gate is covered by its OK; an expensive step that was not estimated there is parked.
+`/debate` always says its cost and waits, in every profile. In Away, a cost estimated at the gate is covered by its OK; an expensive step that was not estimated there is parked.
 
 ## Estimating cost
 
@@ -48,5 +49,6 @@ Before an Away block, `-sss`, a debate or an exploration, count the subagents it
 - Every subagent except the built-in Explore and Plan already loads `CLAUDE.local.md` and its imports (core standards, preferences, project index). The prompt names the role file, the handoff note, the diff and the IDs; it never pastes or re-reads the always-loaded files.
 - Explore and Plan load none of them: use them for searches, never for reviews.
 - Pass the tier's model and effort explicitly on each launch.
-- One subagent per independent question; batch cases that read the same files (skill tests) into one subagent.
+- One subagent per independent question; batch work that reads the same files (skill tests) into one subagent.
+- A follow-up round with the same subagent (a debate's second round, a re-review) continues it instead of launching a new one, when the environment allows it.
 - Return only the verdict and the findings; verbose output stays in the subagent.
