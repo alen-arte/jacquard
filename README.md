@@ -13,6 +13,9 @@ The Jacquard loom wove flowers and figures from punched cards: a hidden pattern 
 - **Present and Away modes:** work side by side, or delegate a block of hours with hard limits and a full decision report.
 - **Guiding documents** (roadmap, decisions, user flows, system manual, refactor backlog) as markdown sources of truth with stable IDs.
 - **`/kickoff`** to start or adopt a project in short, tappable interview blocks.
+- **Economy by tiers:** mechanical checks run cheap, judgement keeps its level; a budget profile and cost estimates before expensive steps.
+- **Design exploration** with an independent critic, and visual QA in a real browser.
+- **`/retro`** and **`/debate`**, plus tests for the kit's own rules.
 
 ## Layers
 
@@ -41,7 +44,7 @@ docs/         guide
 
 ## Status
 
-Version 0.1 (see `CHANGELOG.md`): complete first version, in validation on real projects.
+Version 0.2 (see `CHANGELOG.md`): in validation on real projects.
 
 ## Feedback
 

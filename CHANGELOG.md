@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+- **Economy without lowering the bar** (`core/economy.md`): tiers `light / standard / strong` mapped to models and effort in preferences (`tiers`), a `budget` profile (`lean / balanced / generous`), a floor for level-2 reviews, cost estimates in subagent runs at the Away gate and before expensive steps. Light never produces what the user receives.
+- **Subagents already load the always-loaded files** (verified with Claude Code 2.1.296): every subagent except Explore and Plan loads `CLAUDE.local.md` and its imports, so prompts and role files no longer ask to re-read them.
+- **Tests for the kit itself** (`tests/`, `scripts/test-prompt.sh`): two or three cases per command, role and new rule, run on demand by one light subagent per file; the prompt hides titles and criteria.
+- **Visual QA in a real browser** (`core/visual-qa.md`): what to capture, where, who looks, image cost; `render_check` in project facts; "no real visual check" is never an approval.
+- **Design exploration** (`core/design-exploration.md`) and the **design critic** role: concepts that differ by idea and not by intensity, an independent filter, renders of the survivors only, a protocol for rejecting every option, and design memory.
+- **New commands:** `/retro` (what worked and what cost too much, from data lines and summaries) and `/debate` (two or three perspectives for a large decision, cost first).
+- Closed roadmap items record `reviews`, `findings` and `rework` in their data line.
+- `/rigor` and `/retro` run their own turn at low effort.
+
 ## 0.1.3
 - Away runs in auto mode: the gate reminds the user (Shift+Tab); the install notes explain that permission modes change prompts, not Jacquard's rules.
 

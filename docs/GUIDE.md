@@ -14,6 +14,8 @@ Jacquard gives every project the same hidden structure: standards that set the b
 | `/away-resume` | Continues an Away block that was cut off |
 | `/rigor -s\|-ss\|-sss` | Sets review intensity for the session |
 | `/kit-update` | Brings a project up to the installed kit version, with your OK |
+| `/retro [scope]` | Looks back: what worked, what cost too much, proposals |
+| `/debate <decision>` | Two or three perspectives on a large decision; says the cost first |
 
 ## A normal day
 
@@ -31,6 +33,14 @@ Jacquard gives every project the same hidden structure: standards that set the b
 | `-sss` hardened | Reviews per task, more tests, advisors per batch |
 
 Sensitive work (data, money, auth, privacy, irreversible) always gets its reviews, whatever the intensity.
+
+## Economy
+
+Set `budget` (`lean`, `balanced`, `generous`) and `tiers` (a model and effort for `light`, `standard`, `strong`) in your preferences. Mechanical checks run at light; building and QA at standard; advisors, security and audits at strong. Reviews of sensitive work never drop below their tier. Before expensive steps Claude says the cost in subagent runs; it cannot see how much of your usage limit is left. See `core/economy.md`.
+
+## Design and visual checks
+
+New, high-impact visual decisions get an exploration: ideas that really differ, filtered by an independent critic, with only three rendered. If you reject them all, the next round changes the idea, not the intensity. Visual work is checked in a real browser when the project has one (`render_check`); otherwise it says "no real visual check".
 
 ## IDs
 

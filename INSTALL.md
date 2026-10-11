@@ -10,7 +10,10 @@ Claude Code evolves fast. Check the official documentation and adapt these steps
 - Imports and skills work through symbolic links.
 - The permission rule syntax used in `templates/project/settings.local.json`.
 
-Last verified with Claude Code 2.1.295 (2026-10-09). Worth knowing:
+Last verified with Claude Code 2.1.296 (2026-10-11). Worth knowing:
+- Model and effort can be set per subagent launch and per skill turn (`effort` in a skill's frontmatter); the main session's model is yours (`/model`, `/effort`). `core/economy.md` uses these.
+- Every subagent except the built-in Explore and Plan loads `CLAUDE.local.md` and its imports.
+- Claude Code's Chrome integration does not run in WSL; a headless browser run from the command line works for `render_check`.
 - Imports outside the project, including through a link such as `.jacquard`, load **only after the approval dialog is accepted**. Until then nothing from Jacquard loads, silently.
 - `~/.claude/` is a protected folder: writes there always ask, whatever the rules say. That is why the personal layer, which projects write into, lives in `~/repos/`.
 - Permission rules on a link must match both the link and its target to allow; either one to deny.
@@ -26,10 +29,10 @@ Your working copy, and an installed copy pinned to a release, so editing the kit
 
 ```bash
 git clone https://github.com/<you>/jacquard ~/repos/jacquard
-git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.1.2   # the latest release tag
+git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.2.0   # the latest release tag
 ```
 
-Only using the kit, never editing it: `git clone --branch v0.1.2 https://github.com/<you>/jacquard ~/.claude/jacquard` is enough.
+Only using the kit, never editing it: `git clone --branch v0.2.0 https://github.com/<you>/jacquard ~/.claude/jacquard` is enough.
 
 ## 2. Commands
 
@@ -72,7 +75,7 @@ When a new release is tagged, and no Away block is running in any project:
 
 ```bash
 git -C ~/.claude/jacquard fetch --tags      # skip if you tagged it in your working clone
-git -C ~/.claude/jacquard checkout --detach v0.1.3
+git -C ~/.claude/jacquard checkout --detach v0.2.0
 ```
 
 New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/kit-update` in each project to bring its files up to date, piece by piece.
