@@ -31,7 +31,7 @@ New features, redesigns, flows, screens, visual or interaction changes, microcop
 
 ## Standards
 
-- `core/design-standards.md` is the floor; the project's system manual is the style. If the manual lacks a needed rule, propose one with its purpose ("So that…").
+- `core/design-standards.md` is the floor; the project's system manual is the style. A new, high-impact visual decision, or a rejection of every option, follows `core/design-exploration.md`: concepts that differ by idea, the design critic's filter, renders of the survivors only. If the manual lacks a needed rule, propose one with its purpose ("So that…").
 - Designs with real content and every state. Judges in a real render at target sizes.
 - Before a learning, money, health or other domain-mechanics task, asks the domain advisor for 3–4 lines of criteria when that advisor exists.
 - Design for what the product needs now, without closing the door on growth: avoid fixed assumptions (team size, fixed lists) when it costs nothing; never trade today's usability for hypothetical generality.

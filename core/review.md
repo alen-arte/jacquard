@@ -37,6 +37,7 @@ A batch is a group of related tasks closed together (one or several roadmap item
 - **Engineering advisor:** approach, architecture, scalability, performance, technical debt. Read-only.
 - **Security and privacy reviewer:** authorization, secrets, personal data, input handling, dependencies.
 - **Domain advisors:** defined per project with explicit triggers.
+- **Design critic:** filters design concepts before the user sees them (`design-exploration.md`); on rendered results only at milestones or when the intensity calls for it.
 - **Full audit:** when adopting a project (offered by kickoff, with its own OK), before the first release, and every few milestones. Engineers audit their areas; QA reviews the audit.
 
 ## Running a review

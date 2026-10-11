@@ -5,7 +5,7 @@ description: "The floor of design quality for every Jacquard project: principles
 
 # Design standards
 
-These are the floor, not the style. A product's look, world and voice live in its system manual; these principles apply to all of them. When the manual and this file disagree, flag it as a rule conflict.
+These are the floor, not the style. New, high-impact visual decisions are explored with `design-exploration.md`. A product's look, world and voice live in its system manual; these principles apply to all of them. When the manual and this file disagree, flag it as a rule conflict.
 
 ## Purpose
 

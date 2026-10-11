@@ -13,6 +13,7 @@ Templates that `/kickoff` turns into a project's roles. Each role is a world top
 | Engineering advisor | `review/engineering-advisor.md` | Proposed when the user does not review code, or for long-lived products |
 | Security and privacy reviewer | `review/security-privacy-reviewer.md` | Proposed when there is auth, personal data, money or external integrations |
 | Domain advisor | `review/domain-advisor.template.md` | Created per project from the domain (e.g. learning, finance, health) |
+| Design critic | `review/design-critic.md` | When there is an interface; runs only inside a design exploration (`core/design-exploration.md`) |
 
 Kickoff may split or add engineering roles when the stack needs it (e.g. separate web and mobile clients, platform/infrastructure), using `_role-template.md`.
 

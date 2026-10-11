@@ -19,7 +19,7 @@ What the kit controls: the model and effort of each **subagent** it launches (se
 | Build level 0–1, edit documents | standard | normal |
 | Design decisions; build level 2 | standard | high |
 | Independent QA | standard (light only for pure consistency sweeps) | normal |
-| Design concepts (exploration) | standard | high |
+| Design concepts (`design-exploration.md`) | standard | high |
 | Design critic | standard | normal |
 | Engineering advisor, security and privacy, full audit, structural plan, debate | strong | high |
 
