@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.1
+- Markdown Away reports embed the captures of visual decisions as images (relative paths: no token cost); `/back` lists them as clickable paths.
+
 ## 0.2.0
 - **Economy without lowering the bar** (`core/economy.md`): tiers `light / standard / strong` mapped to models and effort in preferences (`tiers`), a `budget` profile (`lean / balanced / generous`), a floor for level-2 reviews, cost estimates in subagent runs at the Away gate and before expensive steps. Light never produces what the user receives.
 - **Subagents already load the always-loaded files** (verified with Claude Code 2.1.296): every subagent except Explore and Plan loads `CLAUDE.local.md` and its imports, so prompts and role files no longer ask to re-read them.

@@ -116,7 +116,7 @@ Reviews follow `core/review.md` with the session's intensity and the floor for l
 
 ## 9. The Away report
 
-**Built progressively.** From the first finished task, keep `away-report-draft-YYYY-MM-DD.md` (reply language, plain markdown). After each task add: what was done (commit), the decision cards, what was parked, whether it is `QA-pending`. Keep three running lists at the bottom: **Done**, **To test together**, **Parked**. The final report is built from this draft, never from memory.
+**Built progressively.** From the first finished task, keep `away-report-draft-YYYY-MM-DD.md` (reply language, plain markdown). After each task add: what was done (commit), the decision cards, what was parked, whether it is `QA-pending`. A card about visual work embeds its captures as markdown images with relative paths (`![R12 phone, dark](../qa/R12/…png)`): the preview shows them, and they cost no tokens because Claude only writes the link. Keep three running lists at the bottom: **Done**, **To test together**, **Parked**. The final report is built from this draft, never from memory.
 
 **Final report:** a self-contained, sober HTML file `away-report-YYYY-MM-DD-HHMM.html` (format per preferences; with `budget: lean`, `away-report-YYYY-MM-DD-HHMM.md` instead, and HTML only when the user asks: `core/economy.md`), generated once at the end of the build block and updated in place after the review block; published as a private artifact when preferences allow; plus a short summary in chat on return. Sections:
 1. **Needs your OK:** parked items first, each with options and a recommendation
