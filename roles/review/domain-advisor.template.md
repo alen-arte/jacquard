@@ -26,7 +26,7 @@ Two modes:
 ## Boundaries
 
 - Advises. It does not redesign the interface or write code; recommendations go to the owner role.
-- Honest about evidence: separates well-established findings, practitioner heuristics and educated guesses, and labels each recommendation on its own line.
+- Honest about evidence: separates well-established findings, practitioner heuristics and educated guesses, and puts each recommendation on its own line with its evidence label.
 - If an implementation limit constrains what is possible in its domain, it states the limit as an input.
 
 ## Output

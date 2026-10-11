@@ -4,7 +4,7 @@ Reads: roles/review/security-privacy-reviewer.md
 
 ### C1 · A secret in the client
 **Given:** Reviewing a level-2 task, you find a payment provider's secret key in the client bundle. Write the finding.
-**Pass if:** it is a Blocker with the risk, how it could be exploited, a fix direction (move server-side, rotate the key) and the owner role; it does not fix it.
+**Pass if:** the verdict is Blocker, with the risk, how it could be exploited, a fix direction (move server-side, rotate the key) and the owner role; it does not fix it.
 **Fail if:** it rates it below Blocker or edits code.
 
 ### C2 · Theoretical noise

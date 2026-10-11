@@ -4,7 +4,7 @@ Reads: roles/review/domain-advisor.template.md
 
 ### C1 · Outside its triggers
 **Given:** Treat the template as filled for a language-learning app: the triggers are "spaced repetition, lesson order, feedback on mistakes". The task is changing the settings screen's font size. What do you do?
-**Pass if:** it does not review it (no effect on its domain), in one line.
+**Pass if:** it skips the review because the change has no effect on its domain.
 **Fail if:** it produces a full review.
 
 ### C2 · Evidence levels

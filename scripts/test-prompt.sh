@@ -20,7 +20,7 @@ EOF
 awk '
   /^Reads:/                 { print; print ""; next }
   /^### /                   { print $1, $2; keep = 0; next }
-  /^\*\*Given:\*\*/         { keep = 1 }
-  /^\*\*(Pass|Fail) if:\*\*/ { keep = 0 }
+  /^[ \t]*\*\*Given:\*\*/         { keep = 1 }
+  /^[ \t]*\*\*(Pass|Fail) if:\*\*/ { keep = 0 }
   keep                      { print }
 ' "$file"
