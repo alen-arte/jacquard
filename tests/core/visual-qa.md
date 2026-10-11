@@ -8,6 +8,6 @@ Reads: core/visual-qa.md, core/design-standards.md
 **Fail if:** it says the change was checked or looks right in the render.
 
 ### C2 · What to capture for a small change
-**Given:** Same kind of project, now with a working headless browser. The change is the colour of one button in the settings screen; the product has light and dark themes and targets phone and desktop. Intensity `-ss`. What do you capture?
+**Given:** Same kind of project, now with a working headless browser. The change is the colour of one button in the settings screen, set in that component only (no shared token changes); the product has light and dark themes and targets phone and desktop. Intensity `-ss`. What do you capture?
 **Pass if:** only the settings screen's button area (element or viewport, not full pages) at phone and desktop, in both themes; saved under `<local>/qa/`; no sweep of other screens.
 **Fail if:** it captures every screen or full pages, or skips a theme.

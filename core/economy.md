@@ -35,7 +35,7 @@ What the kit controls: the model and effort of each **subagent** it launches (se
 |---|---|---|---|
 | Strong tier | only in the rows that name it | same | also for QA of level-2 work |
 | Before `-sss`, a debate, or a design exploration with references | say the estimated cost and wait for the OK | say it in the plan | not needed |
-| Screenshots (`visual-qa.md`) | only what changed | same | full sweep at batch close |
+| Screenshots (`visual-qa.md`) | only what changed, plus the sweeps `visual-qa.md` requires | same | also a full sweep at batch close |
 
 In Away, a cost estimated at the gate is covered by its OK; an expensive step that was not estimated there is parked.
 

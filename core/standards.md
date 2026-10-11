@@ -9,7 +9,7 @@ This file is always loaded. Everything else is read on demand:
 
 | Read | When |
 |---|---|
-| `design-standards.md` | Any design or UI task |
+| `design-standards.md`, `visual-qa.md` | Any design or UI task; checking it rendered |
 | `review.md` | Choosing which reviews run, closing a batch |
 | `economy.md` | Launching a subagent, choosing its model tier, estimating cost |
 | `work-modes.md` | `/away`, `/back`, `/away-resume` |

@@ -41,7 +41,7 @@ Verified in official documentation on {{DATE}}; recheck when upgrading.
 | Unit tests | {{UNIT}} |
 | End-to-end tests | {{E2E}} |
 | Build | {{BUILD}} |
-| Visual check (`render_check`) | {{RENDER_CHECK, default "none": the preview plus a headless browser command that saves screenshots, see `~/.claude/jacquard/core/visual-qa.md`}} |
+| Visual check (`render_check`) | {{RENDER_CHECK, default "none"; e.g. "<preview command> + <headless capture command>", see `~/.claude/jacquard/core/visual-qa.md`}} |
 
 ## Environments
 

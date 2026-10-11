@@ -13,7 +13,7 @@ Code that reads right can render wrong. Visual work is judged rendered (`design-
 
 - A headless browser run from the command line is enough. A browser extension or MCP server adds tools to every session; use one only if the project already has it.
 - Adding a browser tool to a project is a dependency: ask first.
-- **No browser, or it fails:** the work is reported as **"no real visual check"** in the reply, the QA verdict and the Away report. It is never presented as visually verified.
+- **No browser, or it fails:** the work is reported as **"no real visual check"** in the reply, the QA verdict and the Away report, and the check is logged as pending for the user. It is never presented as visually verified, and a QA verdict on visual work is at most "Approved with notes".
 
 ## What to capture
 
@@ -36,7 +36,7 @@ Only what the task changed:
 
 ## Cost
 
-An image costs about (width ÷ 28) × (height ÷ 28) tokens, up to the model's cap: a phone viewport ≈ 450, a desktop viewport ≈ 1,700. So:
+An image costs about (width ÷ 28) × (height ÷ 28) tokens, up to the model's cap: a 390×844 phone viewport ≈ 430, a 1440×900 desktop viewport ≈ 1,700. A full sweep states its image count in the cost estimate (`economy.md`). So:
 - the viewport, not the full page, unless the change is below the fold;
 - the element alone when the change is one component;
 - one image per size, theme and state that changed, never "just in case";
