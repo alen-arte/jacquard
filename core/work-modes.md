@@ -24,7 +24,7 @@ All Away files live in `<local>/away/` (`<local>`: see core standards): the brie
 The user must always know whether work has begun. Two messages, and **nothing starts before the user's OK**.
 
 **Message 1, the gate** (fast, short, in the reply language). Do not analyse every task or propose designs here. Run `date` and `git status`, read the brief once and write:
-- **Understood:** the scope in 2–4 lines and the tasks in order, each tagged `DEP` (a later task builds on it: R12 is DEP when R13 needs it) or `ISO` (nothing later needs it), with its risk level. If the brief cites roadmap IDs, use them. If it says "everything you can", pick from the roadmap's Now and Next. If the brief looks bigger than one session, one line saying so.
+- **Understood:** the scope in 2–4 lines and the tasks in order, each tagged `DEP` (a later task in the block builds on it) or `ISO` (nothing later needs it), with its risk level. If the brief cites roadmap IDs, use them. If it says "everything you can", pick from the roadmap's Now and Next. If the brief looks bigger than one session, one line saying so.
 - **Needs you first:** roadmap items in scope marked `⏸` (decision) or `🔑` (permission), and anything the brief explicitly assigns that needs a permission (a migration, a dependency). Each with a default.
 - **Time, branch, intensity, cost:** start time, end time, the away branch (`core/git.md`), intensity (`core/review.md`: arguments, else session, else project default), and the estimated cost in subagent runs (`core/economy.md`).
 - **Permission check:** append `GATE HH:MM` to the journal now, so any permission prompt for `<local>/away/` appears while the user is still here.
