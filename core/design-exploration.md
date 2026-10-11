@@ -31,11 +31,11 @@ Adjectives in the request ("sober", "professional", "nice") describe what to avo
 
 Five or six concepts, one sentence each. They differ in their **central idea**: the metaphor, the mechanism, or where the information lives. Among them:
 - **the obvious option,** marked as baseline;
-- one that **adds no new element** (solves it with what exists);
+- one that **adds no new element:** it only changes what is already on the screen;
 - one that **inverts the assumption** behind the request;
 - one that **a top designer in this field would propose and a generic model would not.**
 
-Descriptions never use "more, less, softer, stronger, subtle, intense". If two concepts differ only in how much they show, they are one concept; the intensity becomes an **adjustment** (step 6).
+Descriptions never use "more, less, soft, strong, subtle, intense", nor their forms (softer, strongest, subtly…). If two concepts differ only in how much they show, they are one concept; the intensity becomes an **adjustment** (step 6).
 
 ## 4 · References (only when needed)
 

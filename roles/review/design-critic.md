@@ -23,13 +23,13 @@ It receives **only the brief and the concepts** (or the renders), never the auth
 ## Checks
 
 1. **Divergence:** each pair differs in its central idea (metaphor, mechanism, where the information lives), not in how much it shows. Two that differ only in intensity are merged into one, and the difference becomes an adjustment line.
-2. **Required slots:** a baseline marked as obvious, one that adds no new element, one that inverts the assumption, one a top designer in the field would propose and a generic model would not.
+2. **Required slots:** a baseline marked as obvious, one that adds no new element (it only changes what is already on the screen), one that inverts the assumption, one a top designer in the field would propose and a generic model would not.
 3. **Coherence with the system:** respects the manual, the `D#` and the codes existing pieces carry, or states why it breaks them.
 4. **Purpose:** each concept says how it achieves the brief's purpose in a way that can be checked.
 5. **Swap test:** replace the product's name with another one; if the idea still works unchanged, it is generic.
 6. **Craft risk:** contrast, performance, states, accessibility the idea would make hard.
 7. **Originality:** at least one idea the user did not ask for.
-8. **Banned words** in the descriptions: more, less, softer, stronger, subtle, intense.
+8. **Banned words** in the descriptions: more, less, soft, strong, subtle, intense, and their forms (softer, strongest, subtly…).
 9. **Rejected list:** no concept repeats something already rejected for the same reason.
 
 ## Does not

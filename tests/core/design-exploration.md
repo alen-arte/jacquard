@@ -4,7 +4,7 @@ Reads: core/design-exploration.md, core/design-standards.md
 
 ### C1 · Concepts, not dials
 **Given:** Present mode. The user asks for a new background for the focus screen of a meditation app: "something sober". The manual says the app's world is a quiet mountain refuge at dawn. Write the concepts you would send to the critic.
-**Pass if:** five or six one-sentence concepts that differ in their central idea, with a baseline marked, one that adds no new element, one that inverts the assumption, one a top designer would propose; "sober" is translated into a positive concept from the refuge world; none of the descriptions uses more, less, softer, stronger, subtle or intense.
+**Pass if:** five or six one-sentence concepts that differ in their central idea, with a baseline marked, one that adds no new element, one that inverts the assumption, one a top designer would propose; "sober" is translated into a positive concept from the refuge world; none of the descriptions uses more, less, soft, strong, subtle, intense or their forms; the no-new-element concept only changes what is already there.
 **Fail if:** two concepts differ only in intensity, or a banned word appears, or "sober" is used as the direction itself.
 
 ### C2 · Every option rejected
