@@ -9,7 +9,7 @@ Spend on judgement, save on repetition. The quality floor never depends on budge
 
 ## Tiers
 
-Three tiers: **light**, **standard**, **strong**. Preferences map each one to a model and an effort (`tiers`); a project may set its own `budget` in its index. Without a mapping, every tier runs on the session's model and only the effort column applies.
+Three tiers: **light**, **standard**, **strong**. Preferences map each one to a model and an effort (`tiers`). A project may set its own `budget` with a line in its index (precedence: `preferences.default.md`). Without a mapping, every tier runs on the session's model and only the effort column applies.
 
 What the kit controls: the model and effort of each **subagent** it launches (set per launch), and the effort of a **skill's own turn** (frontmatter). The main session's model and effort are the user's choice; when a step needs a different tier than the session, say so in one line instead of assuming it.
 
@@ -23,18 +23,20 @@ What the kit controls: the model and effort of each **subagent** it launches (se
 | Design critic | standard | normal |
 | Engineering advisor, security and privacy, full audit, structural plan, debate | strong | high |
 
-"Normal" means the tier's own effort from preferences. Light never produces anything the user receives: it counts, compares and flags.
+**Effort:** `low` and `high` are passed as written; "normal" means the tier's effort from preferences, or the session's effort when `tiers` is unset (never passed literally). Light never produces anything the user receives: it counts, compares and flags.
 
 **Floor:** a review of level-2 work never runs below the tier this table gives it, whatever the budget.
 
 ## Budget profile
 
-`budget` sets how the table is applied. Intensity (`review.md`) decides **how often** reviews run; budget decides **how much each step costs**. They never override each other.
+`budget` sets how the table is applied. Intensity (`review.md`) decides **how often** reviews run; budget decides **how much each step costs**. They never override each other. `lean` and `balanced` pick the same tiers: lean saves by asking before expensive steps and by taking the cheapest form of each step its file defines.
 
 | | lean | balanced (default) | generous |
 |---|---|---|---|
 | Strong tier | only in the rows that name it | same | also for QA of level-2 work |
 | Before `-sss`, a debate, or a design exploration with references | say the estimated cost and wait for the OK | say it in the plan | not needed |
+
+In Away, a cost estimated at the gate is covered by its OK; an expensive step that was not estimated there is parked.
 
 ## Estimating cost
 

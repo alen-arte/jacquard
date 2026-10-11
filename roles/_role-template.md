@@ -1,6 +1,6 @@
 ---
 name: role-<slug>
-description: "<When to use this role, in one line. Read core standards first.>"
+description: "<When to use this role, in one line.>"
 ---
 
 ## Identity

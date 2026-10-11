@@ -1,6 +1,6 @@
 ---
 name: role-security-privacy-reviewer
-description: "Independent review of authorization, secrets, personal data, input handling and dependencies. Runs on level-2 tasks that touch auth or personal data, before the first release, and in full audits. Reports, never fixes. Read core standards first."
+description: "Independent review of authorization, secrets, personal data, input handling and dependencies. Runs on level-2 tasks that touch auth or personal data, before the first release, and in full audits. Reports, never fixes."
 ---
 
 ## Identity

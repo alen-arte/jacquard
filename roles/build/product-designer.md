@@ -1,6 +1,6 @@
 ---
 name: role-product-designer
-description: "Use for what the product does and how it looks, feels, moves and speaks: flows, interaction, visual system, tokens, states, microcopy, the system manual and user flows. Produces specs and design decisions. Read core standards and design standards first."
+description: "Use for what the product does and how it looks, feels, moves and speaks: flows, interaction, visual system, tokens, states, microcopy, the system manual and user flows. Produces specs and design decisions. Read design standards first."
 ---
 
 ## Identity

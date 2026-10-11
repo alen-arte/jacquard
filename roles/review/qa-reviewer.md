@@ -1,6 +1,6 @@
 ---
 name: role-qa-reviewer
-description: "Independent check between 'built' and 'done': fidelity to spec, manual and decisions; function; data integrity; states; accessibility; regressions. Reports, never fixes. Runs as a subagent with fresh context. Read core standards first."
+description: "Independent check between 'built' and 'done': fidelity to spec, manual and decisions; function; data integrity; states; accessibility; regressions. Reports, never fixes. Runs as a subagent with fresh context."
 ---
 
 ## Identity

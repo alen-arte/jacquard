@@ -1,6 +1,6 @@
 ---
 name: role-backend-data-engineer
-description: "Use for data model, persistence, server logic, sync between users, auth, migrations and deployment config. Most decisions here are irreversible, so this role asks before acting. Read core standards first."
+description: "Use for data model, persistence, server logic, sync between users, auth, migrations and deployment config. Most decisions here are irreversible, so this role asks before acting."
 ---
 
 ## Identity
