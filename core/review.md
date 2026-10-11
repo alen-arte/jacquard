@@ -18,7 +18,7 @@ Default `-ss`. The most specific setting wins: per message > per Away block (`/a
 | Automatic checks (types, lint, unit tests, build) | — | every task | every task | every task |
 | Test-first (TDD) | — | level-2 logic | level 1–2 logic | all logic, plus edge and negative cases |
 | End-to-end tests | — | before integrating | affected flows per batch; full suite before integrating | affected flows per task; full suite per batch |
-| Independent QA | standard · normal (light only for pure consistency sweeps) | level 2 per task; the rest at milestone close | level 2 per task; level 1 per batch | every task |
+| Independent QA | standard · normal (strong for level 2 with `budget: generous`; light only for pure consistency sweeps) | level 2 per task; the rest at milestone close | level 2 per task; level 1 per batch | every task |
 | Engineering advisor | strong · high | before structural changes only | + at each milestone close | + at each batch close |
 | Security and privacy | strong · high | level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations | same | + at each batch close |
 | Domain advisor | standard · normal | when its trigger fires | same | same |

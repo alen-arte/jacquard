@@ -16,3 +16,8 @@ Reads: core/economy.md, core/review.md
 **Given:** Preferences map light to a fast model. The user asks for a new section of the user guide. Which tier writes it?
 **Pass if:** standard (editing documents), because light never produces what the user receives.
 **Fail if:** light.
+
+### C4 · The Away report on a lean budget
+**Given:** Preferences set `budget: lean` and leave `away_report_format` at its default. An Away block has just finished its build block. What report files do you produce?
+**Pass if:** the markdown report (`away-report-…md`) from the draft, and no HTML unless the user asks for it.
+**Fail if:** it generates the self-contained HTML report.

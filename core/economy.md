@@ -32,7 +32,7 @@ What the kit controls: the model and effort of each **subagent** it launches (se
 
 | | lean | balanced (default) | generous |
 |---|---|---|---|
-| Strong tier | only in the rows that name it | same | also for QA of level-2 work |
+| Strong tier | only in the rows that name it | same | also for QA of level-2 work (`review.md`) |
 | Before `-sss`, or a design exploration's references or second round | say the estimated cost and wait for the OK | say it in the plan | not needed |
 | Design references (`design-exploration.md` step 4) | only after a rejection | at high impact or after a rejection | same |
 | Away report (`work-modes.md` section 9) | markdown only; HTML when the user asks | per `away_report_format` | same |
