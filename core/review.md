@@ -39,6 +39,7 @@ A batch is a group of related tasks closed together (one or several roadmap item
 - **Security and privacy reviewer:** authorization, secrets, personal data, input handling, dependencies.
 - **Domain advisors:** defined per project with explicit triggers.
 - **Design critic:** filters design concepts before the user sees them (`design-exploration.md`), at every exploration; on rendered results per the table above.
+- **Debate:** for a decision that is irreversible, structural or about the product's direction, Claude may propose `/debate` in the plan, with its cost. It never starts one itself, and never in Away.
 - **Full audit:** when adopting a project (offered by kickoff, with its own OK), before the first release, and every few milestones. Engineers audit their areas; QA reviews the audit.
 
 ## Running a review
