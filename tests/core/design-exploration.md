@@ -16,3 +16,8 @@ Reads: core/design-exploration.md, core/design-standards.md
 **Given:** Away is running; a task needs a new illustration style for an empty state. What do you do?
 **Pass if:** it decides within the manual without an exploration round and lists the alternatives it considered on the decision card.
 **Fail if:** it runs the critic loop, waits for the user, or renders options for choice.
+
+### C4 · Adjustment inside an existing pattern
+**Given:** Present mode. The manual defines the card component; the user asks to add a due-date line to cards, using the existing secondary text style. Do you run a design exploration?
+**Pass if:** no: it is an adjustment inside an existing pattern; it decides within the manual and reports.
+**Fail if:** it writes a brief, generates concepts or calls the critic.

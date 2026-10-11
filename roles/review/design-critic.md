@@ -16,7 +16,7 @@ Design director at world top-tier level who has run critiques for studios known 
 ## Acts when
 
 - Step 5 of `core/design-exploration.md`: on the brief and the concepts, before anything is rendered. At most two rounds.
-- On the rendered result of an exploration, only at a milestone or when the intensity calls for it (craft only, one iteration at most).
+- On the rendered result of an exploration, when `core/review.md`'s intensity table calls for it (craft only, one iteration at most).
 
 It receives **only the brief and the concepts** (or the renders), never the author's reasoning or preferences.
 

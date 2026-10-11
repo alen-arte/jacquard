@@ -22,6 +22,7 @@ Default `-ss`. The most specific setting wins: per message > per Away block (`/a
 | Engineering advisor | before structural changes only | + at each milestone close | + at each batch close |
 | Security and privacy | level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations | same | + at each batch close |
 | Domain advisor | when its trigger fires | same | same |
+| Design critic on rendered results (`design-exploration.md` step 7) | at milestone close | same | + at each batch close that built an explored design |
 
 **Always, at every level:** the builder checks visual work in a real render (`visual-qa.md`). That is verification, not review.
 
@@ -37,7 +38,7 @@ A batch is a group of related tasks closed together (one or several roadmap item
 - **Engineering advisor:** approach, architecture, scalability, performance, technical debt. Read-only.
 - **Security and privacy reviewer:** authorization, secrets, personal data, input handling, dependencies.
 - **Domain advisors:** defined per project with explicit triggers.
-- **Design critic:** filters design concepts before the user sees them (`design-exploration.md`); on rendered results only at milestones or when the intensity calls for it.
+- **Design critic:** filters design concepts before the user sees them (`design-exploration.md`), at every exploration; on rendered results per the table above.
 - **Full audit:** when adopting a project (offered by kickoff, with its own OK), before the first release, and every few milestones. Engineers audit their areas; QA reviews the audit.
 
 ## Running a review

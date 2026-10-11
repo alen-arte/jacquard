@@ -39,11 +39,11 @@ Descriptions never use "more, less, soft, strong, subtle, intense", nor their fo
 
 ## 4 · References (only when needed)
 
-Only when the impact is high or an option set was already rejected. Search by **mechanism**, not style: "how do products known for their design solve X". At most five. For each, three lines: what it does, why it works, the principle taken. Take principles, never copy. Save them in `<local>/design/references.md` and reuse them before searching again. Images only when the text cannot carry it: each one costs context (`visual-qa.md` › Cost).
+Only when the impact is high or an option set was already rejected. Search by **mechanism**, not style: "how do products known for their design solve X". At most five. For each, three lines: what it does, why it works, the principle taken. Take principles, never copy. Save them in `<local>/design/references.md` and reuse them before searching again. The `design/` folder gets one line in the project index when it is first created (`docs-system.md`). Images only when the text cannot carry it: each one costs context (`visual-qa.md` › Cost).
 
 ## 5 · Critic filter
 
-The design critic (`roles/review/design-critic.md`) runs as an independent subagent and receives **only the brief and the concepts**. It fixes or discards before the user sees anything. At most two rounds; if fewer than three concepts survive, generate replacements on the axis the critic names, then stop.
+The design critic (`roles/review/design-critic.md`) runs as an independent subagent and receives **only the brief and the concepts**. It fixes or discards before the user sees anything. The baseline is fixed, never discarded: it is what the others are measured against. If fewer than three concepts survive, generate replacements on the axis the critic names and send them back: that is round two, the last one.
 
 ## 6 · Render the three survivors
 
@@ -53,7 +53,7 @@ Low fidelity, side by side, the baseline marked, each with one line on its idea 
 
 ## 7 · After the choice
 
-The owner builds it; QA checks fidelity in a real render. The critic reviews the craft of the rendered result only at a milestone or when the intensity calls for it, with at most one automatic iteration before returning to the user.
+The owner builds it; QA checks fidelity in a real render. The critic reviews the craft of the rendered result when `review.md`'s intensity table calls for it, with at most one automatic iteration before returning to the user.
 
 ## When every option is rejected
 
@@ -71,4 +71,4 @@ The owner builds it; QA checks fidelity in a real render. The critic reviews the
 
 ## Cost
 
-Concepts in text are cheap; renders and images are what cost, and only survivors get them. The concept pass runs at the standard tier with high effort; the critic at standard (`economy.md`). With `budget: lean`, say the estimate before references or a second round.
+Concepts in text are cheap; renders and images are what cost, and only survivors get them. The concept pass runs at the standard tier with high effort; the critic at standard. Before references or a second round, the cost rule in `economy.md` applies.
