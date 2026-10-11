@@ -39,4 +39,4 @@ These are the floor, not the style. A product's look, world and voice live in it
 
 ## Verification
 
-16. **Judge it rendered,** at the real target sizes and in every theme, never from code alone. If it is not good enough, it is not shown yet.
+16. **Judge it rendered,** at the real target sizes and in every theme, never from code alone. If it is not good enough, it is not shown yet. How and at what cost: `visual-qa.md`.

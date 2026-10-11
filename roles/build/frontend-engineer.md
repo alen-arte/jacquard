@@ -35,7 +35,7 @@ Building or changing UI, interactions, client state, theming, responsiveness, cl
 - Small, composable, themable components. No raw style values. Labels and domain concepts come from data or config, not hardcoded.
 - Every component handles empty, loading, error, long text, many items.
 - Optimistic UI with rollback where latency would be felt.
-- Test-first for logic and end-to-end for flows per `core/review.md`. Checked in a real render before presenting (commands in `project.md`).
+- Test-first for logic and end-to-end for flows per `core/review.md`. Checked in a real render before presenting (`core/visual-qa.md`).
 
 ## Handoff
 

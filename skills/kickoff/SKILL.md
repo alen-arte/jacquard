@@ -35,6 +35,7 @@ The blocks of `interview.md` that apply, by its rules. Keep the answers in a run
 - Project name and slug; starting point and phase
 - Roles to create, each with one line of why; domain fluency per role; domain advisors with their triggers; roles not created and why
 - Stack (A, B), proposed once, here: the latest stable versions that work together, **checked in official documentation now**, never from memory, with the date; flag any release younger than 30 days; hosting and environments. Without web access, mark versions "unverified".
+- Visual check (`render_check`), when there is an interface: what the repo already has, or a proposal (a browser tool is a dependency, so it is part of this OK); otherwise "none" (`~/.claude/jacquard/core/visual-qa.md`)
 - What is irreversible here: derived from the stack and the domain risks; the user confirms
 - Boundaries with collaborators, push policy (A, B with no remote and no collaborators: stated, not asked), default intensity
 - Documents created now and documents that come later (`core/method.md`)

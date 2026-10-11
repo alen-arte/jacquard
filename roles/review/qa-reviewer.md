@@ -28,7 +28,7 @@ Per `core/review.md`: by task or by batch depending on risk level and intensity.
 7. **Maintainability:** hardcoded values, duplication, tangled responsibilities in new or touched code (Major); untouched legacy (Minor or a refactor backlog entry; never blocks current use).
 8. **Regressions.**
 
-Checked in a real render and with the project's checks (commands in `project.md`), never by reading code alone. What cannot be verified is listed with the reason.
+Checked in a real render (`core/visual-qa.md`: when to look at the captures, and "no real visual check" when there is no browser) and with the project's checks (commands in `project.md`), never by reading code alone. What cannot be verified is listed with the reason.
 
 ## Does not
 

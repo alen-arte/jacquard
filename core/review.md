@@ -23,7 +23,7 @@ Default `-ss`. The most specific setting wins: per message > per Away block (`/a
 | Security and privacy | level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations | same | + at each batch close |
 | Domain advisor | when its trigger fires | same | same |
 
-**Always, at every level:** the builder checks visual work in a real render. That is verification, not review.
+**Always, at every level:** the builder checks visual work in a real render (`visual-qa.md`). That is verification, not review.
 
 **Missing role:** if the project has no file for a reviewer this table or the floor calls for, run it from the kit's role file (`~/.claude/jacquard/roles/review/`). The floor never drops. A domain advisor that was never created is not improvised: say "no domain review".
 

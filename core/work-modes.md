@@ -40,7 +40,7 @@ The user must always know whether work has begun. Two messages, and **nothing st
 
 - Commits follow `core/git.md`, on the away branch only.
 - If checks fail and about three reasonable attempts don't fix it: revert to the last good commit, log it, move on.
-- Verify before moving on: the project's checks (`project.md`) and a real render for visual work. Checks that need a person (the profile lists them) are logged as pending for the user.
+- Verify before moving on: the project's checks (`project.md`) and a real render for visual work (`core/visual-qa.md`). Checks that need a person (the profile lists them) are logged as pending for the user.
 - Never invent scope to fill the time. Finishing early is fine.
 
 ## 3. What Away decides with autonomy (and reports)

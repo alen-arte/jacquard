@@ -15,7 +15,7 @@ Universal rules: `~/.claude/jacquard/core/work-modes.md`. This file only adds.
 ## Checks
 
 - Automatic checks after each task: see `project.md` › Commands ({{CHECKS_SUMMARY}})
-- Visual check: {{PREVIEW_COMMAND_AND_URL}}
+- Visual check: `project.md` › `render_check` ({{RENDER_CHECK_SUMMARY, default "none: reported as no real visual check"}})
 - Checks that need a person (logged as pending for the user): {{HUMAN_ONLY_CHECKS, default none}}
 
 ## Scope of autonomy here
