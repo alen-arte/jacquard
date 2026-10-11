@@ -14,7 +14,7 @@ If "Jacquard core standards" and this project's index were not loaded at session
 3. **Judge (this session):** from the table only:
    - **What worked:** up to three, each with its evidence.
    - **What cost too much:** up to three (rework, reviews that found nothing, repeated parking), each with its evidence and the likely cause.
-   - **Proposals:** `P#` rows added to the proposals table of `<local>/docs/roadmap.md`, each with its cost.
+   - **Proposals:** `P#` rows added to the proposals table of `<local>/docs/roadmap.md` as "⬜ Proposed" (status first, bold title), each with its cost.
    - **Notes for the kit:** rules that were unclear or missing, appended to `<local>/kit-notes.md`. The user decides whether any of them reaches the kit.
 4. Append one line to `<local>/retro.md`: date, scope, the table's totals.
 5. Report blocks (core standards).

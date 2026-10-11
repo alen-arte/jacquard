@@ -29,10 +29,10 @@ Your working copy, and an installed copy pinned to a release, so editing the kit
 
 ```bash
 git clone https://github.com/<you>/jacquard ~/repos/jacquard
-git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.2.0   # the latest release tag
+git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.2.3   # the latest release tag
 ```
 
-Only using the kit, never editing it: `git clone --branch v0.2.0 https://github.com/<you>/jacquard ~/.claude/jacquard` is enough.
+Only using the kit, never editing it: `git clone --branch v0.2.3 https://github.com/<you>/jacquard ~/.claude/jacquard` is enough.
 
 ## 2. Commands
 
@@ -48,6 +48,14 @@ done
 ```
 
 For each name skipped: back up the existing skill or command and ask before replacing it.
+
+After updating the kit, remove links left dangling by a renamed or deleted skill (for example `kit-update`, now `jacquard-update`); this only touches broken links that point into the kit:
+
+```bash
+for l in ~/.claude/skills/*; do
+  [ -L "$l" ] && [ ! -e "$l" ] && case "$(readlink "$l")" in *jacquard*) echo "removing dangling link $l"; rm "$l";; esac
+done
+```
 
 ## 3. Your personal layer (private)
 
@@ -75,7 +83,7 @@ When a new release is tagged, and no Away block is running in any project:
 
 ```bash
 git -C ~/.claude/jacquard fetch --tags      # skip if you tagged it in your working clone
-git -C ~/.claude/jacquard checkout --detach v0.2.0
+git -C ~/.claude/jacquard checkout --detach v0.2.3
 ```
 
 New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/jacquard-update` in each project to bring its files up to date, piece by piece.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+- **Proposal marks fixed** (`core/docs-system.md`, roadmap template, guide): approved proposals use 🔵 and ✅ never appears on a proposal (it means done; progress lives on the `R#`). 0.2.2 let "✅ Approved" through, contradicting its own marks table. Approved and declined rows leave the proposals table at the next roadmap edit: approved ones vanish (they live on as `R#`), declined ones move to `roadmap-done.md` under "Declined proposals".
+- INSTALL points to the latest tag and removes dangling skill links (the `kit-update` leftover from 0.2.2).
+- Planning triggers on feedback, ideas or a change of direction (not on plan mode alone); a plain request only names its `R#`; a *contradicts* point is asked explicitly; projects with external planning are covered.
+- **Planning against the roadmap** (`core/standards.md`, `core/docs-system.md`): plan mode now reads the roadmap and `D#` first, tags each point of the user's input (already in / changes / contradicts / new), writes nothing to the documents until approval, and ends with a "Roadmap changes" section that is applied as the first step after approving.
+
 ## 0.2.2
 - **Status marks in the roadmap** (`core/docs-system.md`): ⬜ not done, 🟡 done on a branch other than `main` (data line: branch and commit), ✅ in `main` (production); emoji because Markdown task boxes cannot show a third state. Claude sets 🟡 as each task finishes and ✅ when the branch is integrated. The proposals table puts the status first, with a bold titled entry per proposal. Fixes Away leaving finished work as open checks with free-text status.
 - **Away never uses `main`'s name:** from `main` it creates a new branch named after the brief (`away/r12-r14`); from a work branch it uses `away/<that-branch>`. The base branch is recorded in the journal.

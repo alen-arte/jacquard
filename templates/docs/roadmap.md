@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}} · Roadmap
 
-> **How to read it.** The *Now · Next · Later* block is what matters today. Each item has a stable ID (`R#`) and one line of data. Marks: ⬜ not done · 🟡 done on a branch, not in `main` yet · ✅ in `main` (production). `⏸ decision` = waits for a decision from the user. `🔑 permission` = needs an explicit permission (migration, dependency, production, cost). Finished items move to `roadmap-done.md` when a phase closes. Claude's proposals live at the end as `P#` until approved.
+> **How to read it.** The *Now · Next · Later* block is what matters today. Each item has a stable ID (`R#`) and one line of data. Marks: ⬜ not done · 🟡 done on a branch, not in `main` yet · ✅ in `main` (production). `⏸ decision` = waits for a decision from the user. `🔑 permission` = needs an explicit permission (migration, dependency, production, cost). Finished items move to `roadmap-done.md` when a phase closes. Claude's proposals live at the end as `P#`: ⬜ proposed · 🔵 approved (→ `R#`) · ❌ declined; approved and declined ones leave the table at the next edit.
 
 ## ▶ Now · Next · Later
 
@@ -25,8 +25,8 @@
 
 ## 💡 Claude's proposals
 
-Proposals stay here until the user approves them; then they become `R#` items ("from P#").
+Open proposals live here. When approved they become `R#` items ("from P#"); the 🔵 or ❌ row is removed at the next roadmap edit (declined ones move to `roadmap-done.md`).
 
 | Status | Proposal | Area | Cost |
 |---|---|---|---|
-| {{⬜ Proposed · 🟡 On a branch · ✅ Done · ❌ Declined, plus a few words, e.g. “Approved → R12”}} | **P1 · {{Short title}}:** {{What and why, one or two lines}} | {{UX · Security · Scalability · Quality…}} | {{Low · Medium · High}} |
+| {{⬜ Proposed · 🔵 Approved (→ R#) · ❌ Declined, plus a few words, e.g. “🔵 Approved 2026-10-05 → R12”}} | **P1 · {{Short title}}:** {{What and why, one or two lines}} | {{UX · Security · Scalability · Quality…}} | {{Low · Medium · High}} |

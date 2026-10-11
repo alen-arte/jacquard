@@ -50,7 +50,7 @@ Core standards › Decisions apply. Within them, and within where the Away profi
 - **New elements:** their visual design, motion, copy, states and layout within a screen, built from the design standards and the system manual.
 - **Interaction details** of what is being created, within existing flows.
 - **Implementation inside the existing structure,** including contained refactors that change no behaviour and no interfaces.
-- **Never change something built and confirmed** unless the brief says so explicitly. If an improvement seems worth it, park it as a proposal (`P#`).
+- **Never change something built and confirmed** unless the brief says so explicitly. If an improvement seems worth it, park it as a proposal (`P#`, marked ⬜).
 
 Every one of these gets a decision card. Prefer the most reversible, least invasive option.
 

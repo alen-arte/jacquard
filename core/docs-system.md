@@ -17,7 +17,7 @@ description: "How guiding documents work: markdown as source of truth, artifacts
 | ID | What | Lives in |
 |---|---|---|
 | `R#` | Roadmap item | `roadmap.md` |
-| `P#` | Proposal by Claude, not yet approved; becomes an `R#` when approved ("from P7") | `roadmap.md`, proposals table |
+| `P#` | Proposal by Claude; when approved it becomes an `R#` ("from P7") and its row leaves the table at the next roadmap edit | `roadmap.md`, proposals table |
 | `D#` | Decision (product, design, technical) | `decisions.md` |
 | `UF#` | User flow | `user-flows.md` |
 | `RF#` | Planned refactor | `refactor-backlog.md` |
@@ -54,16 +54,32 @@ One mark per item, so the roadmap tells the truth at a glance:
 - An analysis-only item has nothing to integrate: ✅ when the report is delivered.
 - Parked or failed items stay ⬜ with the reason in the data line.
 - Why emoji and not `[ ]`/`[x]`: Markdown task boxes have no third state (`[~]` shows as plain text).
-- Claude's proposals use the same marks, **first column** of the table, followed by a few words ("⬜ Proposed", "✅ Approved 2026-10-05 → R12"; ❌ for declined), and each has a bold short title: `**P3 · Title:** detail`. When approved, a proposal also becomes an `R#` item.
+- Claude's proposals have their own marks, **first column** of the table, followed by a few words, and each has a bold short title: `**P3 · Title:** detail`. ⬜ proposed · 🔵 approved ("🔵 Approved 2026-10-05 → R12"; also rewritten, merged or absorbed into an `R#`) · ❌ declined. **✅ never appears on a proposal:** it means done, and an approved proposal's progress lives on its `R#`.
+- **Proposals leave the table.** The table holds open proposals. 🔵 and ❌ rows stay only until the next roadmap edit, which removes them: an approved one disappears (its `R#` data line keeps `from P#`, so there is no archive entry: it lives on as an `R#`); a declined one moves to `roadmap-done.md` under "Declined proposals" with ❌, the date and the reason, so it is not proposed again.
 
 ## Closing an item
 
 When a roadmap item is marked ✅, its data line also records `reviews` (independent reviews run), `findings` (Blocker/Major/Minor) and `rework` (reverts and fix commits after the first review). `/retro` reads these lines instead of the history.
 
+## Planning against the roadmap
+
+Applies whenever the user brings feedback, ideas or a change of direction to plan (in plan mode or not). An explicit request to edit the roadmap does not need a plan. Plan mode cannot write the project's documents, so the roadmap is changed in one step after approval, never live.
+
+1. **Contrast first.** Read `roadmap.md` (Now, Next, Later and the proposals table, by ID) and search `decisions.md` by `D#` for what the input touches. Organize the plan by roadmap ID, so the user's annotations land on each item.
+2. **Tag every point** of the input: *already in* (`R#`/`P#`), *changes* (`R#`), *contradicts* (`D#`, with both texts and a recommendation, per the conflicts rule in core standards; asked explicitly, and approving the plan does not settle a contradiction the user did not answer) or *new*.
+3. **End the plan with "Roadmap changes"**, in the user's reply language:
+   - Items (`R#`): new (an `R#`, origin user, when the user's idea is approved in the plan; a `P#` only for Claude's own ideas still awaiting a yes), changed (what and why), re-marked (⬜/🟡/✅), reordered, split or dropped.
+   - Proposals (`P#`): approved (🔵) or declined (❌); never ✅. The table is cleaned at the next roadmap edit.
+   - Decisions: new or revised `D#` (superseded ones stay, marked).
+   - Everything else the plan does comes after, as its own steps.
+4. **After approval**, the first step applies that section to `roadmap.md` and `decisions.md` exactly as approved, before any other work. Nothing in it is re-derived.
+5. **No roadmap of its own** (external planning, read-only): contrast against that planning as context; "Roadmap changes" covers only what the project allows (see its `project.md`).
+6. **Ordinary requests** (a task with no change of direction) skip this: the plan only names the `R#` it serves.
+
 ## Archiving
 
-At each phase or milestone close, finished roadmap items move to `roadmap-done.md`, leaving one summary line per group in the roadmap. Superseded decisions stay in `decisions.md`, marked "superseded by D#". Nothing is deleted; it is moved out of the hot path.
+At each phase or milestone close, finished roadmap items move to `roadmap-done.md`, leaving one summary line per group in the roadmap. Declined proposals are archived there too (see Status marks). Superseded decisions stay in `decisions.md`, marked "superseded by D#". Nothing is deleted; it is moved out of the hot path.
 
 ## Language
 
-Documents use `docs_language` (preferences), headings included. IDs, file names, code and the status markers `⏸` and `🔑` stay as they are.
+Documents use `docs_language` (preferences), headings included. IDs, file names, code and the status marks (⬜🟡🔵✅❌⏸🔑) stay as they are.

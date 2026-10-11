@@ -14,7 +14,7 @@ This file is always loaded. Everything else is read on demand:
 | `economy.md` | Launching a subagent other than a review (reviews: `review.md`), choosing a tier, estimating cost |
 | `work-modes.md` | `/away`, `/back`, `/away-resume` |
 | `git.md` | Branches, commits, integration, push |
-| `docs-system.md` | Creating or editing roadmap, decisions, flows, manual, backlog; artifacts |
+| `docs-system.md` | Creating or editing roadmap, decisions, flows, manual, backlog; artifacts; planning against the roadmap |
 | `method.md` | Starting a project, changing phase |
 | `preferences.default.md` | Only if a preference is unclear |
 
@@ -79,6 +79,10 @@ Every reply that builds or decides something ends with these blocks, each one **
 5. **What comes next**: what is left that does not need the user, with IDs
 
 In the Away report, block 4 goes first. Block titles and prose use the user's reply language; cite IDs (`R#`, `D#`, `UF#`, `RF#`). Translate technical findings into their effect on the product and the people using it, at the depth set in preferences.
+
+## Planning
+
+Whenever the user brings feedback, ideas or a change of direction to plan (in plan mode or not; a plain request such as "do R7" only names its `R#`): read the roadmap first and test everything against it and `D#` before proposing. Write nothing under `<local>/docs/` until the plan is approved. The plan ends with **Roadmap changes**. Format: `docs-system.md`, Planning against the roadmap.
 
 ## Work modes
 
