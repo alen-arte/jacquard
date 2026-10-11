@@ -46,7 +46,7 @@ New, high-impact visual decisions get an exploration: ideas that really differ, 
 
 `R#` roadmap item · `P#` Claude's proposal · `D#` decision · `UF#` user flow · `RF#` planned refactor · `§n` manual section.
 
-Roadmap marks: `[ ]` not done · `[~]` done on a branch, not in `main` yet · `[x]` in `main` (production).
+Roadmap marks: ⬜ not done · 🟡 done on a branch, not in `main` yet · ✅ in `main` (production).
 
 ## Where things are
 
