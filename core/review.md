@@ -5,7 +5,7 @@ description: "How much verification and review each task gets: risk levels, inte
 
 # Review
 
-Tests do the heavy lifting every time: they are objective, repeatable and cheap. Judgement reviews (QA, advisors) are added where they pay off. Reviewers are the same model with fresh context and a different question, not a second human, so they complement tests and never replace them.
+Tests do the heavy lifting every time: they are objective, repeatable and cheap. Judgement reviews (QA, advisors) are added where they pay off. Reviewers are a model with fresh context and a different question, not a second human, so they complement tests and never replace them.
 
 Risk levels (0, 1, 2) and the floor for level 2 are in core standards.
 
@@ -41,6 +41,6 @@ A batch is a group of related tasks closed together (one or several roadmap item
 
 ## Running a review
 
-- One subagent per review, prompted as core standards say, with the diff and only the document sections cited by ID.
+- One subagent per review, prompted as core standards say, at the tier in `economy.md`, with the diff and only the document sections cited by ID.
 - The verdict and every open finding go into the report.
 - Blockers and Majors are fixed and re-reviewed (changed areas plus regressions) before asking the user to integrate.

@@ -3,6 +3,7 @@ name: rigor
 description: "Set the review intensity for this session (-s light, -ss normal, -sss hardened), or show the current one."
 argument-hint: "[-s|-ss|-sss]"
 disable-model-invocation: true
+effort: low
 ---
 
 Arguments: $ARGUMENTS

@@ -14,6 +14,8 @@ description: "Default values for everything configurable in Jacquard. The user's
 | `files_language` | English | Role files, core, code, commit messages |
 | `technical_depth` | `plain` | `plain`: explain in product terms, one line per technical step. `technical`: full engineering detail |
 | `default_intensity` | `-ss` | See `review.md` |
+| `budget` | `balanced` | `lean`, `balanced` or `generous`. See `economy.md` |
+| `tiers` | unset: every tier uses the session's model | Model and effort for `light`, `standard`, `strong`. See `economy.md` |
 | `local_folder` | `.jacquard` | Per-project folder, excluded from git; a link into the personal repo |
 | `publish_artifacts` | `false` | `true`: guiding docs and the Away report also get a private artifact view, when the environment can publish one |
 | `away_report_format` | markdown + self-contained HTML | One card per decision: decision, why, alternatives, impact, how to reverse |

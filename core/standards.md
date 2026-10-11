@@ -11,6 +11,7 @@ This file is always loaded. Everything else is read on demand:
 |---|---|
 | `design-standards.md` | Any design or UI task |
 | `review.md` | Choosing which reviews run, closing a batch |
+| `economy.md` | Launching a subagent, choosing its model tier, estimating cost |
 | `work-modes.md` | `/away`, `/back`, `/away-resume` |
 | `git.md` | Branches, commits, integration, push |
 | `docs-system.md` | Creating or editing roadmap, decisions, flows, manual, backlog; artifacts |
@@ -40,7 +41,7 @@ All core files live in `~/.claude/jacquard/core/`. The project's map is its `ind
 - **Risk level** of each task, shown in the plan (`R12 · level 1`); the user can contest it. **0:** no logic and no data, one revert undoes it (copy, spacing, a token, docs). **1:** new or changed logic or interaction, a new screen or component, a contained refactor. **2:** stored data, money, auth and permissions, personal data, security, external integrations, deletions, the core flow, anything irreversible.
 - **Floor:** a level-2 task always gets test-first logic, independent QA on that task and the relevant advisor or security review, whatever the intensity.
 - **A role never reviews its own work.** Independent reviews run as subagents with fresh context. Which reviews run and when: `review.md`.
-- **Subagents do not load these files.** Their prompt must tell them to read this file, their role file and the handoff note, and pass only the diff and the IDs they need.
+- **Subagents** (except Explore and Plan) already load this file, the preferences and the index: their prompt names their role file and the handoff note, and passes only the diff and the IDs they need. Tier and effort: `economy.md`.
 - Never present unreviewed work as reviewed; say "no independent review" when that is the case.
 
 ## Ownership and handoffs
