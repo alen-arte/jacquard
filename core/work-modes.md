@@ -26,7 +26,7 @@ The user must always know whether work has begun. Two messages, and **nothing st
 **Message 1, the gate** (fast, short, in the reply language). Do not analyse every task or propose designs here. Run `date` and `git status`, read the brief once and write:
 - **Understood:** the scope in 2–4 lines and the tasks in order, each tagged `DEP` (a later task in the block builds on it) or `ISO` (nothing later needs it), with its risk level. If the brief cites roadmap IDs, use them. If it says "everything you can", pick from the roadmap's Now and Next. If the brief looks bigger than one session, one line saying so.
 - **Needs you first:** roadmap items in scope marked `⏸` (decision) or `🔑` (permission), and anything the brief explicitly assigns that needs a permission (a migration, a dependency). Each with a default.
-- **Time, branch, intensity, cost:** start time, end time, the away branch (`core/git.md`), intensity (`core/review.md`: arguments, else session, else project default), and the estimated cost in subagent runs (`core/economy.md`).
+- **Time, branch, intensity, cost:** start time, end time, the away branch and the branch it integrates into (`core/git.md`; a new name if the session is on `main`), intensity (`core/review.md`: arguments, else session, else project default), and the estimated cost in subagent runs (`core/economy.md`).
 - **Permission check:** append `GATE HH:MM` to the journal now, so any permission prompt for `<local>/away/` appears while the user is still here.
 - **Permission mode:** Away runs in **auto** mode (Shift+Tab): in the default mode every edit asks and the block stalls at the first prompt. Deny rules hold in every mode; an action the auto classifier blocks is logged and work continues. Remind the user in one line, together with the model and effort that preferences ask for in Away, if any; the mode changes nothing in these rules.
 - **Only if real:** a conflict (the brief contradicts itself or a confirmed decision; uncommitted changes in the tree) or something genuinely unclear about what the user wants, each with a default. What the brief leaves open ("you decide", "propose") is not a question: decide it during the work and report it.
@@ -92,7 +92,7 @@ When parking: write what, options, recommendation and what is blocked. Keep work
 Claude cannot see how much of the session limit is left, so Away is built to be cut at any moment without losing anything.
 
 **Order of blocks** (written at the top of the journal):
-1. **Build:** the tasks, ordered system → function → aesthetics, respecting dependencies. Markdown documents are updated as part of each task (roadmap status, new `D#`, `UF#` changes).
+1. **Build:** the tasks, ordered system → function → aesthetics, respecting dependencies. Markdown documents are updated as part of each task (roadmap item set to `[~]` with branch and commit, per `core/docs-system.md` Status marks; new `D#`; `UF#` changes).
 2. **Report:** the report is already current (section 9); generate the HTML once the build block ends, and publish it if preferences allow.
 3. **Views:** refresh artifact views of the documents that changed, in place, with a backup first (`core/docs-system.md`).
 4. **Review (last):** the review queue, per section 8.
@@ -134,4 +134,4 @@ Be honest: failures, reverts and uncertainty are reported. Parked or failed item
 
 `/back` ends the mode: stop new work, close safely, run the pending reviews if there is room, finish the report, return to Present and present what needs the user first.
 
-Integration happens in Present, only with the user's explicit OK: rejected decisions are first undone with `git revert` on the away branch, then the away branch is integrated into the branch it came from per `core/git.md`. To discard everything: switch back and, with the user's OK, `git branch -D away/<current-branch>`.
+Integration happens in Present, only with the user's explicit OK: rejected decisions are first undone with `git revert` on the away branch, then the away branch is integrated into the branch it came from per `core/git.md`. To discard everything: switch back and, with the user's OK, `git branch -D` on the away branch.

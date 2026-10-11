@@ -78,7 +78,7 @@ git -C ~/.claude/jacquard fetch --tags      # skip if you tagged it in your work
 git -C ~/.claude/jacquard checkout --detach v0.2.0
 ```
 
-New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/kit-update` in each project to bring its files up to date, piece by piece.
+New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/jacquard-update` in each project to bring its files up to date, piece by piece.
 
 ### Upgrading from 0.1.1
 
@@ -91,7 +91,7 @@ rm ~/.claude/jacquard                       # the link, not the repo
 git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.1.2
 ```
 
-Then step 4 (permissions), the hooks in "Publishing changes to the kit" (they replace the 0.1.1 pre-push hook), and `/kit-update` in each project: it re-points `<local>` and the imports in `CLAUDE.local.md`, and brings the permissions and the pre-commit guard up to date. When every project is updated, remove the temporary link: `rm ~/.claude/jacquard-personal`.
+Then step 4 (permissions), the hooks in "Publishing changes to the kit" (they replace the 0.1.1 pre-push hook), and `/jacquard-update` in each project: it re-points `<local>` and the imports in `CLAUDE.local.md`, and brings the permissions and the pre-commit guard up to date. When every project is updated, remove the temporary link: `rm ~/.claude/jacquard-personal`.
 
 ## Publishing changes to the kit
 

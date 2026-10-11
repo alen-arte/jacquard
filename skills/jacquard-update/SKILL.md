@@ -1,5 +1,5 @@
 ---
-name: kit-update
+name: jacquard-update
 description: "Bring this project's Jacquard files up to date with the installed kit version, piece by piece, with the user's OK."
 disable-model-invocation: true
 ---

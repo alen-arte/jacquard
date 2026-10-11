@@ -11,7 +11,7 @@ The user may not be an engineer: choose branches and messages yourself and expla
 
 - **`main` always works.** Nobody commits on it directly, neither the user nor Claude: work reaches `main` only by integrating a branch.
 - One short-lived branch per roadmap item or batch, named after the ID: `r12-tag-filter`. Short means days, not weeks; long branches collect conflicts.
-- Away works on `away/<current-branch>` (add `-2` if it exists). Never on `main`.
+- Away always works on its own branch, created when it starts, never on `main` (or on the project's default branch). If the session is on a work branch, Away uses `away/<that-branch>`; if it is on `main`, Claude names a new one after the brief: `away/<first-ID-or-theme>` (e.g. `away/r44-r50-board-fixes`). Add `-2` if the name exists. The base branch (where it integrates) goes in the journal's `START` line.
 
 ## Commits
 
@@ -22,6 +22,8 @@ The user may not be an engineer: choose branches and messages yourself and expla
 ## Integration
 
 A branch is integrated when its checks are green, its reviews per `review.md` are done, and the user says OK. Prefer `git merge --ff-only`; if it refuses because the target moved, stop and explain the options (a merge commit, or bringing the branch up to date first). Finishing a merge is allowed by the guard; a plain commit on `main` is not. Delete the branch afterwards with `git branch -d` (safe delete).
+
+Integrating into `main` is also what closes roadmap items: as the last commit on the branch, before the merge, mark its items `[x]` with the done date (`core/docs-system.md`, Status marks). If the merge does not go through, revert that commit.
 
 ## Push
 

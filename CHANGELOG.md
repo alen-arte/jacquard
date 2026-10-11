@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+- **Status marks in the roadmap** (`core/docs-system.md`): `[ ]` not done, `[~]` done on a branch other than `main` (data line: branch and commit), `[x]` in `main` (production). Claude sets `[~]` as each task finishes and `[x]` when the branch is integrated; the proposals table uses `☐ ◐ ☑ ✗`. Fixes Away leaving finished work as open checks with free-text status.
+- **Away never uses `main`'s name:** from `main` it creates a new branch named after the brief (`away/r12-r14`); from a work branch it uses `away/<that-branch>`. The base branch is recorded in the journal.
+- **`/kit-update` is now `/jacquard-update`.** Run INSTALL step 2 again to link it and remove the old `kit-update` link.
+
 ## 0.2.1
 - Markdown Away reports embed the captures of visual decisions as images (relative paths: no token cost); `/back` lists them as clickable paths.
 

@@ -13,7 +13,7 @@ Jacquard gives every project the same hidden structure: standards that set the b
 | `/back` | Ends Away and gives you the report, what needs you first |
 | `/away-resume` | Continues an Away block that was cut off |
 | `/rigor -s\|-ss\|-sss` | Sets review intensity for the session |
-| `/kit-update` | Brings a project up to the installed kit version, with your OK |
+| `/jacquard-update` | Brings a project up to the installed kit version, with your OK |
 | `/retro [scope]` | Looks back: what worked, what cost too much, proposals |
 | `/debate <decision>` | Two or three perspectives on a large decision; says the cost first |
 
@@ -45,6 +45,8 @@ New, high-impact visual decisions get an exploration: ideas that really differ, 
 ## IDs
 
 `R#` roadmap item · `P#` Claude's proposal · `D#` decision · `UF#` user flow · `RF#` planned refactor · `§n` manual section.
+
+Roadmap marks: `[ ]` not done · `[~]` done on a branch, not in `main` yet · `[x]` in `main` (production).
 
 ## Where things are
 

@@ -11,7 +11,7 @@ Read first: `~/.claude/jacquard/core/standards.md`, `~/.claude/jacquard/core/met
 
 ## 0. Check
 
-- If `<local>/index.md` already exists, this project already uses Jacquard: stop and suggest `/kit-update`.
+- If `<local>/index.md` already exists, this project already uses Jacquard: stop and suggest `/jacquard-update`.
 - If `CLAUDE.local.md`, `.claude/settings.local.json` or `<local>` is already tracked by git (`git ls-files --error-unmatch <path>`), stop: excluding it would not work and personal files would reach the repo. Explain and ask how to proceed.
 - `git status`: if the tree has uncommitted changes, say so; kickoff only writes files excluded from git, but the user should know.
 
@@ -46,7 +46,7 @@ Wait for the OK. Apply changes the user asks for and show only what changed.
 
 ## 5. Generate
 
-1. Create `<local>/`. If the personal repo exists (`~/repos/jacquard-personal/`), create `projects/<project-slug>/` there and make `<local>` a link to it. Otherwise a plain folder: say so, and write "local folder not in the personal repo yet" in the index rules (`/kit-update` moves it later).
+1. Create `<local>/`. If the personal repo exists (`~/repos/jacquard-personal/`), create `projects/<project-slug>/` there and make `<local>` a link to it. Otherwise a plain folder: say so, and write "local folder not in the personal repo yet" in the index rules (`/jacquard-update` moves it later).
 2. From `~/.claude/jacquard/templates/project/`: `index.md`, `project.md`, `away-profile.md` filled from the summary; `CLAUDE.local.md` at the repo root (if one exists, add the imports and keep its content); append `git-exclude.txt` lines to `.git/info/exclude` (no duplicates); `.claude/settings.local.json` merged with any existing file, never overwritten.
    - A placeholder the summary does not cover takes the default written inside it, or "none".
    - In `settings.local.json`, replace each `{{…}}` entry with real rules or delete it. Never leave a placeholder there.

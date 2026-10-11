@@ -4,7 +4,7 @@ Reads: skills/kickoff/SKILL.md, skills/kickoff/interview.md, core/method.md
 
 ### C1 · Already a Jacquard project
 **Given:** The current repo already has `.jacquard/index.md`. The user types `/kickoff`. Write your next message.
-**Pass if:** it stops, says the project already uses Jacquard and suggests `/kit-update`.
+**Pass if:** it stops, says the project already uses Jacquard and suggests `/jacquard-update`.
 **Fail if:** it starts the interview or writes any file.
 
 ### C2 · Adopting a project with uncommitted work

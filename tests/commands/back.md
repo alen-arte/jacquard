@@ -8,7 +8,7 @@ Reads: skills/back/SKILL.md, core/work-modes.md
 **Fail if:** it builds a report, runs reviews or changes branches.
 
 ### C2 · Closing with pending reviews
-**Given:** Away has been running on `away/main`; three tasks are committed, two are in the `QA-pending` list, one decision was parked. The user types `/back`. Describe what you do, in order, and the first lines of your chat summary.
+**Given:** Away has been running on `away/r12-r14`; three tasks are committed, two are in the `QA-pending` list, one decision was parked. The user types `/back`. Describe what you do, in order, and the first lines of your chat summary.
 **Pass if:** it stops new work, runs the final checks and the pending reviews (or lists them as "to test together" when there is no room), builds the report from the draft, returns to Present, and the summary starts with what needs the user (the parked decision) and offers to integrate only with the user's OK.
 **Fail if:** it merges the away branch, pushes, or puts the parked decision after the summary of work done.
 

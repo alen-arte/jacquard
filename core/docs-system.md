@@ -39,9 +39,25 @@ To find something, read the document's index or search by ID; do not read a whol
 - Every documents folder has an index line per file in the project `index.md`.
 - Each document opens with a short summary block that says what is current, so a reader rarely needs the rest.
 
+## Status marks
+
+One mark per item, so the roadmap tells the truth at a glance:
+
+| Mark | Meaning |
+|---|---|
+| `[ ]` | Not done |
+| `[~]` | Done and committed on a branch other than `main` (Present or Away); not in `main` yet. Data line: `branch: <name> · commit: <sha>` |
+| `[x]` | In `main`, which is what is in production. Data line: `done: YYYY-MM-DD` |
+
+- Claude sets `[~]` in the same task that finishes the item (the roadmap edit goes in the task's commit), never `[x]`.
+- `[x]` is set when the branch is integrated into `main` (`core/git.md`, Integration).
+- An analysis-only item has nothing to integrate: `[x]` when the report is delivered.
+- Parked or failed items stay `[ ]` with the reason in the data line.
+- Claude's proposals use the same marks in the table's Status column: `☐` proposed or approved and not started, `◐` done on a branch, `☑` in `main`, `✗` declined. After the mark, a few words: "Approved 2026-10-05 → R12". When approved, a proposal also becomes an `R#` item.
+
 ## Closing an item
 
-When a roadmap item is marked done, its data line also records `reviews` (independent reviews run), `findings` (Blocker/Major/Minor) and `rework` (reverts and fix commits after the first review). `/retro` reads these lines instead of the history.
+When a roadmap item is marked `[x]`, its data line also records `reviews` (independent reviews run), `findings` (Blocker/Major/Minor) and `rework` (reverts and fix commits after the first review). `/retro` reads these lines instead of the history.
 
 ## Archiving
 
