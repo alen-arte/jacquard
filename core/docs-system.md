@@ -39,6 +39,10 @@ To find something, read the document's index or search by ID; do not read a whol
 - Every documents folder has an index line per file in the project `index.md`.
 - Each document opens with a short summary block that says what is current, so a reader rarely needs the rest.
 
+## Closing an item
+
+When a roadmap item is marked done, its data line also records `reviews` (independent reviews run), `findings` (Blocker/Major/Minor) and `rework` (reverts and fix commits after the first review). `/retro` reads these lines instead of the history.
+
 ## Archiving
 
 At each phase or milestone close, finished roadmap items move to `roadmap-done.md`, leaving one summary line per group in the roadmap. Superseded decisions stay in `decisions.md`, marked "superseded by D#". Nothing is deleted; it is moved out of the hot path.

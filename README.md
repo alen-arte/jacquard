@@ -27,7 +27,7 @@ The Jacquard loom wove flowers and figures from punched cards: a hidden pattern 
 ```
 core/         standards (always loaded) and on-demand rules
 roles/        role library and role template
-skills/       commands: /kickoff, /away, /back, /away-resume, /rigor, /kit-update
+skills/       commands: /kickoff, /away, /back, /away-resume, /rigor, /kit-update, /retro
 templates/    project files and guiding documents
 personal/     template for your private layer
 scripts/      privacy check and git hooks for publishing

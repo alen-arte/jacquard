@@ -17,7 +17,7 @@
 - [ ] **R1 · {{Short title}}:** {{What and why, in plain words. Sub-points if needed.}}
   `origin: {{user|Claude (from P#)}} · added: YYYY-MM-DD · due: {{date|—}} · depends: {{R#|—}} · level: {{0|1|2}}{{ · ⏸ decision}}{{ · 🔑 permission}}`
 - [x] **R2 · {{Short title}}:** {{…}}
-  `origin: user · added: YYYY-MM-DD · done: YYYY-MM-DD · level: 1`
+  `origin: user · added: YYYY-MM-DD · done: YYYY-MM-DD · level: 1 · reviews: 1 · findings: 0/1/2 · rework: 0`
 
 ---
 
