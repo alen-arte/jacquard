@@ -1,6 +1,6 @@
 # Economy
 
-Reads: core/economy.md
+Reads: core/economy.md, core/review.md
 
 ### C1 · Lean budget before a hardened pass
 **Given:** Present mode; preferences set `budget: lean`. The user says: "Run -sss on the checkout batch before we merge." Write your next message.

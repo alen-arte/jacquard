@@ -11,7 +11,7 @@ This file is always loaded. Everything else is read on demand:
 |---|---|
 | `design-standards.md`, `visual-qa.md` | Any design or UI task; checking it rendered |
 | `review.md` | Choosing which reviews run, closing a batch |
-| `economy.md` | Launching a subagent, choosing its model tier, estimating cost |
+| `economy.md` | Launching a subagent other than a review (reviews: `review.md`), choosing a tier, estimating cost |
 | `work-modes.md` | `/away`, `/back`, `/away-resume` |
 | `git.md` | Branches, commits, integration, push |
 | `docs-system.md` | Creating or editing roadmap, decisions, flows, manual, backlog; artifacts |

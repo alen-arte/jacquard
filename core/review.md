@@ -13,16 +13,16 @@ Risk levels (0, 1, 2) and the floor for level 2 are in core standards.
 
 Default `-ss`. The most specific setting wins: per message > per Away block (`/away -s 2h | …`) > per session (`/rigor -sss`) > the project default (`index.md`) > `default_intensity` in preferences (`-ss`).
 
-| Check | `-s` light | `-ss` normal | `-sss` hardened |
-|---|---|---|---|
-| Automatic checks (types, lint, unit tests, build) | every task | every task | every task |
-| Test-first (TDD) | level-2 logic | level 1–2 logic | all logic, plus edge and negative cases |
-| End-to-end tests | before integrating | affected flows per batch; full suite before integrating | affected flows per task; full suite per batch |
-| Independent QA | level 2 per task; the rest at milestone close | level 2 per task; level 1 per batch | every task |
-| Engineering advisor | before structural changes only | + at each milestone close | + at each batch close |
-| Security and privacy | level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations | same | + at each batch close |
-| Domain advisor | when its trigger fires | same | same |
-| Design critic on rendered results (`design-exploration.md` step 7) | at milestone close | same | + at each batch close that built an explored design |
+| Check | Tier · effort | `-s` light | `-ss` normal | `-sss` hardened |
+|---|---|---|---|---|
+| Automatic checks (types, lint, unit tests, build) | — | every task | every task | every task |
+| Test-first (TDD) | — | level-2 logic | level 1–2 logic | all logic, plus edge and negative cases |
+| End-to-end tests | — | before integrating | affected flows per batch; full suite before integrating | affected flows per task; full suite per batch |
+| Independent QA | standard · normal (light only for pure consistency sweeps) | level 2 per task; the rest at milestone close | level 2 per task; level 1 per batch | every task |
+| Engineering advisor | strong · high | before structural changes only | + at each milestone close | + at each batch close |
+| Security and privacy | strong · high | level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations | same | + at each batch close |
+| Domain advisor | standard · normal | when its trigger fires | same | same |
+| Design critic on rendered results (`design-exploration.md` step 7) | standard · normal | at milestone close | same | + at each batch close that built an explored design |
 
 **Always, at every level:** the builder checks visual work in a real render (`visual-qa.md`). That is verification, not review.
 
@@ -44,6 +44,8 @@ A batch is a group of related tasks closed together (one or several roadmap item
 
 ## Running a review
 
-- One subagent per review, prompted as core standards say, at the tier in `economy.md`, with the diff and only the document sections cited by ID.
+- One general-purpose subagent per review (never Explore or Plan: they do not load the core standards), at its row's tier and effort, both passed explicitly: the model and effort come from `tiers` in preferences, and "normal" is the tier's own effort (without `tiers`, the session's). Level-2 work is never reviewed below its row's tier, whatever the budget.
+- The prompt names the role file and the handoff note, and passes the diff and only the document sections cited by ID. It never pastes or re-reads the always-loaded files: the subagent already has them.
+- The reviewer returns only its verdict and findings; a follow-up round continues the same subagent when the environment allows it.
 - The verdict and every open finding go into the report.
 - Blockers and Majors are fixed and re-reviewed (changed areas plus regressions) before asking the user to integrate.

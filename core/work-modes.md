@@ -118,7 +118,7 @@ Reviews follow `core/review.md` with the session's intensity and the floor for l
 
 **Built progressively.** From the first finished task, keep `away-report-draft-YYYY-MM-DD.md` (reply language, plain markdown). After each task add: what was done (commit), the decision cards, what was parked, whether it is `QA-pending`. Keep three running lists at the bottom: **Done**, **To test together**, **Parked**. The final report is built from this draft, never from memory.
 
-**Final report:** a self-contained, sober HTML file `away-report-YYYY-MM-DD-HHMM.html` (format per preferences), generated once at the end of the build block and updated in place after the review block; published as a private artifact when preferences allow; plus a short summary in chat on return. Sections:
+**Final report:** a self-contained, sober HTML file `away-report-YYYY-MM-DD-HHMM.html` (format per preferences; with `budget: lean`, the markdown report only, per `core/economy.md`), generated once at the end of the build block and updated in place after the review block; published as a private artifact when preferences allow; plus a short summary in chat on return. Sections:
 1. **Needs your OK:** parked items first, each with options and a recommendation
 2. **Summary:** what was asked, done, not done, time used
 3. **Decisions I made:** one card each: the decision, why, alternatives and why not, impact, how to reverse it (commit)
