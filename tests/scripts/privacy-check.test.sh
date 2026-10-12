@@ -119,8 +119,8 @@ newrepo; mkdir "$r/x" && echo "Copyright 2026 secretterm" > "$r/x/LICENSE"
 [ "$(staged)" = 1 ] || fail "R7-10 a staged LICENSE elsewhere gets no exception"
 
 # More encodings and binaries
-newrepo; printf '\377\376' > "$r/u.txt"; utf16be() { printf '%s' "$1" | iconv -f UTF-8 -t UTF-16BE; }; utf16be "written by Muñoz" > "$r/u.txt"
-[ "$(files)" = 1 ] || fail "R6-22 a term in UTF-16BE must be found"
+newrepo; utf16be() { printf '%s' "$1" | iconv -f UTF-8 -t UTF-16BE; }; utf16be "written by Muñoz" > "$r/u.txt"
+[ "$(files)" = 1 ] || fail "R6-22 a term in UTF-16BE without BOM must be found"
 newrepo; printf '\211PNG\r\n\032\n\000\000\000\rIHDR' > "$r/i.png"
 [ "$(files)" = 1 ] || fail "R6-23 a PNG must be refused"
 newrepo; printf 'a\000\nby secretterm here\n' > "$r/odd.bin"
@@ -129,7 +129,11 @@ newrepo; echo "by Munoz" > "$r/a.md"
 [ "$(files)" = 1 ] || fail "R6-25 an unaccented spelling must match an accented term"
 newrepo; echo "k: $(printf Alice | base64)" > "$r/a.md"; printf 'Alice\n' >> "$JACQUARD_PRIVACY_TERMS"
 [ "$(files)" = 1 ] || fail "R6-26 a 5-letter term in padded base64 must be found"
-sed -i.bak '/^Alice$/d' "$JACQUARD_PRIVACY_TERMS"
+newrepo; echo "k: $(printf Juan | base64)" > "$r/a.md"; printf 'Juan\n' >> "$JACQUARD_PRIVACY_TERMS"
+[ "$(files)" = 1 ] || fail "R6-26b a 4-letter term in base64 with == must be found"
+sed -i.bak -e '/^Alice$/d' -e '/^Juan$/d' "$JACQUARD_PRIVACY_TERMS"
+newrepo; echo "Copyright 2026 secretterm" > "$r/LICENSE"; g config diff.noprefix true
+[ "$(staged)" = 0 ] || fail "R7-8b the LICENSE exception must not depend on diff.noprefix"
 newrepo; echo "k: $(printf 'by secretterm' | iconv -t UTF-16LE | base64)" > "$r/a.md"
 [ "$(files)" = 1 ] || fail "R6-27 UTF-16 text inside base64 must be found"
 

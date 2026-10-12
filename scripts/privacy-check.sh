@@ -135,7 +135,7 @@ emit_commit() { # commit id
   local c="$1"
   git log -1 --format="(identity) %an <%ae> | %cn <%ce>%n%B" "$c" | label "commit $c: " >> "$out" || fail "cannot read commit $c"
   git diff-tree -m -r --root --no-commit-id --name-only -z "$c" | tr '\0' '\n' | label "commit $c: (path) " >> "$out" || fail "cannot list paths of $c"
-  git show -m --format= --root --no-renames --text -p "$c" | added "commit $c: " >> "$out" || fail "cannot read changes of $c"
+  git show -m --format= --root --no-renames --text --no-textconv --no-ext-diff --src-prefix=a/ --dst-prefix=b/ -p "$c" | added "commit $c: " >> "$out" || fail "cannot read changes of $c"
   blob_rev="$c"
   git diff-tree -m -r --root --no-commit-id --no-renames --diff-filter=d --numstat -z "$c" > "$tmp/numstat" || fail "cannot list changes of $c"
   emit_blobs "commit $c: " < "$tmp/numstat"
@@ -158,7 +158,7 @@ case "$mode" in
     git rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail "not a git repository"
     { git var GIT_AUTHOR_IDENT && git var GIT_COMMITTER_IDENT; } | sed -E 's/ [0-9]+ [+-][0-9]{4}$//' | label "staged: (identity) " >> "$out" || fail "cannot read identity"
     git diff --cached --name-only -z | tr '\0' '\n' | label "staged: (path) " >> "$out" || fail "cannot list staged paths"
-    git diff --cached --no-renames --text -p | added "staged: " >> "$out" || fail "cannot read staged changes"
+    git diff --cached --no-renames --text --no-textconv --no-ext-diff --src-prefix=a/ --dst-prefix=b/ -p | added "staged: " >> "$out" || fail "cannot read staged changes"
     blob_rev=":0"
     git diff --cached --no-renames --diff-filter=d --numstat -z > "$tmp/numstat" || fail "cannot list staged changes"
     emit_blobs "staged: " < "$tmp/numstat"
@@ -210,10 +210,10 @@ LC_ALL=C awk -v unread="$tmp/unreadable" '
     if (fl >= 4) printf "\n"
   }
   { p = index($0, ": "); lbl = (p ? substr($0, 1, p + 1) : ""); where = (p ? substr($0, 1, p - 1) : "line " NR)
-    gsub(/=+/, "= ")   # padding ends a run, and counts toward its length
+    gsub(/=+/, "& ")   # padding ends a run, and counts toward its length
     n = split($0, parts, /[^A-Za-z0-9+\/_=-]+/)
     for (j = 1; j <= n; j++) {
-      run = parts[j]; len = length(run); sub(/=$/, "", run)
+      run = parts[j]; len = length(run); sub(/=+$/, "", run)
       if (len < 8 || run ~ /^[a-z]+$/) continue
       if (run ~ /^(H4sI|UEsDB|QlpoO|\/Td6WFo|KLUv|eJ[A-Za-z0-9+\/])/) { print where " (compressed data in base64)" >> unread; continue }
       if (len < 256) { for (k = 0; k < 4; k++) emit(run, k); continue }
