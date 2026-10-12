@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.2.5
-- **Archiving of finished batches** (`core/docs-system.md`): before every block of work (Away gate, or the first task of a batch in Present) Claude asks, in one line, whether to move each complete batch (all items ✅ or ❌) to `roadmap-done.md`; only the user's OK moves it. The roadmap keeps a `📦` line with the IDs, which the status index counts as Done (`scripts/roadmap-index.sh`). Rejected items and approved/rejected proposals still move at the next edit without asking.
+- **Archiving of finished batches** (`core/docs-system.md`): before every block of work (Away gate, or the first task of a batch in Present) Claude asks, in one line, whether to move each complete batch (all items ✅ or ❌) to `roadmap-done.md`; only the user's OK moves it. The roadmap keeps a single `📦` line naming the last batch moved, replaced each time; the status index counts only what is still in the roadmap. Rejected items and approved/rejected proposals still move at the next edit without asking.
 - The Away gate's "needs you first" now says ⚖️ (it still said `⏸`).
 
 ## 0.2.4
