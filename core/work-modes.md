@@ -92,7 +92,7 @@ When parking: write what, options, recommendation and what is blocked. Keep work
 Claude cannot see how much of the session limit is left, so Away is built to be cut at any moment without losing anything.
 
 **Order of blocks** (written at the top of the journal):
-1. **Build:** the tasks, ordered system → function → aesthetics, respecting dependencies. Markdown documents are updated as part of each task (roadmap item set to 🟡 with branch and commit, per `core/docs-system.md` Status marks; new `D#`; `UF#` changes).
+1. **Build:** the tasks, ordered system → function → aesthetics, respecting dependencies. Markdown documents are updated as part of each task (roadmap item set to 👀 with branch and commit, then the status index regenerated, per `core/docs-system.md` Status marks; new `D#`; `UF#` changes).
 2. **Report:** the report is already current (section 9); generate the HTML once the build block ends, and publish it if preferences allow.
 3. **Views:** refresh artifact views of the documents that changed, in place, with a backup first (`core/docs-system.md`).
 4. **Review (last):** the review queue, per section 8.

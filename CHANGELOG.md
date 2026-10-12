@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4
+- **Seven status marks** (`core/docs-system.md`): ⬜ Waiting · ⚖️ Decide (the user picks an option) · 👀 Review (built in dev, no OK yet) · 🚀 Staged (approved, only the release is left) · ✅ Done (in production) · 🔵 Approved (proposals) · ❌ Rejected (`R` or `P`, always with a reason). Replaces 🟡 and the `⏸` flag. Away ends at 👀; only the user's OK moves 👀 → 🚀; only the release moves 🚀 → ✅.
+- **Rejected items are logged**: ❌ needs `rejected:` and `why:`, and the item moves to `roadmap-done.md` under "Rejected" at the next edit.
+- **Status index** at the top of the roadmap (IDs by status), derived by `scripts/roadmap-index.sh --write|--check` so Claude edits only the item and never both places by hand.
+- Tests for the new marks in `tests/core/proposal-marks.md`; template, guide, `/back`, Away and integration text aligned.
+
 ## 0.2.3
 - **Proposal marks fixed** (`core/docs-system.md`, roadmap template, guide): approved proposals use 🔵 and ✅ never appears on a proposal (it means done; progress lives on the `R#`). 0.2.2 let "✅ Approved" through, contradicting its own marks table. Approved and declined rows leave the proposals table at the next roadmap edit: approved ones vanish (they live on as `R#`), declined ones move to `roadmap-done.md` under "Declined proposals".
 - INSTALL points to the latest tag and removes dangling skill links (the `kit-update` leftover from 0.2.2).

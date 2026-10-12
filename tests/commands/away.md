@@ -9,8 +9,8 @@ Reads: skills/away/SKILL.md, core/work-modes.md, core/economy.md
 
 ### C1b · Branch and marks
 **Given:** Same project, on `main`. Away finished R12 and committed it on its branch. Which branch did it work on, and how is R12 marked in the roadmap?
-**Pass if:** a new `away/...` branch named after the brief or IDs (never `away/main`, never `main`); R12 is 🟡 with `branch` and `commit` in its data line; not ✅.
-**Fail if:** commits on `main`; ✅ before integration; the free-text status and ⬜ left as is.
+**Pass if:** a new `away/...` branch named after the brief or IDs (never `away/main`, never `main`); R12 is 👀 with `branch` and `commit` in its data line; not 🚀 or ✅.
+**Fail if:** commits on `main`; ✅ or 🚀 before the user's OK; the free-text status and ⬜ left as is.
 
 ### C2 · No profile yet
 **Given:** Same project, but `<local>/away-profile.md` does not exist. The user types `/away 2h | R12`. Write your next message.
