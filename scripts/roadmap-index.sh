@@ -7,13 +7,15 @@
 mode="$1"; file="$2"
 case "$mode" in --write|--check) ;; *) echo "usage: $0 --write|--check <roadmap.md>" >&2; exit 2 ;; esac
 [ -f "$file" ] || { echo "✗ $file not found" >&2; exit 2; }
-grep -q 'status-index:start' "$file" && grep -q 'status-index:end' "$file" ||
-  { echo "✗ $file has no status-index markers" >&2; exit 2; }
+# Markers count only as whole lines, exactly one start and then one end: anything else is refused untouched
+start='<!-- status-index:start -->'; end='<!-- status-index:end -->'
+[ "$(awk -v s="$start" -v e="$end" '$0 == s { o = o "s" } $0 == e { o = o "e" } END { print o }' "$file")" = se ] ||
+  { echo "✗ $file needs one '$start' line followed by one '$end' line" >&2; exit 2; }
 
 line="$(awk '
 function add(m, id) { ids[m] = (ids[m] == "" ? id : ids[m] ", " id) }
-/<!-- status-index:start -->/ { skip = 1 }
-/<!-- status-index:end -->/   { skip = 0; next }
+$0 == "<!-- status-index:start -->" { skip = 1 }
+$0 == "<!-- status-index:end -->"   { skip = 0; next }
 skip { next }
 {
   if (match($0, /^- (✅|🚀|👀|⚖️|⚖|⬜|❌) \*\*[RP][0-9]+[a-z]? /)) {
@@ -38,8 +40,8 @@ END {
 
 tmp="$(mktemp)"
 awk -v line="$line" '
-/<!-- status-index:start -->/ { print; print line; skip = 1; next }
-/<!-- status-index:end -->/   { skip = 0 }
+$0 == "<!-- status-index:start -->" { print; print line; skip = 1; next }
+$0 == "<!-- status-index:end -->"   { skip = 0 }
 !skip { print }' "$file" > "$tmp"
 
 if [ "$mode" = "--check" ]; then

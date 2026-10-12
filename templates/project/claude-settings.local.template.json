@@ -15,7 +15,8 @@
       "Bash(date +*)",
       "Bash(~/.claude/jacquard/scripts/away-guard.sh on {{LOCAL_FOLDER}} *)",
       "Bash(~/.claude/jacquard/scripts/away-guard.sh off {{LOCAL_FOLDER}})",
-      "Bash(~/.claude/jacquard/scripts/roadmap-index.sh *)",
+      "Bash(~/.claude/jacquard/scripts/roadmap-index.sh --check {{LOCAL_FOLDER}}/docs/roadmap.md)",
+      "Bash(~/.claude/jacquard/scripts/roadmap-index.sh --write {{LOCAL_FOLDER}}/docs/roadmap.md)",
       "Edit(/{{LOCAL_FOLDER}}/**)",
       "Edit(~/repos/jacquard-personal/projects/{{PROJECT_SLUG}}/**)",
       "{{CHECK_COMMANDS_AS_BASH_RULES}}"

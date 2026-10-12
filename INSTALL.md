@@ -8,17 +8,18 @@ Claude Code evolves fast. Check the official documentation and adapt these steps
 - Personal skills live in `~/.claude/skills/<name>/SKILL.md`; `disable-model-invocation: true` keeps them out of context until invoked; `$ARGUMENTS` and `${CLAUDE_SKILL_DIR}` work.
 - `CLAUDE.local.md` is loaded and is not tracked; `@~/...` imports work from it; the first external import shows an approval dialog.
 - Imports and skills work through symbolic links.
-- The permission rule syntax used in `templates/project/claude-settings.local.template.json`.
+- The permission rule syntax used in `templates/project/claude-settings.local.template.json`, including `permissions.additionalDirectories`, and that Claude Code still runs its built-in read-only commands without a rule.
 - User subagents in `~/.claude/agents/` load through symbolic links, with `tools` and `maxTurns` in their frontmatter (the QA reviewer, step 2).
 - The hook events the Away guard uses (`PermissionRequest`, `Elicitation`, `SessionStart`), their decision output, and that `CLAUDE_CODE_SESSION_ID` matches the hooks' `session_id` in Bash and hook subprocesses.
 
-Last verified with Claude Code 2.1.296 (2026-10-11). Worth knowing:
+Last verified with Claude Code 2.1.296 (2026-10-11; the permissions page re-checked 2026-10-12). Worth knowing:
 - Model and effort can be set per subagent launch and per skill turn (`effort` in a skill's frontmatter); the main session's model is yours (`/model`, `/effort`). `core/economy.md` uses these.
 - Every subagent except the built-in Explore and Plan loads `CLAUDE.local.md` and its imports.
 - Claude Code's Chrome integration does not run in WSL; a headless browser run from the command line works for `render_check`.
 - Imports outside the project, including through a link such as `.jacquard`, load **only after the approval dialog is accepted**. Until then nothing from Jacquard loads, silently.
 - `~/.claude/` is a protected folder: writes there always ask, whatever the rules say. That is why the personal layer, which projects write into, lives in `~/repos/`.
-- Permission rules on a link must match both the link and its target to allow; either one to deny.
+- Permission rules on a link must match both the link and its target to allow; either one to deny. A terminal write through a link that leads outside the working directories asks even in auto mode, unless the target is a working directory: hence `additionalDirectories` for the personal project folder.
+- Read-only commands (`ls`, `cat`, `grep`, `find` without actions, `diff`, read-only `git`) run without asking and need no rule; a prefix rule such as `Bash(sed *)` would also allow their writing forms.
 - `CLAUDE.local.md` is not ignored by git on its own; kickoff excludes it in `.git/info/exclude`.
 - `/memory` does not list imported files; `/context` does.
 - When a skill and a command share a name, the skill wins for project commands; for `~/.claude/commands/` it is undocumented, hence the stop rule in step 2.

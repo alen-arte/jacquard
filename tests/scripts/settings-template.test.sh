@@ -25,8 +25,14 @@ for p in sed sort find tee awk xargs python python3 node perl ruby bash sh zsh n
 done
 printf '%s\n' "$allow" | grep -qxE 'Bash|Bash\(\*\)' && fail "S3 blanket Bash allow rule"
 
-# S4 · The kit's own scripts that Claude runs as routine are allowed
-printf '%s\n' "$allow" | grep -qF 'Bash(~/.claude/jacquard/scripts/roadmap-index.sh *)' || fail "S4 no allow rule for roadmap-index.sh"
+# S4 · The kit's own scripts that Claude runs as routine are allowed, on the project's roadmap only
+# (a wildcard would let --write rewrite any file with markers, outside every Edit rule)
+for m in --check --write; do
+  printf '%s\n' "$allow" | grep -qxF "Bash(~/.claude/jacquard/scripts/roadmap-index.sh $m {{LOCAL_FOLDER}}/docs/roadmap.md)" || fail "S4 no exact allow rule for roadmap-index.sh $m"
+done
+printf '%s\n' "$allow" | grep -q 'roadmap-index\.sh.*\*' && fail "S4 roadmap-index.sh rule with a wildcard"
+# Every rule for a kit script the rules spell is matched by the spelling in core/
+grep -qF '~/.claude/jacquard/scripts/roadmap-index.sh --write <local>/docs/roadmap.md' "$here/../../core/docs-system.md" || fail "S4b core/docs-system.md spells roadmap-index.sh differently from the allow rule"
 
 # S5 · The local folder can be written from the terminal through its link
 grep -qF '"additionalDirectories": ["{{PERSONAL_PROJECT_FOLDER}}"]' "$template" || fail "S5 no additionalDirectories entry for the personal project folder"

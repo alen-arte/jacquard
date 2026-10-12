@@ -75,7 +75,7 @@ Under the "How to read it" note, the roadmap carries one line per status listing
 <!-- status-index:end -->
 ```
 
-It is derived, never edited by hand: after any change of mark, Claude edits **only the item** and then runs `~/.claude/jacquard/scripts/roadmap-index.sh --write <roadmap.md>`, which rewrites the block between the markers from the marks of the items. `--check` exits 1 if the block is out of date. The pre-commit hook does not run it, so run `--check` before a roadmap edit is committed.
+It is derived, never edited by hand: after any change of mark, Claude edits **only the item** and then runs `~/.claude/jacquard/scripts/roadmap-index.sh --write <local>/docs/roadmap.md`, spelled exactly so (the allow rule matches only that), which rewrites the block between the marker lines from the marks of the items. `--check` instead of `--write` exits 1 if the block is out of date. The pre-commit hook does not run it, so run `--check` before a roadmap edit is committed.
 
 ## Closing an item
 
