@@ -51,6 +51,12 @@ echo z > a.md; git add -A
 mkdir -p .git/rebase-merge
 "$guard" >/dev/null 2>&1 || fail "G5 a commit during a rebase (detached HEAD) is allowed"
 rmdir .git/rebase-merge
+mkdir -p .git/rebase-apply
+"$guard" >/dev/null 2>&1 || fail "G5b a commit during git am / rebase-apply is allowed"
+rmdir .git/rebase-apply
+git rev-parse HEAD > .git/CHERRY_PICK_HEAD
+"$guard" >/dev/null 2>&1 || fail "G5c a commit during a cherry-pick is allowed"
+rm -f .git/CHERRY_PICK_HEAD
 mkdir -p .jacquard && echo n > .jacquard/n.md && git switch -q r1-work 2>/dev/null; git add -A .jacquard 2>/dev/null
 "$guard" >/dev/null 2>&1 && fail "G6 staged local files must be refused"
 

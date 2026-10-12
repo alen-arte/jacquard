@@ -110,6 +110,29 @@ newrepo; echo "Copyright 2026 secretterm" > "$r/LICENSE"; echo "secretterm" >> "
 newrepo; dom=real-domain.net; echo "Copyright 2026 Someone <someone@$dom>" > "$r/LICENSE"
 [ "$(files)" = 1 ] || fail "R7-4b the copyright line is exempt from terms only, not from patterns (an email)"
 
+# LICENSE's copyright line is exempt in commit and push checks too (terms only)
+newrepo; echo "Copyright 2026 secretterm" > "$r/LICENSE"
+[ "$(staged)" = 0 ] || fail "R7-8 a staged LICENSE copyright line must be allowed"
+g commit -q -m lic
+g rev-parse HEAD | "$check" --objects "$r" >/dev/null 2>&1; [ $? = 0 ] || fail "R7-9 a pushed LICENSE copyright line must be allowed"
+newrepo; mkdir "$r/x" && echo "Copyright 2026 secretterm" > "$r/x/LICENSE"
+[ "$(staged)" = 1 ] || fail "R7-10 a staged LICENSE elsewhere gets no exception"
+
+# More encodings and binaries
+newrepo; printf '\377\376' > "$r/u.txt"; utf16be() { printf '%s' "$1" | iconv -f UTF-8 -t UTF-16BE; }; utf16be "written by Muñoz" > "$r/u.txt"
+[ "$(files)" = 1 ] || fail "R6-22 a term in UTF-16BE must be found"
+newrepo; printf '\211PNG\r\n\032\n\000\000\000\rIHDR' > "$r/i.png"
+[ "$(files)" = 1 ] || fail "R6-23 a PNG must be refused"
+newrepo; printf 'a\000\nby secretterm here\n' > "$r/odd.bin"
+[ "$(files)" = 1 ] || fail "R6-24 a file with a stray NUL is not UTF-16: refused or its term found"
+newrepo; echo "by Munoz" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R6-25 an unaccented spelling must match an accented term"
+newrepo; echo "k: $(printf Alice | base64)" > "$r/a.md"; printf 'Alice\n' >> "$JACQUARD_PRIVACY_TERMS"
+[ "$(files)" = 1 ] || fail "R6-26 a 5-letter term in padded base64 must be found"
+sed -i.bak '/^Alice$/d' "$JACQUARD_PRIVACY_TERMS"
+newrepo; echo "k: $(printf 'by secretterm' | iconv -t UTF-16LE | base64)" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R6-27 UTF-16 text inside base64 must be found"
+
 # R7: outside a git repository (no find -printf)
 d="$tmp/plain"; mkdir -p "$d/sub" && echo "clean" > "$d/sub/a.md"
 "$check" "$d" >/dev/null 2>&1; [ $? = 0 ] || fail "R7-5 a clean folder outside git must pass"

@@ -9,6 +9,7 @@ Claude Code evolves fast. Check the official documentation and adapt these steps
 - `CLAUDE.local.md` is loaded and is not tracked; `@~/...` imports work from it; the first external import shows an approval dialog.
 - Imports and skills work through symbolic links.
 - The permission rule syntax used in `templates/project/settings.local.json`.
+- User subagents in `~/.claude/agents/` load through symbolic links, with `tools` and `maxTurns` in their frontmatter (the QA reviewer, step 2).
 - The hook events the Away guard uses (`PermissionRequest`, `Elicitation`, `SessionStart`), their decision output, and that `CLAUDE_CODE_SESSION_ID` matches the hooks' `session_id` in Bash and hook subprocesses.
 
 Last verified with Claude Code 2.1.296 (2026-10-11). Worth knowing:
@@ -67,8 +68,8 @@ Check with `/agents` that `jacquard-qa-reviewer` is listed.
 After updating the kit, remove links left dangling by a renamed or deleted skill (for example `kit-update`, now `jacquard-update`); this only touches broken links that point into the kit:
 
 ```bash
-for l in ~/.claude/skills/* ~/.claude/agents/*; do
-  [ -L "$l" ] && [ ! -e "$l" ] && case "$(readlink "$l")" in *jacquard*) echo "removing dangling link $l"; rm "$l";; esac
+find -L ~/.claude/skills ~/.claude/agents -maxdepth 1 -type l 2>/dev/null | while IFS= read -r l; do
+  case "$(readlink "$l")" in *jacquard*) echo "removing dangling link $l"; rm "$l";; esac
 done
 ```
 
