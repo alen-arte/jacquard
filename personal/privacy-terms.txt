@@ -1,5 +1,6 @@
 # One term per line. Case-insensitive. Lines starting with # are ignored.
-# Terms of 5 letters or fewer match only as whole words, so add a handle like ana_dev as its own line.
+# Terms of 5 characters or fewer match only as whole words, so add a handle like ana_dev as its own
+# line, and list a handle without its @ (ana, not @ana).
 # Your name, handles, collaborators' names, project names, private URLs.
 # A line starting with ! allows that exact commit identity, e.g. your public no-reply one:
 # !Your Name <you@example.com>

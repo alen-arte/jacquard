@@ -215,6 +215,22 @@ newrepo; { png x; printf '\000\001<dc:creator>Mu\303\261oz</dc:creator>\000'; } 
 newrepo; { png x; printf '\000\001'; utf16le "by Muñoz"; printf '\000\000\001'; } > "$r/i.png"; allow i.png
 [ "$(files)" = 1 ] || fail "R26-16 a UTF-16LE name inside a listed binary must be found"
 [ "$(staged)" = 1 ] || fail "R26-16b the same, staged"
+# Inside a listed binary only terms count: email- and path-shaped noise is common in compressed image data
+newrepo; at=@; h=home; { png x; printf '\000\001zq%skv.net\000/%s/qx\000' "$at" "$h"; } > "$r/i.png"; allow i.png
+[ "$(files)" = 0 ] || fail "R26-17 pattern-shaped noise inside a listed binary must not be a finding"
+[ "$(staged)" = 0 ] || fail "R26-17b the same, staged"
+newrepo; { png x; printf '\000\001secretterm%smail.net\000' "$at"; } > "$r/i.png"; allow i.png
+[ "$(files)" = 1 ] || fail "R26-17c a term inside a listed binary must still be found"
+# Real-sized listed binaries: several fixed seeds at 2 MB, with short terms in the list, never fail on noise
+printf 'Ana\nJuan\n' >> "$tmp/terms.bak"
+for seed in 11 12 13; do
+  newrepo; { png x; LC_ALL=C awk -v s="$seed" 'BEGIN { srand(s); for (i = 0; i < 2097152; i++) printf "%c", int(rand() * 256) }'; } > "$r/big.png"; allow big.png
+  [ "$(files)" = 0 ] || fail "R26-19 a listed 2 MB binary (seed $seed) must pass"
+done
+[ "$(staged)" = 0 ] || fail "R26-19b the same, staged"
+sed -i.bak -e '/^Ana$/d' -e '/^Juan$/d' "$tmp/terms.bak"
+newrepo; h=home; echo "/$h/someone/x" > "$r/a: (text in binary) b.txt"
+[ "$(files)" = 1 ] || fail "R26-18 a file name that imitates the binary-text label must not hide patterns"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"
 
 # R31: terms of 5 letters or fewer match only as a whole word; longer ones anywhere
@@ -229,6 +245,10 @@ newrepo; echo "id xPereyrax" > "$r/a.md"
 [ "$(files)" = 1 ] || fail "R31-4 a term of 6+ letters must still match inside a word"
 newrepo; echo "by ANA" > "$r/a.md"
 [ "$(staged)" = 1 ] || fail "R31-5 a whole-word short term must be found staged, ignoring case"
+newrepo; echo "bananas, then Ana" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R31-6 a whole-word occurrence after an in-word one on the same line must be found"
+printf '@bo\n' >> "$JACQUARD_PRIVACY_TERMS"; newrepo; echo "mail x@bo" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R31-7 a short term that starts with punctuation matches after any character"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"
 
 # R7: outside a git repository (no find -printf)

@@ -25,6 +25,7 @@
 # (a binary listed with "=" excepted).
 # The copyright lines of the top-level LICENSE are exempt from terms, not from patterns (files mode).
 # Terms of 5 characters or fewer match only as whole words (a handle like ana_dev needs its own line).
+# Inside allowed binaries only terms of 4+ characters are looked for, and no patterns.
 # Findings name terms by number (their order in the terms file), never by text.
 # Exit: 0 clean · 1 something found · 2 nothing could be checked.
 set -u
@@ -91,7 +92,7 @@ done < "$tmp/allow"
 
 # One stream of labelled lines with everything that would be published.
 out="$tmp/stream"; : > "$out"
-: > "$tmp/unreadable"; : > "$tmp/copyright"
+: > "$tmp/unreadable"; : > "$tmp/copyright"; : > "$tmp/binstream"
 # Content of a file or blob as text: UTF-8 as is, 8-bit text read as Windows-1252, UTF-16 converted;
 # anything else is listed as unreadable, unless that path with that exact content is a reviewed binary.
 # With "blob", UTF-8 text is skipped: the patch already holds it; "whole" (a blob git calls binary, left
@@ -127,9 +128,15 @@ inspect() { # source file, label, "" or blob or whole, [path in the repo]
     unreadable
   fi
 }
-# Runs of 4+ characters of readable Latin text in bytes that are mostly not text: printable ASCII plus the
-# UTF-8 bytes of Latin-1 and Latin Extended-A letters (lead bytes C2-C5); anything else splits a run.
-latin_runs() { LC_ALL=C tr -c '\040-\176\t\200-\277\302-\305' '\n' | LC_ALL=C grep -a '.\{4,\}' | iconv -c -f UTF-8 -t UTF-8 2>/dev/null; }
+# Runs of 4+ bytes of readable Latin text in bytes that are mostly not text: printable ASCII, tab, and complete
+# UTF-8 letters of Latin-1 and Latin Extended-A (C2-C5 then 80-BF). Any other byte splits a run, never glues it.
+latin_runs() { LC_ALL=C tr -c '\040-\176\t\200-\277\302-\305' '\n' | LC_ALL=C awk '{
+  s = $0
+  while (s != "") {
+    if (match(s, /^([\040-\176\t]|[\302-\305][\200-\277])+/)) { if (RLENGTH >= 4) print substr(s, 1, RLENGTH) }
+    else if (!match(s, /^([\200-\277]+|[\302-\305])/)) RLENGTH = 1
+    s = substr(s, RLENGTH + 1)
+  } }'; }
 unreadable() { # uses inspect's src, lbl, kind and path
   local id
   # The id of the content as git stores it: a blob is already stored; a working-tree file gets its filters
@@ -138,11 +145,13 @@ unreadable() { # uses inspect's src, lbl, kind and path
 "*) id="" ;; esac # a path with a newline never matches
   if [ -n "$path" ] && [ -n "$id" ] && [ -s "$tmp/binok" ] &&
      E="$id $path" awk '$0 == ENVIRON["E"] { found = 1; exit } END { exit !found }' "$tmp/binok"; then
-    # A reviewed binary: its readable runs (ASCII or UTF-8, and UTF-16 either way) are still checked
+    # A reviewed binary: its readable runs (ASCII or UTF-8, and UTF-16 either way) are still checked for
+    # terms of 4+ characters, not for patterns: in compressed image data, email- and path-shaped noise and
+    # 3-letter words are common (measured on random 1 MB files), a whole-word term of 4+ by chance is not
     { latin_runs < "$src"
       iconv -c -f UTF-16LE -t UTF-8 < "$src" 2>/dev/null | latin_runs
       iconv -c -f UTF-16BE -t UTF-8 < "$src" 2>/dev/null | latin_runs
-    } | label "$lbl: (text in binary) " >> "$out"
+    } | label "$lbl: (text in binary) " >> "$tmp/binstream"
     return 0
   fi
   printf '%s\n' "$lbl" >> "$tmp/unreadable"
@@ -176,7 +185,7 @@ emit_commit() { # commit id
   git diff-tree -m -r --root --no-commit-id --name-only -z "$c" | tr '\0' '\n' | label "commit $c: (path) " >> "$out" || fail "cannot list paths of $c"
   git show -m --format= --root --no-renames --no-textconv --no-ext-diff --src-prefix=a/ --dst-prefix=b/ -p "$c" | added "commit $c: " >> "$out" || fail "cannot read changes of $c"
   blob_rev="$c"
-  git diff-tree -m -r --root --no-commit-id --no-renames --diff-filter=d --numstat -z "$c" > "$tmp/numstat" || fail "cannot list changes of $c"
+  git diff-tree -m -r --root --no-commit-id --no-renames --no-textconv --no-ext-diff --diff-filter=d --numstat -z "$c" > "$tmp/numstat" || fail "cannot list changes of $c"
   emit_blobs "commit $c: " < "$tmp/numstat"
 }
 
@@ -199,7 +208,7 @@ case "$mode" in
     git diff --cached --name-only -z | tr '\0' '\n' | label "staged: (path) " >> "$out" || fail "cannot list staged paths"
     git diff --cached --no-renames --no-textconv --no-ext-diff --src-prefix=a/ --dst-prefix=b/ -p | added "staged: " >> "$out" || fail "cannot read staged changes"
     blob_rev=":0"
-    git diff --cached --no-renames --diff-filter=d --numstat -z > "$tmp/numstat" || fail "cannot list staged changes"
+    git diff --cached --no-renames --no-textconv --no-ext-diff --diff-filter=d --numstat -z > "$tmp/numstat" || fail "cannot list staged changes"
     emit_blobs "staged: " < "$tmp/numstat"
     what="staged changes"
     ;;
@@ -266,8 +275,9 @@ LC_ALL=C awk -v unread="$tmp/unreadable" '
       if (best < 0.85) print where " (binary data in base64)" >> unread
       else emit(run, bk)
     } }' "$out" > "$tmp/decoded" || fail "cannot decode base64"
-cat "$out" "$tmp/decoded" > "$tmp/kept"
-nkept=$(( $(wc -l < "$tmp/kept") ))
+# Readable text from allowed binaries goes last, for terms only: its line numbers are skipped by the patterns.
+cat "$out" "$tmp/decoded" "$tmp/binstream" > "$tmp/kept"
+nkept=$(( $(wc -l < "$tmp/kept") )); bin_from=$(( nkept - $(wc -l < "$tmp/binstream") + 1 ))
 # Fold (LICENSE's copyright lines at the end, for patterns only); replace allowed texts with a marker without letters.
 cat "$tmp/kept" "$tmp/copyright" | fold > "$tmp/folded0"
 [ "$(( $(wc -l < "$tmp/kept") + $(wc -l < "$tmp/copyright") ))" -eq "$(( $(wc -l < "$tmp/folded0") ))" ] || fail "folding lost lines"
@@ -277,13 +287,16 @@ awk -v allowfile="$tmp/allow" '
     for (i = 1; i <= n; i++) while ((p = index(low, allow[i])) > 0) {
       line = substr(line, 1, p-1) "<=>" substr(line, p + length(allow[i])); low = tolower(line) }
     print line }' "$tmp/folded0" > "$tmp/scan" || fail "cannot apply allow lines"
-head -n "$nkept" "$tmp/scan" > "$tmp/folded"
+head -n "$(( bin_from - 1 ))" "$tmp/scan" > "$tmp/folded"
+head -n "$nkept" "$tmp/scan" | tail -n +"$bin_from" > "$tmp/folded.bin" # empty when no binary text
+head -n "$(( bin_from - 1 ))" "$tmp/kept" > "$tmp/kept.main"; cp "$tmp/binstream" "$tmp/kept.bin"
 
 found=0
 report() { echo "✗ $1"; printf '%s\n' "$2" | head -20 | cut -c1-300 | sed 's/^/    /'; found=1; }
 [ -s "$tmp/unreadable" ] && report "cannot be checked (binary, compressed or unknown encoding): remove it or publish it another way.
   An image can carry personal data in its metadata (EXIF: author, camera, place, date), invisible when you look at it;
-  a PDF or office document keeps its author in its properties. Removing the metadata is the real protection.
+  a PDF or office document keeps its author in its properties, often compressed where this check cannot see it.
+  Removing the metadata is the real protection; the check reads only plain text inside an allowed file.
   To publish an image or PDF: strip its metadata, review it, then allow that exact file with a line =<id> <path>
   in your terms file (<id>: git hash-object <path>, run in the repo). Any later change refuses it again.
   Compressed files (zip, docx, gzip…) can never be allowed. A file you already allowed that is still listed
@@ -294,10 +307,13 @@ while IFS= read -r term; do
   i=$((i+1))
   orig=$(sed -n "${i}p" "$tmp/terms")
   # A term of 5 characters or fewer matches only as a whole word: inside hashes and tokens it shows up by chance.
-  w=""; [ "${#orig}" -le 5 ] && w=-w
-  hits=$(grep -a -i $w -F -- "$term" "$tmp/folded")
+  # (Only when it starts and ends with a letter or digit: "@ana" keeps matching after any character.)
+  w=""; [ "${#orig}" -le 5 ] && case "$orig" in [[:alnum:]]*[[:alnum:]]|[[:alnum:]]) w=-w ;; esac
+  # Readable text inside allowed binaries: terms of 4+ characters only.
+  bin=""; [ "${#orig}" -ge 4 ] && bin=.bin
+  hits=$(grep -a -h -i $w -F -- "$term" "$tmp/folded" ${bin:+"$tmp/folded.bin"})
   # Terms that do not fold cleanly (non-Latin scripts) are also matched as written.
-  case "$term" in *'?'*) hits="$hits$(grep -a -i $w -F -- "$orig" "$tmp/kept")" ;; esac
+  case "$term" in *'?'*) hits="$hits$(grep -a -h -i $w -F -- "$orig" "$tmp/kept.main" ${bin:+"$tmp/kept.bin"})" ;; esac
   [ -n "$hits" ] && report "term #$i" "$hits"
 done < "$tmp/terms.f"
 
@@ -312,7 +328,8 @@ patterns=(
 for p in "${patterns[@]}"; do
   # Each match is judged on its own, so an allowed example next to a real value does not hide it.
   lines=$(grep -a -n -o -i -E -- "$p" "$tmp/scan" \
-    | grep -a -v -i -E ':[^:]*[@.]example\.(com|org)$|:noreply@anthropic\.com$' | cut -d: -f1 | sort -un)
+    | grep -a -v -i -E ':[^:]*[@.]example\.(com|org)$|:noreply@anthropic\.com$' | cut -d: -f1 | sort -un \
+    | awk -v a="$bin_from" -v b="$nkept" '$1 < a || $1 > b')
   [ -z "$lines" ] && continue
   report "pattern: $p" "$(for l in $lines; do sed -n "${l}p" "$tmp/scan"; done)"
 done
