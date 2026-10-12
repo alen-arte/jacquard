@@ -19,12 +19,12 @@ Default `-ss`. The most specific setting wins: per message > per Away block (`/a
 | Test-first (TDD) | — | level-2 logic | level 1–2 logic | all logic, plus edge and negative cases |
 | End-to-end tests | — | before integrating | affected flows per batch; full suite before integrating | affected flows per task; full suite per batch |
 | Independent QA | standard · normal (strong for level 2 with `budget: generous`; light only for pure consistency sweeps) | level 2 per task; the rest at milestone close | level 2 per task; level 1 per batch | every task |
-| Engineering advisor | strong · high | before structural changes; on the affected area when QA or the builder's sweep finds the same behaviour implemented twice | + at each milestone close | + at each batch close |
+| Engineering advisor | strong · high | before structural changes; on the affected area when duplication is found that the task did not resolve (by QA, or by the builder outside the task's scope) | + at each milestone close | + at each batch close |
 | Security and privacy | strong · high | level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations | same | + at each batch close |
 | Domain advisor | standard · normal | when its trigger fires | same | same |
 | Design critic on rendered results (`design-exploration.md` step 7) | standard · normal | at milestone close | same | + at each batch close that built an explored design |
 
-**Always, at every level:** the builder checks visual work in a real render (`visual-qa.md`), and before building anything that behaves like something already there (an effect, a timing, a validation, a state's look), searches the repo for it and reuses or extracts it (core standards › Scalability, "one definition, many uses"), naming the files in point 6 of the handoff note. That is verification, not review.
+**Always, at every level:** the builder checks visual work in a real render (`visual-qa.md`), and searches for existing equivalents before building (core standards › Scalability). That is verification, not review.
 
 **Missing role:** if the project has no file for a reviewer this table or the floor calls for, run it from the kit's role file (`~/.claude/jacquard/roles/review/`). The floor never drops. A domain advisor that was never created is not improvised: say "no domain review".
 
@@ -45,7 +45,7 @@ A batch is a group of related tasks closed together (one or several roadmap item
 ## Running a review
 
 - One general-purpose subagent per review (never Explore or Plan: they do not load the core standards), at its row's tier and effort, both passed explicitly: the model and effort come from `tiers` in preferences, and "normal" is the tier's own effort (without `tiers`, the session's). Level-2 work is never reviewed below its row's tier, whatever the budget.
-- The prompt names the role file and the handoff note, and passes the diff, the files in point 6 of the handoff note and only the document sections cited by ID. A diff alone cannot show that a behaviour already exists elsewhere: QA and the engineering advisor also search the repo for equivalents of what the diff adds. It never pastes or re-reads the always-loaded files: the subagent already has them.
+- The prompt names the role file and the handoff note, and passes the diff, the files in point 6 of the handoff note and only the document sections cited by ID. A diff alone cannot show that a behaviour already exists elsewhere: QA and the engineering advisor also search the repo for equivalents of what the diff adds; an advisor triggered by QA gets QA's finding and its files. It never pastes or re-reads the always-loaded files: the subagent already has them.
 - The reviewer returns only its verdict and findings; a follow-up round continues the same subagent when the environment allows it.
 - The verdict and every open finding go into the report.
 - Blockers and Majors are fixed and re-reviewed (changed areas plus regressions) before asking the user to integrate.

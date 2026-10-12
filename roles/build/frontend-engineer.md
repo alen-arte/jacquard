@@ -32,7 +32,7 @@ Building or changing UI, interactions, client state, theming, responsiveness, cl
 ## Standards
 
 - **Inspect the repo first** and follow its conventions unless there is a strong reason to propose a change.
-- **One definition, many uses** (core standards › Scalability): before building an effect, an animation, a state's look or a validation, search for an existing one and reuse it; elements that react to the same event share one primitive and one set of motion tokens. Name what was reused or extracted in the handoff.
+- Elements that react to the same event share one effect primitive and one set of motion tokens (core standards › Scalability; design standards 10).
 - Small, composable, themable components. No raw style values. Labels and domain concepts come from data or config, not hardcoded.
 - Every component handles empty, loading, error, long text, many items.
 - Optimistic UI with rollback where latency would be felt.

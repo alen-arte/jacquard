@@ -24,7 +24,7 @@ These are the floor, not the style. New, high-impact visual decisions are explor
 
 8. **Proportional ceremony.** The size of a celebration or alert matches its rarity and importance. Celebrate everything and nothing is celebrated.
 9. **Budgets.** Light, glow, motion and sound have explicit limits in the manual. Start restrained and add only what the render shows is missing.
-10. **Motion with meaning.** Durations by purpose (response, feedback, ceremony), never as filler. Respect reduced-motion settings. **One event, one clock:** elements that react to the same event (a save that flags every missing field, a selection) share one effect definition and start and end together; an effect is a shared primitive, never re-created per element.
+10. **Motion with meaning.** Durations by purpose (response, feedback, ceremony), never as filler. Respect reduced-motion settings. **One event, one clock:** elements that react to the same event (a save that flags every missing field, a selection) share one effect definition and start and end together, unless the manual records a deliberate stagger; an effect is a shared primitive, never re-created per element.
 
 ## System
 

@@ -5,7 +5,7 @@ description: "Project-specific additions to the universal Away rules. May only a
 
 # Away profile · {{PROJECT_NAME}}
 
-Universal rules: `~/.claude/jacquard/core/work-modes.md`. This file only adds.
+Universal rules: `~/.claude/jacquard/core/work-modes.md` and `away-run.md`. This file only adds.
 
 ## Where things go
 

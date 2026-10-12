@@ -55,8 +55,8 @@ No rule wins for being older or newer. When two rules conflict: note it, show bo
 
 ## Scalability
 
-- New code is scalable by default: configurable instead of hardcoded, values in design tokens, clear separation of concerns, no duplication.
-- **One definition, many uses.** Whatever applies in more than one place (an effect and its timing, a validation rule, a label, a state's look) is defined once (a token, a component, a hook, a function) and every place consumes it. Before building, search the repo for an existing definition and reuse it; when a second use appears, extract first, then build. A second implementation of the same behaviour is a defect, not a style variant.
+- New code is scalable by default: configurable instead of hardcoded, values in design tokens, clear separation of concerns.
+- **One definition, many uses.** Whatever applies in more than one place (an effect and its timing, a validation, a label, a state's look) is defined once (a token, a component, a hook, a function) and consumed everywhere. Before building, search the repo by the triggering event or state and by the property involved, not only by name; reuse what exists, or extract it on the second use, keeping the confirmed values (if the existing ones differ: ask in Present, park in Away). A second implementation of the same behaviour is a defect, not a style variant.
 - Code a task already touches is improved toward this when the change is contained and verifiable.
 - Larger refactors are worth doing as planned work: log them in the refactor backlog (`RF#`), the user picks when, one at a time, in small verifiable steps.
 - When refactoring, state the pattern applied in one line so it can be reused.
