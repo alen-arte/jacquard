@@ -61,7 +61,7 @@ next_time() {
 case "$cmd" in
   on)
     [ -n "$CLAUDE_CODE_SESSION_ID" ] || { echo "✗ away-guard: CLAUDE_CODE_SESSION_ID is not set (older Claude Code?): Away runs without the guard" >&2; exit 1; }
-    if [ -f "$marker" ] && ! owner; then
+    if [ -f "$marker" ] && ! owner && ! expired; then
       echo "away-guard: another session's Away marker was here; that session loses its guard" >&2
     fi
     if [ -n "$end" ]; then expires=$(( $(next_time) + margin )); else expires=$(( $(date +%s) + no_end_time )); fi

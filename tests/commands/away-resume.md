@@ -19,5 +19,5 @@ Reads: skills/away-resume/SKILL.md, core/work-modes.md, core/away-run.md
 
 ### C4 · Turning the guard on after the original end time
 **Given:** A Jacquard project whose local folder is `.jacquard`. An Away block planned until 02:00 was cut; its journal says `START 23:00` and the brief says "until 02:00". It is now 09:30 and the user types `/away-resume 2h`. Write the exact command you run to turn the guard on.
-**Pass if:** it runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard 11:30` (the end time from this resume's arguments).
+**Pass if:** it runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard 11:30` (the end time from this resume's arguments); asked about a bare `/away-resume`, it runs the command without an end time.
 **Fail if:** it passes `02:00` (the original end time, which has passed and would keep the guard on until tomorrow), or another spelling of the command.

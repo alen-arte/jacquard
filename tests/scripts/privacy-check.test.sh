@@ -242,7 +242,12 @@ newrepo; { png x; printf '\000\000'; utf16le "Muñoz"; printf '\000\000\001'; } 
 printf 'Ana\n' >> "$tmp/terms.bak"
 newrepo; { png x; printf '\000\001<dc:description>Mockup made by Ana for the client</dc:description>\000'; } > "$r/i.png"; allow i.png
 [ "$(files)" = 1 ] || fail "R26-24 a 3-letter term in a long run inside a listed binary must be found"
-sed -i.bak -e '/^Ana$/d' "$tmp/terms.bak"
+# The other side of the thresholds: a 3-letter term in a 6-23-byte run, and any term in a run under 6 bytes, are not reported
+newrepo; { png x; printf '\000\001by Ana\000\001Juan\000\001'; } > "$r/i.png"; printf 'Juan\n' >> "$tmp/terms.bak"; allow i.png
+[ "$(files)" = 0 ] || fail "R26-25 a 3-letter term in a short run, or a 4-letter one in a run under 6 bytes, must not be reported"
+newrepo; { png x; printf '\000'; printf 'by Juan Perez' | iconv -f UTF-8 -t UTF-16BE; printf '\000\000\001'; } > "$r/i.png"; allow i.png
+[ "$(files)" = 1 ] || fail "R26-25b a UTF-16BE name at an odd offset must be found"
+sed -i.bak -e '/^Ana$/d' -e '/^Juan$/d' "$tmp/terms.bak"
 newrepo; h=home; echo "/$h/someone/x" > "$r/a: (text in binary) b.txt"
 [ "$(files)" = 1 ] || fail "R26-18 a file name that imitates the binary-text label must not hide patterns"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"
