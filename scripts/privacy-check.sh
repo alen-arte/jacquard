@@ -13,6 +13,8 @@
 # terms_file: $JACQUARD_PRIVACY_TERMS, else ~/repos/jacquard-personal/privacy-terms.txt.
 #   One term per line; "# ..." comments. A line "!Name <email>" allows that exact commit identity
 #   (e.g. your public no-reply identity); it must be a full identity and contain one of your terms.
+#   A line "=<id> <path>" allows one binary you reviewed by hand (an image without metadata) at that
+#   path with that exact content; <id> is `git hash-object --no-filters <path>`. Any change refuses it again.
 # Matching ignores case and accents (both sides folded to ASCII with iconv; required).
 # Encoded content: UTF-16 and 8-bit text that is not UTF-8 (read as Windows-1252) are converted and
 # checked; base64 runs (standard or URL-safe, 8+ characters) are decoded at every alignment and their
@@ -64,9 +66,12 @@ label() { LC_ALL=C L="$1" awk '{print ENVIRON["L"] $0}'; }
 [ -f "$terms_file" ] && [ -r "$terms_file" ] || fail "no readable terms file at $terms_file"
 sed -e '1s/^\xEF\xBB\xBF//' -e 's/\r$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -- "$terms_file" \
   | grep -v -e '^$' -e '^#' > "$tmp/raw" || fail "the terms file has no terms"
-grep -v '^!' "$tmp/raw" | awk '!seen[tolower($0)]++' > "$tmp/terms" || fail "the terms file has no terms"
+grep -v '^[!=]' "$tmp/raw" | awk '!seen[tolower($0)]++' > "$tmp/terms" || fail "the terms file has no terms"
 fold < "$tmp/terms" > "$tmp/terms.f"
 grep '^!' "$tmp/raw" | cut -c2- | fold > "$tmp/allow" || true
+# Reviewed binaries: "=<id> <path>", a git blob id (SHA-1 or SHA-256) and a path relative to the repo.
+grep '^=' "$tmp/raw" | cut -c2- > "$tmp/binok" || true
+grep -v -E '^([0-9a-f]{40}|[0-9a-f]{64}) [^ ].*$' "$tmp/binok" | grep -q . && fail "an exception line (=...) must be =<id> <path>, with the id from git hash-object --no-filters"
 nterms=$(( $(wc -l < "$tmp/terms") ))
 # An allow line must be a full identity, "Name <user@host>", and contain one of the terms.
 while IFS= read -r a; do
@@ -83,12 +88,13 @@ done < "$tmp/allow"
 out="$tmp/stream"; : > "$out"
 : > "$tmp/unreadable"; : > "$tmp/copyright"
 # Content of a file or blob as text: UTF-8 as is, 8-bit text read as Windows-1252, UTF-16 converted;
-# anything else is listed as unreadable. With "blob", UTF-8 text is skipped: the patch already holds it.
-inspect() { # source file, label, [blob]
-  local src="$1" lbl="$2" kind="${3:-}" magic from=""
+# anything else is listed as unreadable, unless that path with that exact content is a reviewed binary.
+# With "blob", UTF-8 text is skipped: the patch already holds it.
+inspect() { # source file, label, blob or "", [path in the repo]
+  local src="$1" lbl="$2" kind="${3:-}" path="${4:-}" magic from=""
   magic=$(od -An -tx1 -N6 "$src" | tr -d ' \n') || fail "cannot read $lbl"
   case "$magic" in 1f8b*|504b0304*|504b0506*|504b0708*|425a68*|fd377a585a00*|28b52ffd*|377abcaf271c*)
-    printf '%s\n' "$lbl" >> "$tmp/unreadable"; return ;; esac
+    unreadable; return ;; esac
   nuls=$(( $(LC_ALL=C tr -cd '\000' < "$src" | wc -c) ))
   if [ "$nuls" -eq 0 ]; then
     if iconv -f UTF-8 -t UTF-8 < "$src" > /dev/null 2>&1; then
@@ -98,7 +104,7 @@ inspect() { # source file, label, [blob]
       [ "$kind" = blob ] || iconv -c -f UTF-8 -t UTF-8 < "$src" 2>/dev/null | label "$lbl: " >> "$out"
       label "$lbl: " < "$tmp/conv" >> "$out"
     else
-      printf '%s\n' "$lbl" >> "$tmp/unreadable"
+      unreadable
     fi
     return
   fi
@@ -112,8 +118,13 @@ inspect() { # source file, label, [blob]
      && [ "$(LC_ALL=C tr -d '\t\n\r' < "$tmp/conv" | LC_ALL=C tr -cd '\000-\037' | head -c 1 | wc -c)" -eq 0 ]; then
     label "$lbl: " < "$tmp/conv" >> "$out"
   else
-    printf '%s\n' "$lbl" >> "$tmp/unreadable"
+    unreadable
   fi
+}
+unreadable() { # uses inspect's src, lbl and path
+  [ -n "$path" ] && [ -s "$tmp/binok" ] &&
+    grep -qxF -- "$(git hash-object --no-filters -- "$src") $path" "$tmp/binok" && return
+  printf '%s\n' "$lbl" >> "$tmp/unreadable"
 }
 emit_file() { # path as listed by git
   local f="$1"
@@ -125,7 +136,7 @@ emit_file() { # path as listed by git
     LC_ALL=C awk -v re="$holder_re" '$0 ~ re && length($0) <= 100' "$f" | label "LICENSE: (copyright) " >> "$tmp/copyright"
     LC_ALL=C awk -v re="$holder_re" '!($0 ~ re && length($0) <= 100)' "$f" > "$tmp/license"; inspect "$tmp/license" "$f"
   else
-    inspect "$f" "$f"
+    inspect "$f" "$f" "" "$f"
   fi
 }
 emit_blobs() { # label, then numstat -z records on stdin; every added or changed blob is inspected; rev in $blob_rev
@@ -133,7 +144,7 @@ emit_blobs() { # label, then numstat -z records on stdin; every added or changed
   while IFS= read -r -d '' rec; do
     p="${rec#*	}"; p="${p#*	}"
     git cat-file blob "$blob_rev:$p" > "$tmp/blob" || fail "cannot read $p"
-    inspect "$tmp/blob" "$lbl$p" blob
+    inspect "$tmp/blob" "$lbl$p" blob "$p"
   done
 }
 emit_commit() { # commit id
@@ -247,7 +258,10 @@ head -n "$nkept" "$tmp/scan" > "$tmp/folded"
 
 found=0
 report() { echo "✗ $1"; printf '%s\n' "$2" | head -20 | cut -c1-300 | sed 's/^/    /'; found=1; }
-[ -s "$tmp/unreadable" ] && report "cannot be checked (binary, compressed or unknown encoding): remove it or publish it another way" "$(cat "$tmp/unreadable")"
+[ -s "$tmp/unreadable" ] && report "cannot be checked (binary, compressed or unknown encoding): remove it or publish it another way.
+  An image can carry personal data in its metadata (EXIF: author, camera, place, date), invisible when you look at it.
+  To publish one: strip its metadata, review it, then allow that exact file with a line =<id> <path> in your
+  terms file (<id>: git hash-object --no-filters <path>). Any later change to the file refuses it again." "$(cat "$tmp/unreadable")"
 
 i=0
 while IFS= read -r term; do

@@ -160,6 +160,34 @@ newrepo; echo "Copyright 2026 secretterm" > "$r/LICENSE"; g config diff.noprefix
 newrepo; echo "k: $(printf 'by secretterm' | iconv -t UTF-16LE | base64)" > "$r/a.md"
 [ "$(files)" = 1 ] || fail "R6-27 UTF-16 text inside base64 must be found"
 
+# R26: a binary reviewed by hand is allowed by path and content id ("=<id> <path>" in the terms file)
+png() { printf '\211PNG\r\n\032\n\000\000\000\rIHDR%s' "$1"; }
+newrepo; mkdir -p "$r/img dir"; png one > "$r/img dir/i.png"
+id=$(git hash-object --no-filters "$r/img dir/i.png")
+out=$("$check" "$r" 2>&1); st=$?
+[ "$st" = 1 ] || fail "R26-1 an unlisted binary must still be refused"
+case "$out" in *EXIF*'='*) ;; *) fail "R26-2 the refusal must explain image metadata (EXIF) and how to allow a reviewed file";; esac
+cp "$JACQUARD_PRIVACY_TERMS" "$tmp/terms.bak"
+printf '=%s img dir/i.png\n' "$id" >> "$JACQUARD_PRIVACY_TERMS"
+[ "$(files)" = 0 ] || fail "R26-3 a binary listed with its path and id must pass (path with a space)"
+[ "$(staged)" = 0 ] || fail "R26-4 the same, staged"
+g commit -qm img; g rev-parse HEAD | "$check" --objects "$r" >/dev/null 2>&1; [ $? = 0 ] || fail "R26-5 the same, pushed"
+png two > "$r/img dir/i.png"
+[ "$(files)" = 1 ] || fail "R26-6 a listed binary whose content changed must be refused again"
+[ "$(staged)" = 1 ] || fail "R26-6b the same, staged"
+png one > "$r/img dir/i.png"; cp "$r/img dir/i.png" "$r/other.png"
+[ "$(files)" = 1 ] || fail "R26-7 the same content at another path must be refused"
+rm "$r/other.png"; echo "by secretterm" > "$r/note.txt"
+printf '=%s note.txt\n' "$(git hash-object --no-filters "$r/note.txt")" >> "$JACQUARD_PRIVACY_TERMS"
+[ "$(files)" = 1 ] || fail "R26-8 an exception never exempts text: its terms are still found"
+rm "$r/note.txt"
+newrepo; echo "by secretterm" > "$r/a.md"
+printf '=%s a.md\n' "$id" >> "$JACQUARD_PRIVACY_TERMS"
+[ "$(files)" = 1 ] || fail "R26-9 exception lines must not be read as terms or hide other findings"
+cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=nothex i.png\n' >> "$JACQUARD_PRIVACY_TERMS"
+newrepo; "$check" "$r" >/dev/null 2>&1; [ $? = 2 ] || fail "R26-10 a malformed exception line must stop the check (exit 2)"
+cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"
+
 # R7: outside a git repository (no find -printf)
 d="$tmp/plain"; mkdir -p "$d/sub" && echo "clean" > "$d/sub/a.md"
 "$check" "$d" >/dev/null 2>&1; [ $? = 0 ] || fail "R7-5 a clean folder outside git must pass"
