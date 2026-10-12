@@ -139,12 +139,13 @@ CLAUDE_CODE_SESSION_ID=s1 "$guard" on "$abs" >/dev/null 2>&1
 
 # Every on/off the rules spell matches an allow rule of the permissions template exactly
 kit="$here/../.."
+template="$kit/templates/project/claude-settings.local.template.json"
 spelled="$(grep -rhoE '[~$A-Za-z/._{}-]*away-guard\.sh (on|off) <local>' "$kit/core" "$kit/skills" | sort -u)"
 [ -n "$spelled" ] || fail "C26 no on/off spelling found in core/ or skills/"
-grep -q 'away-guard.sh on' "$kit/templates/project/settings.local.json" || fail "C26 the permissions template has no guard rules (template change not committed?)"
+grep -q 'away-guard.sh on' "$template" || fail "C26 the permissions template has no guard rules (template change not committed?)"
 printf '%s\n' "$spelled" | while IFS= read -r c; do
   rule="Bash($(printf '%s' "$c" | sed 's/<local>/{{LOCAL_FOLDER}}/'))"
-  grep -qF "\"$rule\"" "$kit/templates/project/settings.local.json" || echo "✗ C26 no allow rule for: $c"
+  grep -qF "\"$rule\"" "$template" || echo "✗ C26 no allow rule for: $c"
 done | grep . && fails=$((fails + 1))
 
 [ "$fails" = 0 ] && echo "✓ away-guard: all cases pass" && exit 0

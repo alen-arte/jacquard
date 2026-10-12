@@ -8,7 +8,7 @@ Claude Code evolves fast. Check the official documentation and adapt these steps
 - Personal skills live in `~/.claude/skills/<name>/SKILL.md`; `disable-model-invocation: true` keeps them out of context until invoked; `$ARGUMENTS` and `${CLAUDE_SKILL_DIR}` work.
 - `CLAUDE.local.md` is loaded and is not tracked; `@~/...` imports work from it; the first external import shows an approval dialog.
 - Imports and skills work through symbolic links.
-- The permission rule syntax used in `templates/project/settings.local.json`.
+- The permission rule syntax used in `templates/project/claude-settings.local.template.json`.
 - User subagents in `~/.claude/agents/` load through symbolic links, with `tools` and `maxTurns` in their frontmatter (the QA reviewer, step 2).
 - The hook events the Away guard uses (`PermissionRequest`, `Elicitation`, `SessionStart`), their decision output, and that `CLAUDE_CODE_SESSION_ID` matches the hooks' `session_id` in Bash and hook subprocesses.
 
