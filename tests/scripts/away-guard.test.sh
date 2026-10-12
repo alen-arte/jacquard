@@ -20,7 +20,7 @@ run() {
     out="$(printf '%s' "${3:-}" | CLAUDE_CODE_SESSION_ID="$1" "$guard" "$2" .local 2>/dev/null)"; st=$?
   fi
 }
-is_json() { command -v python3 >/dev/null || return 0; printf '%s' "$1" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; }
+is_json() { command -v python3 >/dev/null || { echo "(JSON validity not checked: no python3)" >&2; return 0; }; printf '%s' "$1" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; }
 
 # Off by default: nothing is denied
 run s1 permission '{"session_id":"s1"}'
@@ -82,6 +82,50 @@ out="$(CLAUDE_CODE_SESSION_ID=s1 "$guard" permission 2>/dev/null)"; st=$?
 [ "$st" = 2 ] && [ -z "$out" ] || fail "C16 a missing local folder must exit 2 and print nothing"
 out="$(CLAUDE_CODE_SESSION_ID=s1 "$guard" on ../x 2>/dev/null)"; st=$?
 [ "$st" = 2 ] && [ ! -e "$tmp/../x/away/.away-active" ] || fail "C17 a local folder with .. must be refused"
+
+# The guard never denies its own switch-off (a misspelt or unallowed off must still reach the user)
+run s1 on
+run s1 permission '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"~/.claude/jacquard/scripts/away-guard.sh off .jacquard/"}}'
+[ -z "$out" ] || fail "C18 the guard's own off command must not be denied"
+
+# The hook input's session id wins over the environment, and a nested session_id does not count
+run s2 permission '{"session_id":"s1","tool_input":{"session_id":"s2"}}'
+case "$out" in *'"behavior": "deny"'*) ;; *) fail "C19 hook input session_id (first, top level) decides, not a nested one or the env";; esac
+
+# Clear and fork start in Present
+run s1 session-start '{"session_id":"s1","source":"clear"}'
+[ ! -e "$marker" ] || fail "C20 /clear of the Away session must clear the marker"
+run s1 on
+run s1 session-start '{"session_id":"s1","source":"fork"}'
+[ ! -e "$marker" ] || fail "C21 a fork of the Away session must clear the marker"
+
+# A second Away elsewhere warns before taking over
+run s1 on
+err="$(CLAUDE_CODE_SESSION_ID=s2 "$guard" on .local 2>&1 >/dev/null)"
+case "$err" in *"another session"*) ;; *) fail "C22 on over another session's marker must warn";; esac
+run s2 off
+
+# Without CLAUDE_PROJECT_DIR, on/off resolve the repo root, not the current folder
+repo="$tmp/repo"; mkdir -p "$repo/sub" && git init -q "$repo"
+( cd "$repo/sub" && env -u CLAUDE_PROJECT_DIR CLAUDE_CODE_SESSION_ID=s1 "$guard" on .local >/dev/null 2>&1 )
+[ -f "$repo/.local/away/.away-active" ] && [ ! -e "$repo/sub/.local" ] || fail "C23 on from a subfolder must write the marker at the repo root"
+( cd "$repo/sub" && env -u CLAUDE_PROJECT_DIR CLAUDE_CODE_SESSION_ID=s1 "$guard" off .local >/dev/null 2>&1 )
+[ ! -e "$repo/.local/away/.away-active" ] || fail "C24 off from a subfolder must clear the marker at the repo root"
+
+# An absolute local folder is used as is; a symlink at the marker is replaced, not followed
+abs="$tmp/abs"; target="$tmp/target.txt"; echo keep > "$target"
+mkdir -p "$abs/away" && ln -s "$target" "$abs/away/.away-active"
+CLAUDE_CODE_SESSION_ID=s1 "$guard" on "$abs" >/dev/null 2>&1
+[ "$(cat "$target")" = keep ] && [ ! -L "$abs/away/.away-active" ] && [ "$(cat "$abs/away/.away-active")" = s1 ] || fail "C25 on must replace a symlinked marker without writing through it"
+
+# Every on/off the rules spell matches an allow rule of the permissions template exactly
+kit="$here/../.."
+spelled="$(grep -rhoE '[~$A-Za-z/._{}-]*away-guard\.sh (on|off) <local>' "$kit/core" "$kit/skills" | sort -u)"
+[ -n "$spelled" ] || fail "C26 no on/off spelling found in core/ or skills/"
+printf '%s\n' "$spelled" | while IFS= read -r c; do
+  rule="Bash($(printf '%s' "$c" | sed 's/<local>/{{LOCAL_FOLDER}}/'))"
+  grep -qF "\"$rule\"" "$kit/templates/project/settings.local.json" || echo "✗ C26 no allow rule for: $c"
+done | grep . && fails=$((fails + 1))
 
 [ "$fails" = 0 ] && echo "✓ away-guard: all cases pass" && exit 0
 echo "✗ away-guard: $fails failing"; exit 1

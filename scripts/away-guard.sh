@@ -15,31 +15,39 @@ case "$cmd" in on|off|permission|elicitation|session-start) ;; *)
   echo "usage: away-guard.sh <on|off|permission|elicitation|session-start> <local folder>" >&2; exit 2 ;; esac
 [ -n "$local_dir" ] || { echo "away-guard: missing local folder" >&2; exit 2; }
 case "/$local_dir/" in */../*) echo "away-guard: local folder must not contain .." >&2; exit 2 ;; esac
-case "$local_dir" in /*) dir="$local_dir/away" ;; *) dir="${CLAUDE_PROJECT_DIR:-$PWD}/$local_dir/away" ;; esac
+# The project root: the hooks get CLAUDE_PROJECT_DIR; the Bash tool may not, and may sit in a subfolder.
+root="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+case "$local_dir" in /*) dir="$local_dir/away" ;; *) dir="$root/$local_dir/away" ;; esac
 marker="$dir/.away-active"
 
-# Hooks get their input on stdin; the session id comes from the environment, else from that input.
+# Hooks get their input on stdin, and its session id decides; on and off use the environment's.
 input=""
 case "$cmd" in permission|elicitation|session-start) input="$(cat)" ;; esac
-field() { printf '%s' "$input" | tr '\n' ' ' | sed -n "s/.*\"$1\" *: *\"\([^\"]*\)\".*/\1/p"; }
-session="${CLAUDE_CODE_SESSION_ID:-$(field session_id)}"
+# First occurrence of a string field: the top-level ones come before tool_input.
+field() { printf '%s' "$input" | tr '\n' ' ' | grep -o "\"$1\" *: *\"[^\"]*\"" | head -n 1 | sed 's/.*: *"\(.*\)"$/\1/'; }
+session="$(field session_id)"; session="${session:-$CLAUDE_CODE_SESSION_ID}"
 mine() { [ -n "$session" ] && [ -f "$marker" ] && [ "$(cat "$marker")" = "$session" ]; }
 
 case "$cmd" in
   on)
     [ -n "$CLAUDE_CODE_SESSION_ID" ] || { echo "✗ away-guard: CLAUDE_CODE_SESSION_ID is not set (older Claude Code?): Away runs without the guard" >&2; exit 1; }
-    mkdir -p "$dir" && printf '%s\n' "$CLAUDE_CODE_SESSION_ID" > "$marker" || exit 1
+    if [ -f "$marker" ] && ! mine; then
+      echo "away-guard: another session's Away marker was here; that session loses its guard" >&2
+    fi
+    mkdir -p "$dir" && rm -f "$marker" && printf '%s\n' "$CLAUDE_CODE_SESSION_ID" > "$marker" || exit 1
     echo "✓ Away guard on for this session" ;;
   off)
     if mine; then rm -f "$marker"; echo "✓ Away guard off"; else echo "✓ Away guard was not on for this session"; fi ;;
   permission)
+    # Never its own switch-off: if that prompts, the person who ended Away answers it.
+    case "$input" in *away-guard.sh*off*) exit 0 ;; esac
     mine && cat <<'EOF'
 {
   "hookSpecificOutput": {
     "hookEventName": "PermissionRequest",
     "decision": {
       "behavior": "deny",
-      "message": "Away mode is on and nobody is here to answer this permission prompt, so it was denied automatically. Do not retry it or wait for an answer: use a safe equivalent the settings already allow, or park the step in the Away journal (what it needed and why) and continue with other work."
+      "message": "Away mode is on and nobody is here to answer this permission prompt, so it was denied automatically. Do not retry it or wait for an answer: use a safe equivalent the settings already allow, or park the step in the Away journal (what it needed and why) and continue with other work. If the user is actually back, end Away (/back), which turns this guard off."
     }
   }
 }

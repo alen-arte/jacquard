@@ -10,12 +10,14 @@ tmp="$(mktemp -d)" || exit 2
 trap 'rm -rf "$tmp"' EXIT
 ids="$tmp/ids"; : > "$ids"
 # What the remote at this URL has now. Not the tracking refs: after a remote set-url they describe the old URL.
-# If it cannot be listed, nothing counts as published and every commit is checked.
+# If it cannot be listed (in 60 s where `timeout` exists), nothing counts as published and every commit is checked.
 : > "$tmp/have"
-if GIT_TERMINAL_PROMPT=0 git ls-remote -- "$url" > "$tmp/remote" 2>/dev/null; then
-  cut -f1 "$tmp/remote" | sort -u | while read -r sha; do
-    git cat-file -e "$sha^{commit}" 2>/dev/null && echo "^$sha"
-  done > "$tmp/have"
+limit=""; command -v timeout >/dev/null 2>&1 && limit="timeout 60"
+if GIT_TERMINAL_PROMPT=0 $limit git ls-remote -- "$url" > "$tmp/remote" 2>/dev/null; then
+  cut -f1 "$tmp/remote" | sort -u | sed 's/$/^{commit}/' | git cat-file --batch-check='%(objectname) %(objecttype)' \
+    | awk '$2 == "commit" { print "^" $1 }' > "$tmp/have"
+else
+  echo "Could not list what $url has: checking every commit this push would send." >&2
 fi
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$local_sha" in *[!0]*) ;; *) continue ;; esac   # deleting a remote ref publishes nothing

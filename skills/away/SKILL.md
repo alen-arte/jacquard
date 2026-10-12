@@ -12,6 +12,6 @@ Start **Away mode** for this session. Arguments from the user: $ARGUMENTS
 3. **Pre-flight gate** exactly as in `work-modes.md` section 1: one short message in the reply language, ending with the meaning "I haven't started yet. Give me the OK and I'll start." Then STOP and wait. Do not start work, do not analyse every task.
 4. **On the OK:** message 2 of `work-modes.md` section 1 (brief saved, Away guard on, "Started at HH:MM.", `START` in the journal), the task plan at the top of the journal, the design-manual pass if there is visual or interaction work, then create the branch and work.
 5. **Work** by `work-modes.md` sections 2–6 and `away-run.md` sections 7–9 at the chosen intensity (`core/review.md`): after every task, checks → commit → journal line → report-draft entry. Park what must be parked and keep going. Check `date` between tasks; stop at the end time, when the brief is done, or when nothing safe is left.
-6. **Finish:** report, views, review block (in that order), then turn the guard off (`~/.claude/jacquard/scripts/away-guard.sh off <local>`) and return to Present with the summary: what needs the user first.
+6. **Finish:** report, views, review block (in that order), then turn the guard off (`~/.claude/jacquard/scripts/away-guard.sh off <local>`, exactly as written; if it fails, the summary says so first) and return to Present with the summary: what needs the user first.
 
 This mode applies to this session only. If the session is cut, `/away-resume` continues it in a fresh session.

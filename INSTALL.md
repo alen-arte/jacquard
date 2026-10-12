@@ -23,7 +23,7 @@ Last verified with Claude Code 2.1.296 (2026-10-11). Worth knowing:
 - When a skill and a command share a name, the skill wins for project commands; for `~/.claude/commands/` it is undocumented, hence the stop rule in step 2.
 - Deny rules are a safety net, not a wall: a variant such as `git -C . push` can escape a pattern.
 - Permission modes decide whether Claude Code asks before each action, not what Claude decides or reports. Away needs **auto** mode (Shift+Tab): the default mode asks before every edit and an unattended block stalls. Deny rules apply in every mode.
-- A `PermissionRequest` hook runs whenever Claude Code is about to show a permission prompt, whatever the mode. The Away guard (`scripts/away-guard.sh`, hooks in the permissions template) uses it to deny prompts in the Away session only; it never allows anything. Hooks from settings files run only after the workspace trust dialog is accepted.
+- A `PermissionRequest` hook runs whenever Claude Code is about to show a permission prompt (that it fires in auto mode, where the classifier decides most actions, is still to be confirmed in a real session). The Away guard (`scripts/away-guard.sh`, hooks in the permissions template) uses it to deny prompts in the Away session only; it never allows anything. Hooks from settings files run only after the workspace trust dialog is accepted.
 
 ## 1. The kit
 
@@ -120,7 +120,7 @@ Then step 4 (permissions), the hooks in "Publishing changes to the kit" (they re
 
 ## Publishing changes to the kit
 
-Install the privacy hooks in your clone of the kit. The pre-commit hook checks what each commit records; the pre-push hook checks every commit and tag the push would publish to that remote (content, paths, messages, author), not just the current files. They are small stubs that run the installed kit's copy, so a branch without the scripts, or with changed ones, cannot skip or alter the check:
+Install the privacy hooks in your clone of the kit. The pre-commit hook checks what each commit records; the pre-push hook checks every commit and tag the push would publish to that remote (content, paths, messages, author), not just the current files. The pre-push hook asks the remote what it already has (`git ls-remote`), a second connection: an SSH key without an agent asks for its passphrase twice. They are small stubs that run the installed kit's copy, so a branch without the scripts, or with changed ones, cannot skip or alter the check:
 
 ```bash
 for h in pre-commit pre-push; do

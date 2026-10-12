@@ -14,9 +14,10 @@
 #   One term per line; "# ..." comments. A line "!Name <email>" allows that exact commit identity
 #   (e.g. your public no-reply identity); it must be a full identity and contain one of your terms.
 # Matching ignores case and accents (both sides folded to ASCII with iconv; required).
-# Encoded content: UTF-16 is converted and checked; base64 runs (standard or URL-safe, 8+ characters,
-# delimited by other characters) are decoded and checked too; binary or compressed content cannot be
-# read, so it is refused. The copyright lines of the top-level LICENSE are allowed (files mode).
+# Encoded content: UTF-16 and 8-bit text that is not UTF-8 (read as Windows-1252) are converted and
+# checked; base64 runs (standard or URL-safe, 8+ characters) are decoded at every alignment and their
+# text is checked; binary or compressed content, also inside base64, cannot be read, so it is refused.
+# The copyright lines of the top-level LICENSE are exempt from terms, not from patterns (files mode).
 # Findings name terms by number (their order in the terms file), never by text.
 # Exit: 0 clean · 1 something found · 2 nothing could be checked.
 set -u
@@ -40,6 +41,12 @@ tmp=$(mktemp -d) || exit 2
 trap 'rm -rf "$tmp"' EXIT
 
 fold() { iconv -f UTF-8 -t ASCII//TRANSLIT -c 2>/dev/null; }
+# Some iconv builds (macOS) write é as 'e: then drop those marks after folding, on both sides alike.
+case "$(printf 'P\303\251rez\n' | fold)" in
+  Perez) ;;
+  *[\'\`^\"~]*) fold() { iconv -f UTF-8 -t ASCII//TRANSLIT -c 2>/dev/null | tr -d "'\`^\"~"; } ;;
+  *) fail "accents cannot be folded here (no UTF-8 locale for iconv)" ;;
+esac
 # Added lines of a patch: only inside hunks, so a line whose text starts with "++ " is kept.
 added() { awk '/^diff --git /{h=0; next} /^@@/{h=1; next} h && /^\+/{print}'; }
 # Prefix every line with a label, safely for any file name.
@@ -66,15 +73,23 @@ done < "$tmp/allow"
 
 # One stream of labelled lines with everything that would be published.
 out="$tmp/stream"; : > "$out"
-: > "$tmp/unreadable"
-# Content of a file or blob as text: plain text as is, UTF-16 converted; anything else is listed as unreadable.
-inspect() { # source file, label
-  local src="$1" lbl="$2" magic from=""
+: > "$tmp/unreadable"; : > "$tmp/copyright"
+# Content of a file or blob as text: UTF-8 as is, 8-bit text read as Windows-1252, UTF-16 converted;
+# anything else is listed as unreadable. With "blob", UTF-8 text is skipped: the patch already holds it.
+inspect() { # source file, label, [blob]
+  local src="$1" lbl="$2" kind="${3:-}" magic from=""
   magic=$(od -An -tx1 -N6 "$src" | tr -d ' \n') || fail "cannot read $lbl"
   case "$magic" in 1f8b*|504b0304*|504b0506*|504b0708*|425a68*|fd377a585a00*|28b52ffd*|377abcaf271c*)
     printf '%s\n' "$lbl" >> "$tmp/unreadable"; return ;; esac
   if [ "$(tr -cd '\000' < "$src" | head -c 1 | wc -c)" -eq 0 ]; then
-    label "$lbl: " < "$src" >> "$out" || fail "cannot read $lbl"; return
+    if iconv -f UTF-8 -t UTF-8 < "$src" > /dev/null 2>&1; then
+      [ "$kind" = blob ] || label "$lbl: " < "$src" >> "$out" || fail "cannot read $lbl"
+    elif iconv -c -f CP1252 -t UTF-8 < "$src" > "$tmp/conv" 2>/dev/null; then
+      label "$lbl: " < "$tmp/conv" >> "$out"
+    else
+      printf '%s\n' "$lbl" >> "$tmp/unreadable"
+    fi
+    return
   fi
   case "$magic" in # a BOM, else the NUL of the first character tells the byte order
     fffe*|feff*) from=UTF-16 ;;
@@ -94,18 +109,19 @@ emit_file() { # path as listed by git
   if [ -L "$f" ]; then printf '(link to) %s\n' "$(readlink -- "$f")" | label "$f: " >> "$out"; return; fi
   [ -f "$f" ] || return 0
   [ -r "$f" ] || fail "cannot read $f"
-  if [ "$f" = LICENSE ]; then # its copyright lines are allowed, the rest is checked
+  if [ "$f" = LICENSE ]; then # its copyright lines are exempt from terms (kept for patterns); the rest is checked
+    grep -a -E '^Copyright ' -- "$f" | label "LICENSE: (copyright) " >> "$tmp/copyright"
     grep -a -v -E '^Copyright ' -- "$f" > "$tmp/license"; inspect "$tmp/license" "$f"
   else
     inspect "$f" "$f"
   fi
 }
-emit_blobs() { # label, then numstat -z records on stdin; blobs git calls binary are inspected; rev prefix in $blob_rev
+emit_blobs() { # label, then numstat -z records on stdin; every added or changed blob is inspected; rev in $blob_rev
   local lbl="$1" rec p
   while IFS= read -r -d '' rec; do
-    case "$rec" in "-	-	"*) p="${rec#-	-	}"
-      git cat-file blob "$blob_rev:$p" > "$tmp/blob" || fail "cannot read $p"
-      inspect "$tmp/blob" "$lbl$p" ;; esac
+    p="${rec#*	}"; p="${p#*	}"
+    git cat-file blob "$blob_rev:$p" > "$tmp/blob" || fail "cannot read $p"
+    inspect "$tmp/blob" "$lbl$p" blob
   done
 }
 emit_commit() { # commit id
@@ -156,38 +172,61 @@ case "$mode" in
     ;;
 esac
 
-# Decode base64 runs (8+ characters, not all lowercase letters) into extra lines: printable bytes kept,
-# control bytes become spaces. Byte-wise, hence LC_ALL=C.
-LC_ALL=C awk '
+# Decode base64 runs (8+ characters, not all lowercase letters) into extra lines. Short runs are decoded at
+# all four alignments (a prefix may be glued to them) and only text fragments of 4+ bytes are kept; a long
+# run that decodes to binary, or any run that starts like compressed data, is unreadable. Byte-wise: LC_ALL=C.
+LC_ALL=C awk -v unread="$tmp/unreadable" '
   BEGIN { a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-          for (i = 1; i <= 64; i++) v[substr(a, i, 1)] = i - 1; v["-"] = 62; v["_"] = 63 }
-  function dec(s,   out, i, n, bits, nb, b) {
-    out = ""; bits = 0; nb = 0; n = length(s)
-    for (i = 1; i <= n; i++) {
+          for (i = 1; i <= 64; i++) v[substr(a, i, 1)] = i - 1; v["-"] = 62; v["_"] = 63
+          for (i = 0; i < 256; i++) chr[i] = sprintf("%c", i); for (i = 0; i <= 16; i++) pw[i] = 2 ^ i }
+  function text(b) { return (b >= 32 && b < 127) || b >= 128 || b == 9 }
+  function score(s, k,   n, i, bits, nb, b, good, tot) { # share of printable ASCII bytes, from a sample
+    n = length(s); if (n > k + 4000) n = k + 4000; bits = 0; nb = 0; good = 0; tot = 0
+    for (i = k + 1; i <= n; i++) {
       bits = bits * 64 + v[substr(s, i, 1)]; nb += 6
-      if (nb >= 8) { nb -= 8; b = int(bits / 2 ^ nb); bits -= b * 2 ^ nb
-        out = out ((b >= 32 && b < 127) || b >= 128 ? sprintf("%c", b) : " ") }
+      if (nb >= 8) { nb -= 8; b = int(bits / pw[nb]); bits -= b * pw[nb]; tot++; if ((b >= 32 && b < 127) || b == 9 || b == 10 || b == 13) good++ }
     }
-    return out
+    return tot ? good / tot : 0
   }
-  { p = index($0, ": "); lbl = (p ? substr($0, 1, p + 1) : ""); rest = $0
-    while (match(rest, /[A-Za-z0-9+\/_-]+/)) {
-      run = substr(rest, RSTART, RLENGTH); rest = substr(rest, RSTART + RLENGTH)
-      if (length(run) >= 8 && run !~ /^[a-z]+$/) { d = dec(run); if (d ~ /[^ ]/) print lbl "(base64) " d }
+  function emit(s, k,   n, i, bits, nb, b, frag, fl) { # one line per text fragment of 4+ bytes
+    n = length(s); bits = 0; nb = 0; frag = ""; fl = 0
+    for (i = k + 1; i <= n; i++) {
+      bits = bits * 64 + v[substr(s, i, 1)]; nb += 6
+      if (nb < 8) continue
+      nb -= 8; b = int(bits / pw[nb]); bits -= b * pw[nb]
+      if (text(b)) {
+        if (fl < 4) { frag = frag chr[b]; if (++fl == 4) printf "%s(base64) %s", lbl, frag }
+        else printf "%s", chr[b]
+      } else { if (fl >= 4) printf "\n"; frag = ""; fl = 0 }
+    }
+    if (fl >= 4) printf "\n"
+  }
+  { p = index($0, ": "); lbl = (p ? substr($0, 1, p + 1) : ""); where = (p ? substr($0, 1, p - 1) : "line " NR)
+    n = split($0, parts, /[^A-Za-z0-9+\/_-]+/)
+    for (j = 1; j <= n; j++) {
+      run = parts[j]; len = length(run)
+      if (len < 8 || run ~ /^[a-z]+$/) continue
+      if (run ~ /^(H4sI|UEsDB|QlpoO|\/Td6WFo|KLUv)/) { print where " (compressed data in base64)" >> unread; continue }
+      if (len < 256) { for (k = 0; k < 4; k++) emit(run, k); continue }
+      best = -1; for (k = 0; k < 4; k++) { sc = score(run, k); if (sc > best) { best = sc; bk = k } }
+      if (best < 0.85) print where " (binary data in base64)" >> unread
+      else emit(run, bk)
     } }' "$out" > "$tmp/decoded" || fail "cannot decode base64"
 cat "$out" "$tmp/decoded" > "$tmp/kept"
-# Fold; replace allowed texts with a marker that holds no letters.
-fold < "$tmp/kept" > "$tmp/folded0"
-[ "$(wc -l < "$tmp/kept")" -eq "$(wc -l < "$tmp/folded0")" ] || fail "folding lost lines"
+nkept=$(( $(wc -l < "$tmp/kept") ))
+# Fold (LICENSE's copyright lines at the end, for patterns only); replace allowed texts with a marker without letters.
+cat "$tmp/kept" "$tmp/copyright" | fold > "$tmp/folded0"
+[ "$(( $(wc -l < "$tmp/kept") + $(wc -l < "$tmp/copyright") ))" -eq "$(( $(wc -l < "$tmp/folded0") ))" ] || fail "folding lost lines"
 awk -v allowfile="$tmp/allow" '
   BEGIN { while ((getline a < allowfile) > 0) if (a != "") allow[++n] = tolower(a) }
   { line = $0; low = tolower(line)
     for (i = 1; i <= n; i++) while ((p = index(low, allow[i])) > 0) {
       line = substr(line, 1, p-1) "<=>" substr(line, p + length(allow[i])); low = tolower(line) }
-    print line }' "$tmp/folded0" > "$tmp/folded" || fail "cannot apply allow lines"
+    print line }' "$tmp/folded0" > "$tmp/scan" || fail "cannot apply allow lines"
+head -n "$nkept" "$tmp/scan" > "$tmp/folded"
 
 found=0
-report() { echo "✗ $1"; printf '%s\n' "$2" | head -20 | sed 's/^/    /'; found=1; }
+report() { echo "✗ $1"; printf '%s\n' "$2" | head -20 | cut -c1-300 | sed 's/^/    /'; found=1; }
 [ -s "$tmp/unreadable" ] && report "cannot be checked (binary, compressed or unknown encoding): remove it or publish it another way" "$(cat "$tmp/unreadable")"
 
 i=0
@@ -210,10 +249,10 @@ patterns=(
 )
 for p in "${patterns[@]}"; do
   # Each match is judged on its own, so an allowed example next to a real value does not hide it.
-  lines=$(grep -a -n -o -i -E -- "$p" "$tmp/folded" \
+  lines=$(grep -a -n -o -i -E -- "$p" "$tmp/scan" \
     | grep -a -v -i -E ':[^:]*[@.]example\.(com|org)$|:noreply@anthropic\.com$' | cut -d: -f1 | sort -un)
   [ -z "$lines" ] && continue
-  report "pattern: $p" "$(for l in $lines; do sed -n "${l}p" "$tmp/folded"; done)"
+  report "pattern: $p" "$(for l in $lines; do sed -n "${l}p" "$tmp/scan"; done)"
 done
 
 if [ "$found" -eq 0 ]; then

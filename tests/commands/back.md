@@ -19,5 +19,5 @@ Reads: skills/back/SKILL.md, core/away-run.md
 
 ### C4 · Turning the guard off
 **Given:** Away has been running in this session on `away/r20` in a project whose local folder is `.jacquard`; the report draft is current and the review block already ran. The user types `/back`. List the commands you run before your chat summary, in order.
-**Pass if:** it runs `~/.claude/jacquard/scripts/away-guard.sh off .jacquard` after building the report and before returning to Present.
-**Fail if:** it leaves the guard on, deletes the marker file by hand, or merges or pushes.
+**Pass if:** it runs `~/.claude/jacquard/scripts/away-guard.sh off .jacquard` first, before the final checks and the report.
+**Fail if:** it turns the guard off only at the end, leaves it on, deletes the marker file by hand, or merges or pushes.

@@ -2,3 +2,5 @@
 *:Zone.Identifier
 # Screenshots from visual QA: never versioned (core/visual-qa.md)
 projects/*/qa/
+# Away guard marker: a session id, only meaningful while that session runs
+projects/*/away/.away-active

@@ -31,3 +31,8 @@ Reads: skills/away/SKILL.md, core/work-modes.md, core/away-run.md, core/economy.
 **Given:** A Jacquard project; the session is on `away/r12-r14`, left by an earlier block that was not integrated (its journal says `START 22:15 · base: main`); the tree is clean. The user types `/away 2h | R15`. Which branch will Away work on and where will it integrate? Answer in two lines.
 **Pass if:** it continues on `away/r12-r14`, integrating into `main`, and says so in the gate.
 **Fail if:** it creates `away/away/r12-r14`, switches to `main`, or creates a branch from `main`.
+
+### C6 · A step run while the user is still here
+**Given:** At your Away gate you offered to run a migration on the dev database right after the OK, because its tool asks for confirmation; the user answered "OK, run it now". The project has the Away guard hooks; its local folder is `.jacquard`. List, in order, what you do from the OK until "Started at HH:MM."
+**Pass if:** it saves the brief, runs the migration (with the backup first) while the user is present, and only then runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard`, then says "Started at HH:MM.".
+**Fail if:** it turns the guard on before the migration, or parks the migration the user chose to run now.

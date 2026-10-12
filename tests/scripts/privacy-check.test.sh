@@ -45,7 +45,7 @@ newrepo; printf 'BZh91AY&SY' > "$r/c.bz2"
 # Base64, standard and URL-safe, including patterns
 newrepo; echo "token: $(b64 'contact secretterm now')" > "$r/a.md"
 [ "$(files)" = 1 ] || fail "R6-6 a term in base64 must be found"
-newrepo; echo "token=$(b64 "path /ho""me/someone/x" | tr '+/' '-_' | tr -d '=')" > "$r/a.md"
+newrepo; h=home; echo "token=$(b64 "path /$h/someone/x" | tr '+/' '-_' | tr -d '=')" > "$r/a.md"
 [ "$(files)" = 1 ] || fail "R6-7 a pattern in URL-safe base64 without padding must be found"
 newrepo; echo "name: $(b64 'by Muñoz')" > "$r/a.md"
 [ "$(files)" = 1 ] || fail "R6-7b an accented term in base64 must be found"
@@ -70,6 +70,34 @@ g rev-parse HEAD | "$check" --objects "$r" >/dev/null 2>&1; [ $? = 1 ] || fail "
 newrepo; utf16le "by Muñoz" > "$r/u.txt"; g add -A && g commit -q -m one
 g rev-parse HEAD | "$check" --objects "$r" >/dev/null 2>&1; [ $? = 1 ] || fail "R6-14 a pushed UTF-16 term must be found"
 
+# Base64 glued to a prefix, embedded binary, compressed data in base64
+newrepo; echo "url: https://cdn.test/files/$(b64 'contact secretterm now')" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R6-15 base64 after a path prefix must be found"
+newrepo; echo "token_$(b64 'contact secretterm now')" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R6-16 base64 glued with _ must be found"
+newrepo; echo "img: $(head -c 3000 /dev/urandom | base64 | tr -d '\n')" > "$r/a.md"
+o="$("$check" "$r" 2>&1)"; st=$?
+[ "$st" = 1 ] || fail "R6-17 a long base64 run of binary data must be refused"
+[ "${#o}" -lt 4000 ] || fail "R6-17b the report must stay short (${#o} characters)"
+newrepo; echo "z: $(echo hello | gzip | base64 | tr -d '\n')" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R6-18 compressed data in base64 must be refused"
+
+# Commit checks read every changed blob, not only the ones git calls binary
+newrepo; { head -c 9000 /dev/zero | tr '\0' 'a'; echo; echo x | gzip; } > "$r/mixed.txt"
+[ "$(files)" = 1 ] || fail "R6-19 text followed by compressed data must be refused"
+[ "$(staged)" = 1 ] || fail "R6-19b the same, staged"
+
+# 8-bit text that is not UTF-8 (Windows-1252) is read as such
+newrepo; printf 'by Mu\361oz\n' > "$r/l.txt"
+[ "$(files)" = 1 ] || fail "R6-20 a term in Windows-1252 text must be found"
+[ "$(staged)" = 1 ] || fail "R6-20b the same, staged"
+
+# A long line does not make the check hang
+newrepo; yes 'x=SomethingLong1;' | head -c 1000000 | tr -d '\n' > "$r/min.js"
+start=$(date +%s); "$check" "$r" >/dev/null 2>&1; st=$?; secs=$(( $(date +%s) - start ))
+[ "$st" = 0 ] || fail "R6-21 a clean minified line must pass"
+[ "$secs" -le 20 ] || fail "R6-21b a 1 MB line took ${secs}s"
+
 # R7: the LICENSE exception covers only LICENSE's own copyright line
 newrepo; echo "Copyright 2026 secretterm" > "$r/LICENSE"
 [ "$(files)" = 0 ] || fail "R7-1 LICENSE's copyright line must be allowed"
@@ -79,6 +107,8 @@ newrepo; mkdir "$r/sub" && echo "Copyright 2026 secretterm" > "$r/sub/LICENSE"
 [ "$(files)" = 1 ] || fail "R7-3 a LICENSE in a subfolder gets no exception"
 newrepo; echo "Copyright 2026 secretterm" > "$r/LICENSE"; echo "secretterm" >> "$r/LICENSE"
 [ "$(files)" = 1 ] || fail "R7-4 only LICENSE's copyright line is allowed, not the rest of it"
+newrepo; dom=real-domain.net; echo "Copyright 2026 Someone <someone@$dom>" > "$r/LICENSE"
+[ "$(files)" = 1 ] || fail "R7-4b the copyright line is exempt from terms only, not from patterns (an email)"
 
 # R7: outside a git repository (no find -printf)
 d="$tmp/plain"; mkdir -p "$d/sub" && echo "clean" > "$d/sub/a.md"

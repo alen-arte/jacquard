@@ -1,6 +1,6 @@
 ---
 name: jacquard-qa-reviewer
-description: "Jacquard QA review of finished work, launched per core/review.md. Read-only: reports findings, never builds or fixes."
+description: "Only in projects that use Jacquard: QA review of finished work, launched per core/review.md. Read-only: reports, never fixes."
 tools: Read, Grep, Glob
 maxTurns: 40
 ---
