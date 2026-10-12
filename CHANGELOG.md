@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.6
+- **Away no longer stalls on a permission prompt** (`core/work-modes.md`): the gate audits every task's tools and commands against `allow`/`ask`/`deny` and against tools that confirm on their own even when allowed (an MCP server that confirms schema changes); anything that would ask is allowed by the user right then or parked from the start. The gate also reads the user's feedback memories about Away and flags conflicts with the kit. An assigned migration runs only if its tool runs without a prompt; otherwise it is parked with the SQL, backup and restore steps ready. A new rail: before a command the audit did not cover, match it against `ask`/`deny` and use a safe equivalent (WIP commit or `git apply -R` instead of `stash`, `reset`, `checkout --`; project scripts, never `npx`) or park the step.
+- **`/away-resume` re-audits** the remaining tasks and the items parked for a permission, while the user is present.
+- **Templates:** the Away profile gets "Tools that confirm on their own"; the permissions template allows the recoverable operations (`git apply`, `git stash` push/pop/apply/list/show, `git reset --soft/--mixed`); `stash drop/clear` and `reset --hard` stay denied, `restore` and `checkout --` still ask. `/jacquard-update` offers the change per project.
+- **One definition, many uses** (`core/standards.md`, `core/design-standards.md` #10, `core/review.md`, roles): whatever applies in more than one place is defined once and consumed; the builder searches before building and names reused or extracted definitions in the handoff note (new point 6); reviewers get those files and search the repo, not only the diff; the engineering advisor runs on the affected area when the same behaviour is implemented twice. Elements reacting to the same event share one effect and one clock.
+- **`work-modes.md` split:** sections 7–9 and "Ending" move to `core/away-run.md`. `/back` reads only that file (about 4.9 KB instead of 12.6 KB, roughly 2,000 tokens less per call); `/away` and `/away-resume` read both, since resuming keeps working under sections 2–6.
+- **`/jacquard-update --check`:** compares the project's kit version, the installed one and the latest release, and only reports.
+- Tests: `tests/core/away-permissions.md`, `tests/core/single-source.md`, new cases for `/away-resume`, `/jacquard-update` and QA.
+
 ## 0.2.5
 - **Archiving of finished batches** (`core/docs-system.md`): before every block of work (Away gate, or the first task of a batch in Present) Claude asks, in one line, whether to move each complete batch (all items ✅ or ❌) to `roadmap-done.md`; only the user's OK moves it. The roadmap keeps a single `📦` line naming the last batch moved, replaced each time; the status index counts only what is still in the roadmap. Rejected items and approved/rejected proposals still move at the next edit without asking.
 - The Away gate's "needs you first" now says ⚖️ (it still said `⏸`).

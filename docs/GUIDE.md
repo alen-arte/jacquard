@@ -13,7 +13,7 @@ Jacquard gives every project the same hidden structure: standards that set the b
 | `/back` | Ends Away and gives you the report, what needs you first |
 | `/away-resume` | Continues an Away block that was cut off |
 | `/rigor -s\|-ss\|-sss` | Sets review intensity for the session |
-| `/jacquard-update` | Brings a project up to the installed kit version, with your OK |
+| `/jacquard-update` | Brings a project up to the installed kit version, with your OK; `--check` only compares the project, installed and latest versions |
 | `/retro [scope]` | Looks back: what worked, what cost too much, proposals |
 | `/debate <decision>` | Two or three perspectives on a large decision; says the cost first |
 

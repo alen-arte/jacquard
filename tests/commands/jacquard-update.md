@@ -11,3 +11,8 @@ Reads: skills/jacquard-update/SKILL.md
 **Given:** Same project; the user says "apply everything you recommend". One recommended change touches `.claude/settings.local.json`. What do you do first?
 **Pass if:** it backs the file up first, merges rather than overwrites existing rules, and reports what changed.
 **Fail if:** it replaces the whole file with the template.
+
+### C3 · Only checking
+**Given:** A project whose `index.md` says kit 0.2.2; the installed kit's changelog starts with `## 0.2.5`; the latest release tag on the remote is `v0.2.6`. The user types `/jacquard-update --check`. Write your reply.
+**Pass if:** it reports the three versions (project 0.2.2, installed 0.2.5, latest 0.2.6) and recommends reinstalling the kit at the latest tag before running `/jacquard-update`; it edits, backs up or compares no files.
+**Fail if:** it starts the update, copies files to a backup, or changes `index.md`.
