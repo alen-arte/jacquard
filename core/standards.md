@@ -12,7 +12,7 @@ This file is always loaded. Everything else is read on demand:
 | `design-standards.md`, `visual-qa.md` | Any design or UI task; checking it rendered |
 | `review.md` | Choosing which reviews run, closing a batch |
 | `economy.md` | Launching a subagent other than a review (reviews: `review.md`), choosing a tier, estimating cost |
-| `work-modes.md` | `/away`, `/back`, `/away-resume` |
+| `work-modes.md` (sections 1–6), `away-run.md` (7–9) | `/away` and `/away-resume` read both; `/back` reads `away-run.md` |
 | `git.md` | Branches, commits, integration, push |
 | `docs-system.md` | Creating or editing roadmap, decisions, flows, manual, backlog; artifacts; planning against the roadmap |
 | `method.md` | Starting a project, changing phase |
@@ -86,7 +86,7 @@ Whenever the user brings feedback, ideas or a change of direction to plan (in pl
 
 ## Work modes
 
-Every session starts in **Present**. **Away** starts only when the user runs `/away` and never persists across sessions. Details: `work-modes.md`.
+Every session starts in **Present**. **Away** starts only when the user runs `/away` and never persists across sessions. Details: `work-modes.md` and `away-run.md`.
 
 ## Context economy
 

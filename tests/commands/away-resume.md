@@ -1,6 +1,6 @@
 # /away-resume
 
-Reads: skills/away-resume/SKILL.md, core/work-modes.md
+Reads: skills/away-resume/SKILL.md, core/work-modes.md, core/away-run.md
 
 ### C1 · Resuming after a cut
 **Given:** A fresh session in a Jacquard project (the core standards and index are loaded). The latest journal says `START 22:15`, R12 done (commit a1b2c3d), "R13 in progress", end time 01:15. `git status` shows one modified file for R13, uncommitted, on `away/main`; it is 23:40. The user types `/away-resume`. Write your next message and your first action.

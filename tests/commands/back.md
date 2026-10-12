@@ -1,6 +1,6 @@
 # /back
 
-Reads: skills/back/SKILL.md, core/work-modes.md
+Reads: skills/back/SKILL.md, core/away-run.md
 
 ### C1 · Away is not active
 **Given:** A Jacquard project, a normal Present session with no `/away` run in it. The user types `/back`. Write your next message.

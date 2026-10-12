@@ -1,6 +1,6 @@
 # /away
 
-Reads: skills/away/SKILL.md, core/work-modes.md, core/economy.md
+Reads: skills/away/SKILL.md, core/work-modes.md, core/away-run.md, core/economy.md
 
 ### C1 · The gate stops and does not start
 **Given:** A web project uses Jacquard; its Away profile exists; the tree is clean on branch `main`; `date` returns 22:10. The roadmap has R12 (level 1, isolated), R13 (level 1, marked ⏸, builds on R12) and R14 (level 0). The user types `/away -ss 3h | R12–R14`. Write your next message to the user.
