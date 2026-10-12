@@ -2,7 +2,7 @@
 # Your name, handles, collaborators' names, project names, private URLs.
 # A line starting with ! allows that exact commit identity, e.g. your public no-reply one:
 # !Your Name <you@example.com>
-# A line starting with = allows one binary you reviewed by hand (an image with its metadata removed),
-# at that path and with that exact content; any change refuses it again. The id comes from
-# git hash-object --no-filters <path>:
+# A line starting with = allows one binary you reviewed by hand (an image or PDF with its metadata
+# removed), at that path and with that exact content; any change refuses it again. Compressed files
+# (zip, docx, gzip) can never be allowed. The id comes from git hash-object <path>, run in the repo:
 # =<id> docs/screenshot.png

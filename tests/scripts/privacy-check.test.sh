@@ -134,7 +134,9 @@ newrepo; head -c 9000 /dev/zero | tr '\0' 'a' > "$r/long.txt"; echo >> "$r/long.
 [ "$(staged)" = 0 ] || fail "R6-29 a long all-lowercase line must pass staged, as in files mode"
 
 # Many short random hashes (a lockfile) are not decoded into false findings; real words are not "compressed"
-newrepo; i=0; while [ $i -lt 3000 ]; do printf '"integrity": "sha512-%s"\n' "$(head -c 64 /dev/urandom | base64 | tr -d '\n')"; i=$((i+1)); done > "$r/lock.json"
+# (fixed pseudo-random hashes, so the case gives the same answer on every run)
+newrepo; LC_ALL=C awk 'BEGIN { srand(7); a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+  for (i = 0; i < 3000; i++) { h = ""; for (j = 0; j < 86; j++) h = h substr(a, int(rand() * 64) + 1, 1); printf "\"integrity\": \"sha512-%s==\"\n", h } }' > "$r/lock.json"
 [ "$(files)" = 0 ] || fail "R6-30 random integrity hashes must pass"
 newrepo; echo "const eJsonParser = 1; see KLUvFooBar and H4sIcons" > "$r/a.js"
 [ "$(files)" = 0 ] || fail "R6-31 identifiers that look like compressed prefixes must pass"
@@ -190,6 +192,29 @@ cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=%s i.png\n' "$(git hash-
 [ "$(staged)" = 1 ] || fail "R26-11b the same, staged"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=nothex i.png\n' >> "$JACQUARD_PRIVACY_TERMS"
 newrepo; "$check" "$r" >/dev/null 2>&1; [ $? = 2 ] || fail "R26-10 a malformed exception line must stop the check (exit 2)"
+cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=\n' >> "$JACQUARD_PRIVACY_TERMS"
+newrepo; "$check" "$r" >/dev/null 2>&1; [ $? = 2 ] || fail "R26-10b a bare = line must stop the check (exit 2)"
+allow() { cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=%s %s\n' "$(cd "$r" && git hash-object -- "$1")" "$1" >> "$JACQUARD_PRIVACY_TERMS"; }
+# A path with a newline never matches an exception line, not even its second line
+newrepo; png one > "$r/ok.png"; allow ok.png; nl="x
+$(cd "$r" && git hash-object -- ok.png) ok.png"; png one > "$r/$nl"
+[ "$(files)" = 1 ] || fail "R26-12 a path with a newline must not match an exception"
+[ "$(staged)" = 1 ] || fail "R26-12b the same, staged"
+# Compressed files (zip, docx, gzip…) can never be allowed: nothing can read inside them
+newrepo; echo "by secretterm" | gzip > "$r/doc.gz"; allow doc.gz
+[ "$(files)" = 1 ] || fail "R26-13 compressed content must stay refused even when listed"
+# A real-sized binary (1 MB of fixed pseudo-random bytes) passes in all three modes, without noise findings
+newrepo; { png x; LC_ALL=C awk 'BEGIN { srand(3); for (i = 0; i < 1048576; i++) printf "%c", int(rand() * 256) }'; } > "$r/big.png"; allow big.png
+[ "$(files)" = 0 ] || fail "R26-14 a listed 1 MB binary must pass"
+[ "$(staged)" = 0 ] || fail "R26-14b the same, staged"
+g commit -qm big; g rev-parse HEAD | "$check" --objects "$r" >/dev/null 2>&1; [ $? = 0 ] || fail "R26-14c the same, pushed"
+# Accented names inside a listed binary: UTF-8 (XMP) and UTF-16LE (Windows XP tags)
+newrepo; { png x; printf '\000\001<dc:creator>Mu\303\261oz</dc:creator>\000'; } > "$r/i.png"; allow i.png
+[ "$(files)" = 1 ] || fail "R26-15 an accented UTF-8 name inside a listed binary must be found"
+[ "$(staged)" = 1 ] || fail "R26-15b the same, staged"
+newrepo; { png x; printf '\000\001'; utf16le "by Muñoz"; printf '\000\000\001'; } > "$r/i.png"; allow i.png
+[ "$(files)" = 1 ] || fail "R26-16 a UTF-16LE name inside a listed binary must be found"
+[ "$(staged)" = 1 ] || fail "R26-16b the same, staged"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"
 
 # R7: outside a git repository (no find -printf)

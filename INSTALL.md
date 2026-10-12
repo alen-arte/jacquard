@@ -139,4 +139,4 @@ for h in pre-commit pre-push; do
 done
 ```
 
-Both fail closed: without the installed kit, `iconv`, or your terms file, nothing is committed or published. Your commit identity is checked too; to keep your email private, use your host's no-reply address in this repo, and list it as allowed in `privacy-terms.txt` with a leading `!`.
+Both fail closed: without the installed kit, `iconv`, or your terms file, nothing is committed or published. Your commit identity is checked too; to keep your email private, use your host's no-reply address in this repo, and list it as allowed in `privacy-terms.txt` with a leading `!`. To publish an image you reviewed (metadata removed), allow that exact file with a line `=<id> <path>` (from 0.2.8 of the installed kit; the refusal explains how).

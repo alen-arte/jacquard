@@ -14,11 +14,15 @@
 #   One term per line; "# ..." comments. A line "!Name <email>" allows that exact commit identity
 #   (e.g. your public no-reply identity); it must be a full identity and contain one of your terms.
 #   A line "=<id> <path>" allows one binary you reviewed by hand (an image without metadata) at that
-#   path with that exact content; <id> is `git hash-object --no-filters <path>`. Any change refuses it again.
+#   path with that exact content; <id> is `git hash-object <path>`, run in the repo; <path> is relative to
+#   the folder checked (the hooks pass the repo root). Any change refuses it again. Compressed files
+#   (zip, docx, gzip…) can never be allowed. Readable text inside an allowed binary (ASCII, UTF-8 and
+#   UTF-16 runs) is still checked: a backstop, since compressed or numeric metadata stays invisible.
 # Matching ignores case and accents (both sides folded to ASCII with iconv; required).
 # Encoded content: UTF-16 and 8-bit text that is not UTF-8 (read as Windows-1252) are converted and
 # checked; base64 runs (standard or URL-safe, 8+ characters) are decoded at every alignment and their
-# text is checked; binary or compressed content, also inside base64, cannot be read, so it is refused.
+# text is checked; binary or compressed content, also inside base64, cannot be read, so it is refused
+# (a binary listed with "=" excepted).
 # The copyright lines of the top-level LICENSE are exempt from terms, not from patterns (files mode).
 # Findings name terms by number (their order in the terms file), never by text.
 # Exit: 0 clean · 1 something found · 2 nothing could be checked.
@@ -71,7 +75,7 @@ fold < "$tmp/terms" > "$tmp/terms.f"
 grep '^!' "$tmp/raw" | cut -c2- | fold > "$tmp/allow" || true
 # Reviewed binaries: "=<id> <path>", a git blob id (SHA-1 or SHA-256) and a path relative to the repo.
 grep '^=' "$tmp/raw" | cut -c2- > "$tmp/binok" || true
-grep -v -E '^([0-9a-f]{40}|[0-9a-f]{64}) [^ ].*$' "$tmp/binok" | grep -q . && fail "an exception line (=...) must be =<id> <path>, with the id from git hash-object --no-filters"
+[ "$(grep -v -c -E '^([0-9a-f]{40}|[0-9a-f]{64}) [^ ].*$' "$tmp/binok")" = 0 ] || fail "an exception line (=...) must be =<id> <path>, with the id from git hash-object <path>"
 nterms=$(( $(wc -l < "$tmp/terms") ))
 # An allow line must be a full identity, "Name <user@host>", and contain one of the terms.
 while IFS= read -r a; do
@@ -89,12 +93,13 @@ out="$tmp/stream"; : > "$out"
 : > "$tmp/unreadable"; : > "$tmp/copyright"
 # Content of a file or blob as text: UTF-8 as is, 8-bit text read as Windows-1252, UTF-16 converted;
 # anything else is listed as unreadable, unless that path with that exact content is a reviewed binary.
-# With "blob", UTF-8 text is skipped: the patch already holds it.
-inspect() { # source file, label, blob or "", [path in the repo]
+# With "blob", UTF-8 text is skipped: the patch already holds it; "whole" (a blob git calls binary, left
+# out of the patch) is read whole. Kind "" is a working-tree file.
+inspect() { # source file, label, "" or blob or whole, [path in the repo]
   local src="$1" lbl="$2" kind="${3:-}" path="${4:-}" magic from=""
   magic=$(od -An -tx1 -N6 "$src" | tr -d ' \n') || fail "cannot read $lbl"
   case "$magic" in 1f8b*|504b0304*|504b0506*|504b0708*|425a68*|fd377a585a00*|28b52ffd*|377abcaf271c*)
-    unreadable; return ;; esac
+    printf '%s\n' "$lbl" >> "$tmp/unreadable"; return ;; esac # compressed: never allowed, nothing can read inside
   nuls=$(( $(LC_ALL=C tr -cd '\000' < "$src" | wc -c) ))
   if [ "$nuls" -eq 0 ]; then
     if iconv -f UTF-8 -t UTF-8 < "$src" > /dev/null 2>&1; then
@@ -121,11 +126,22 @@ inspect() { # source file, label, blob or "", [path in the repo]
     unreadable
   fi
 }
-unreadable() { # uses inspect's src, lbl and path
-  if [ -n "$path" ] && [ -s "$tmp/binok" ] &&
-     grep -qxF -- "$(git hash-object --no-filters -- "$src") $path" "$tmp/binok"; then
-    # A reviewed binary: its readable runs (4+ printable ASCII characters, such as EXIF text) are still checked
-    LC_ALL=C tr -c '\040-\176\t' '\n' < "$src" | LC_ALL=C grep -a '.\{4,\}' | label "$lbl: (text in binary) " >> "$out"
+# Runs of 4+ characters of readable Latin text in bytes that are mostly not text: printable ASCII plus the
+# UTF-8 bytes of Latin-1 and Latin Extended-A letters (lead bytes C2-C5); anything else splits a run.
+latin_runs() { LC_ALL=C tr -c '\040-\176\t\200-\277\302-\305' '\n' | LC_ALL=C grep -a '.\{4,\}' | iconv -c -f UTF-8 -t UTF-8 2>/dev/null; }
+unreadable() { # uses inspect's src, lbl, kind and path
+  local id
+  # The id of the content as git stores it: a blob is already stored; a working-tree file gets its filters
+  if [ -n "$kind" ]; then id=$(git hash-object --no-filters -- "$src" 2>/dev/null); else id=$(git hash-object -- "$src" 2>/dev/null); fi
+  case "$path" in *"
+"*) id="" ;; esac # a path with a newline never matches
+  if [ -n "$path" ] && [ -n "$id" ] && [ -s "$tmp/binok" ] &&
+     E="$id $path" awk '$0 == ENVIRON["E"] { found = 1; exit } END { exit !found }' "$tmp/binok"; then
+    # A reviewed binary: its readable runs (ASCII or UTF-8, and UTF-16 either way) are still checked
+    { latin_runs < "$src"
+      iconv -c -f UTF-16LE -t UTF-8 < "$src" 2>/dev/null | latin_runs
+      iconv -c -f UTF-16BE -t UTF-8 < "$src" 2>/dev/null | latin_runs
+    } | label "$lbl: (text in binary) " >> "$out"
     return 0
   fi
   printf '%s\n' "$lbl" >> "$tmp/unreadable"
@@ -143,19 +159,21 @@ emit_file() { # path as listed by git
     inspect "$f" "$f" "" "$f"
   fi
 }
+# What git calls binary is left out of the patch (its raw bytes would only add noise) and read whole here.
 emit_blobs() { # label, then numstat -z records on stdin; every added or changed blob is inspected; rev in $blob_rev
-  local lbl="$1" rec p
+  local lbl="$1" rec p kind
   while IFS= read -r -d '' rec; do
     p="${rec#*	}"; p="${p#*	}"
+    case "$rec" in "-	-	"*) kind=whole ;; *) kind=blob ;; esac
     git cat-file blob "$blob_rev:$p" > "$tmp/blob" || fail "cannot read $p"
-    inspect "$tmp/blob" "$lbl$p" blob "$p"
+    inspect "$tmp/blob" "$lbl$p" "$kind" "$p"
   done
 }
 emit_commit() { # commit id
   local c="$1"
   git log -1 --format="(identity) %an <%ae> | %cn <%ce>%n%B" "$c" | label "commit $c: " >> "$out" || fail "cannot read commit $c"
   git diff-tree -m -r --root --no-commit-id --name-only -z "$c" | tr '\0' '\n' | label "commit $c: (path) " >> "$out" || fail "cannot list paths of $c"
-  git show -m --format= --root --no-renames --text --no-textconv --no-ext-diff --src-prefix=a/ --dst-prefix=b/ -p "$c" | added "commit $c: " >> "$out" || fail "cannot read changes of $c"
+  git show -m --format= --root --no-renames --no-textconv --no-ext-diff --src-prefix=a/ --dst-prefix=b/ -p "$c" | added "commit $c: " >> "$out" || fail "cannot read changes of $c"
   blob_rev="$c"
   git diff-tree -m -r --root --no-commit-id --no-renames --diff-filter=d --numstat -z "$c" > "$tmp/numstat" || fail "cannot list changes of $c"
   emit_blobs "commit $c: " < "$tmp/numstat"
@@ -178,7 +196,7 @@ case "$mode" in
     git rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail "not a git repository"
     { git var GIT_AUTHOR_IDENT && git var GIT_COMMITTER_IDENT; } | sed -E 's/ [0-9]+ [+-][0-9]{4}$//' | label "staged: (identity) " >> "$out" || fail "cannot read identity"
     git diff --cached --name-only -z | tr '\0' '\n' | label "staged: (path) " >> "$out" || fail "cannot list staged paths"
-    git diff --cached --no-renames --text --no-textconv --no-ext-diff --src-prefix=a/ --dst-prefix=b/ -p | added "staged: " >> "$out" || fail "cannot read staged changes"
+    git diff --cached --no-renames --no-textconv --no-ext-diff --src-prefix=a/ --dst-prefix=b/ -p | added "staged: " >> "$out" || fail "cannot read staged changes"
     blob_rev=":0"
     git diff --cached --no-renames --diff-filter=d --numstat -z > "$tmp/numstat" || fail "cannot list staged changes"
     emit_blobs "staged: " < "$tmp/numstat"
@@ -263,9 +281,12 @@ head -n "$nkept" "$tmp/scan" > "$tmp/folded"
 found=0
 report() { echo "✗ $1"; printf '%s\n' "$2" | head -20 | cut -c1-300 | sed 's/^/    /'; found=1; }
 [ -s "$tmp/unreadable" ] && report "cannot be checked (binary, compressed or unknown encoding): remove it or publish it another way.
-  An image can carry personal data in its metadata (EXIF: author, camera, place, date), invisible when you look at it.
-  To publish one: strip its metadata, review it, then allow that exact file with a line =<id> <path> in your
-  terms file (<id>: git hash-object --no-filters <path>). Any later change to the file refuses it again." "$(cat "$tmp/unreadable")"
+  An image can carry personal data in its metadata (EXIF: author, camera, place, date), invisible when you look at it;
+  a PDF or office document keeps its author in its properties. Removing the metadata is the real protection.
+  To publish an image or PDF: strip its metadata, review it, then allow that exact file with a line =<id> <path>
+  in your terms file (<id>: git hash-object <path>, run in the repo). Any later change refuses it again.
+  Compressed files (zip, docx, gzip…) can never be allowed. A file you already allowed that is still listed
+  has something inside it that cannot be read (data in base64)." "$(cat "$tmp/unreadable")"
 
 i=0
 while IFS= read -r term; do
