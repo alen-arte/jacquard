@@ -11,7 +11,13 @@ The user may not be an engineer: choose branches and messages yourself and expla
 
 - **`main` always works.** Nobody commits on it directly, neither the user nor Claude: work reaches `main` only by integrating a branch.
 - One short-lived branch per roadmap item or batch, named after the ID: `r12-tag-filter`. Short means days, not weeks; long branches collect conflicts.
-- Away always works on its own branch, created when it starts, never on `main` (or on the project's default branch). If the session is on a work branch, Away uses `away/<that-branch>`; if it is on `main`, Claude names a new one after the brief: `away/<first-ID-or-theme>` (e.g. `away/r44-r50-board-fixes`). Add `-2` if the name exists. The base branch (where it integrates) goes in the journal's `START` line.
+- Away always works on its own branch, never on `main` (or on the project's default branch). The gate says which, by where the session is:
+  - on `main`: a new branch named after the brief, `away/<first-ID-or-theme>` (e.g. `away/r44-r50-board-fixes`); add `-2` if the name exists;
+  - already on an `away/…` branch (an earlier block not integrated yet): Away continues on it;
+  - on any other work branch: `away/<that-branch>`;
+  - the brief changes nothing tracked in the repo (only `<local>` documents, or analysis): no branch.
+
+  The base branch (where it integrates) goes in the journal's `START` line; on an existing `away/…` branch, it is the one in that block's `START` line.
 
 ## Commits
 

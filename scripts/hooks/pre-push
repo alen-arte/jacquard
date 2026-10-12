@@ -1,13 +1,25 @@
 #!/bin/sh
-# Jacquard pre-push: checks what this push would publish to this remote (commits and tags it lacks).
+# Jacquard pre-push: checks what this push would publish to this remote URL (commits and tags it lacks).
 # Install as a stub that runs the installed kit's copy (see INSTALL.md), so it never depends on the branch checked out.
 here="$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" || exit 2
 check="$here/../privacy-check.sh"
 [ -x "$check" ] || { echo "✗ Privacy check not found at $check: push refused." >&2; exit 2; }
-remote="$1"
+url="${2:-$1}"   # git passes the remote name and its URL
 root="$(git rev-parse --show-toplevel)" || exit 2
-ids="$(mktemp)" || exit 2
-trap 'rm -f "$ids"' EXIT
+tmp="$(mktemp -d)" || exit 2
+trap 'rm -rf "$tmp"' EXIT
+ids="$tmp/ids"; : > "$ids"
+# What the remote at this URL has now. Not the tracking refs: after a remote set-url they describe the old URL.
+# If it cannot be listed (in 60 s where `timeout` exists), nothing counts as published and every commit is checked.
+: > "$tmp/have"
+# --foreground keeps the terminal for an SSH passphrase or host-key prompt (GNU timeout); no limit without it.
+limit=""; timeout --foreground 5 true >/dev/null 2>&1 && limit="timeout --foreground 60"
+if GIT_TERMINAL_PROMPT=0 $limit git ls-remote -- "$url" > "$tmp/remote" 2>/dev/null; then
+  cut -f1 "$tmp/remote" | sort -u | sed 's/$/^{commit}/' | git cat-file --batch-check='%(objectname) %(objecttype)' \
+    | awk '$2 == "commit" { print "^" $1 }' > "$tmp/have"
+else
+  echo "Could not list what $url has: checking every commit this push would send." >&2
+fi
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$local_sha" in *[!0]*) ;; *) continue ;; esac   # deleting a remote ref publishes nothing
   case "$(git cat-file -t "$local_sha")" in
@@ -15,7 +27,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     tag) echo "$local_sha" >> "$ids" ;;
     *) echo "✗ $local_ref points to something that is not a commit or a tag: push refused." >&2; exit 1 ;;
   esac
-  git rev-list "$local_sha^{}" --not --remotes="$remote" >> "$ids" || { echo "✗ Cannot list commits to push: push refused." >&2; exit 2; }
+  { echo "$local_sha^{}"; cat "$tmp/have"; } | git rev-list --stdin >> "$ids" || { echo "✗ Cannot list commits to push: push refused." >&2; exit 2; }
 done
 [ -s "$ids" ] || exit 0
 sort -u "$ids" | "$check" --objects "$root"

@@ -16,6 +16,10 @@ Each file gives a command, a role or a core rule to a subagent with no knowledge
 4. A case that fails at light runs again at standard before any rule changes. Fails at both: the rule is unclear or wrong, fix it. Fails only at light: note it and fix the rule only if a clearer wording costs nothing.
 5. Log one line per run in `<local>/tests-log.md`: date, files, passed / failed (IDs), subagent runs.
 
+## Script tests
+
+Shell scripts with logic have their own tests in `tests/scripts/` (`<script>.test.sh`; the git hooks and the pre-commit guard in `git-hooks.test.sh`): `tests/scripts/run.sh` runs them all. Run it after changing a script and before tagging a release. They need no subagent.
+
 ## Writing a test file
 
 ```

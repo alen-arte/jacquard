@@ -9,6 +9,8 @@ Claude Code evolves fast. Check the official documentation and adapt these steps
 - `CLAUDE.local.md` is loaded and is not tracked; `@~/...` imports work from it; the first external import shows an approval dialog.
 - Imports and skills work through symbolic links.
 - The permission rule syntax used in `templates/project/settings.local.json`.
+- User subagents in `~/.claude/agents/` load through symbolic links, with `tools` and `maxTurns` in their frontmatter (the QA reviewer, step 2).
+- The hook events the Away guard uses (`PermissionRequest`, `Elicitation`, `SessionStart`), their decision output, and that `CLAUDE_CODE_SESSION_ID` matches the hooks' `session_id` in Bash and hook subprocesses.
 
 Last verified with Claude Code 2.1.296 (2026-10-11). Worth knowing:
 - Model and effort can be set per subagent launch and per skill turn (`effort` in a skill's frontmatter); the main session's model is yours (`/model`, `/effort`). `core/economy.md` uses these.
@@ -22,6 +24,7 @@ Last verified with Claude Code 2.1.296 (2026-10-11). Worth knowing:
 - When a skill and a command share a name, the skill wins for project commands; for `~/.claude/commands/` it is undocumented, hence the stop rule in step 2.
 - Deny rules are a safety net, not a wall: a variant such as `git -C . push` can escape a pattern.
 - Permission modes decide whether Claude Code asks before each action, not what Claude decides or reports. Away needs **auto** mode (Shift+Tab): the default mode asks before every edit and an unattended block stalls. Deny rules apply in every mode.
+- A `PermissionRequest` hook runs whenever Claude Code is about to show a permission prompt (that it fires in auto mode, where the classifier decides most actions, is still to be confirmed in a real session). The Away guard (`scripts/away-guard.sh`, hooks in the permissions template) uses it to deny prompts in the Away session only; it never allows anything. Hooks from settings files run only after the workspace trust dialog is accepted.
 
 ## 1. The kit
 
@@ -29,10 +32,10 @@ Your working copy, and an installed copy pinned to a release, so editing the kit
 
 ```bash
 git clone https://github.com/<you>/jacquard ~/repos/jacquard
-git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.2.6   # the latest release tag
+git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.2.7   # the latest release tag
 ```
 
-Only using the kit, never editing it: `git clone --branch v0.2.6 https://github.com/<you>/jacquard ~/.claude/jacquard` is enough.
+Only using the kit, never editing it: `git clone --branch v0.2.7 https://github.com/<you>/jacquard ~/.claude/jacquard` is enough.
 
 ## 2. Commands
 
@@ -49,11 +52,24 @@ done
 
 For each name skipped: back up the existing skill or command and ask before replacing it.
 
+Link the reviewer subagents into `~/.claude/agents/` the same way (today only `jacquard-qa-reviewer`; each adds one line to every session's context):
+
+```bash
+mkdir -p ~/.claude/agents
+for a in ~/.claude/jacquard/agents/*.md; do
+  n=$(basename "$a")
+  if [ -e ~/.claude/agents/"$n" ]; then echo "skip $n: already exists"; continue; fi
+  ln -s "$a" ~/.claude/agents/"$n"
+done
+```
+
+Check with `/agents` that `jacquard-qa-reviewer` is listed.
+
 After updating the kit, remove links left dangling by a renamed or deleted skill (for example `kit-update`, now `jacquard-update`); this only touches broken links that point into the kit:
 
 ```bash
-for l in ~/.claude/skills/*; do
-  [ -L "$l" ] && [ ! -e "$l" ] && case "$(readlink "$l")" in *jacquard*) echo "removing dangling link $l"; rm "$l";; esac
+find -L ~/.claude/skills ~/.claude/agents -maxdepth 1 -type l 2>/dev/null | while IFS= read -r l; do
+  case "$(readlink "$l")" in *jacquard*) echo "removing dangling link $l"; rm "$l";; esac
 done
 ```
 
@@ -83,7 +99,7 @@ When a new release is tagged, and no Away block is running in any project:
 
 ```bash
 git -C ~/.claude/jacquard fetch --tags      # skip if you tagged it in your working clone
-git -C ~/.claude/jacquard checkout --detach v0.2.6
+git -C ~/.claude/jacquard checkout --detach v0.2.7
 ```
 
 New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/jacquard-update` in each project to bring its files up to date, piece by piece.
@@ -105,7 +121,7 @@ Then step 4 (permissions), the hooks in "Publishing changes to the kit" (they re
 
 ## Publishing changes to the kit
 
-Install the privacy hooks in your clone of the kit. The pre-commit hook checks what each commit records; the pre-push hook checks every commit and tag the push would publish to that remote (content, paths, messages, author), not just the current files. They are small stubs that run the installed kit's copy, so a branch without the scripts, or with changed ones, cannot skip or alter the check:
+Install the privacy hooks in your clone of the kit. The pre-commit hook checks what each commit records; the pre-push hook checks every commit and tag the push would publish to that remote (content, paths, messages, author), not just the current files. The pre-push hook asks the remote what it already has (`git ls-remote`), a second connection: an SSH key without an agent asks for its passphrase twice. They are small stubs that run the installed kit's copy, so a branch without the scripts, or with changed ones, cannot skip or alter the check:
 
 ```bash
 for h in pre-commit pre-push; do

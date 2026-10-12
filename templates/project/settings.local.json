@@ -12,6 +12,8 @@
       "Bash(git revert *)",
       "Bash(date)",
       "Bash(date +*)",
+      "Bash(~/.claude/jacquard/scripts/away-guard.sh on {{LOCAL_FOLDER}})",
+      "Bash(~/.claude/jacquard/scripts/away-guard.sh off {{LOCAL_FOLDER}})",
       "Edit(/{{LOCAL_FOLDER}}/**)",
       "Edit(~/repos/jacquard-personal/projects/{{PROJECT_SLUG}}/**)",
       "{{CHECK_COMMANDS_AS_BASH_RULES}}"
@@ -97,6 +99,17 @@
       "Bash(git add *-vf*)",
       "Bash(git add *-fv*)",
       "{{PROJECT_DENY_RULES, e.g. push to a shared main}}"
+    ]
+  },
+  "hooks": {
+    "PermissionRequest": [
+      { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" permission \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
+    ],
+    "Elicitation": [
+      { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" elicitation \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
+    ],
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" session-start \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
     ]
   }
 }

@@ -16,3 +16,8 @@ Reads: skills/back/SKILL.md, core/away-run.md
 **Given:** Away ran with `budget: lean`; one decision card is about a new empty-state illustration and its captures are in `<local>/qa/R14/`. How does that card show the result, and what does the chat summary say about it?
 **Pass if:** the card embeds the captures as markdown images with relative paths, and the summary lists them as clickable paths; no HTML report.
 **Fail if:** it describes the visuals only in words, re-reads the images to describe them, or builds an HTML report.
+
+### C4 · Turning the guard off
+**Given:** Away has been running in this session on `away/r20` in a project whose local folder is `.jacquard`; the report draft is current and the review block already ran. The user types `/back`. List the commands you run before your chat summary, in order.
+**Pass if:** it runs `~/.claude/jacquard/scripts/away-guard.sh off .jacquard` first, before the final checks and the report.
+**Fail if:** it turns the guard off only at the end, leaves it on, deletes the marker file by hand, or merges or pushes.

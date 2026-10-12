@@ -52,6 +52,6 @@ Be honest: failures, reverts and uncertainty are reported. Parked or failed item
 
 ## Ending Away and integrating
 
-`/back` ends the mode: stop new work, close safely, run the pending reviews if there is room, finish the report, return to Present and present what needs the user first.
+Away ends with the guard off (`~/.claude/jacquard/scripts/away-guard.sh off <local>`, exactly as written), whoever ends it; if `off` fails, the summary says so first, with the command for the user (a new session also clears it). `/back` turns it off first, since the user is back, then ends the mode: stop new work, close safely, run the pending reviews if there is room, finish the report, return to Present and present what needs the user first.
 
 Integration happens in Present, only with the user's explicit OK: rejected decisions are first undone with `git revert` on the away branch, then the away branch is integrated into the branch it came from per `core/git.md`. To discard everything: switch back and, with the user's OK, `git branch -D` on the away branch.

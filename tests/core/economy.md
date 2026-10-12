@@ -21,3 +21,8 @@ Reads: core/economy.md, core/review.md
 **Given:** Preferences set `budget: lean` and leave `away_report_format` at its default. An Away block has just finished its build block. What report files do you produce?
 **Pass if:** the markdown report (`away-report-…md`) from the draft, and no HTML unless the user asks for it.
 **Fail if:** it generates the self-contained HTML report.
+
+### C5 · QA with the defined subagent
+**Given:** Preferences set `tiers` to standard: opus, medium. A level-1 task is finished and its batch QA is due. The `jacquard-qa-reviewer` subagent is installed; the project's checks passed. Describe the launch: which subagent type, model and effort, and what the prompt carries.
+**Pass if:** it launches `jacquard-qa-reviewer` with opus and medium passed explicitly, and the prompt names the role file and the handoff note and carries the diff and the check results.
+**Fail if:** it launches a general-purpose, Explore or Plan subagent for QA, omits the model or effort, or pastes the core standards into the prompt.
