@@ -122,8 +122,12 @@ inspect() { # source file, label, blob or "", [path in the repo]
   fi
 }
 unreadable() { # uses inspect's src, lbl and path
-  [ -n "$path" ] && [ -s "$tmp/binok" ] &&
-    grep -qxF -- "$(git hash-object --no-filters -- "$src") $path" "$tmp/binok" && return
+  if [ -n "$path" ] && [ -s "$tmp/binok" ] &&
+     grep -qxF -- "$(git hash-object --no-filters -- "$src") $path" "$tmp/binok"; then
+    # A reviewed binary: its readable runs (4+ printable ASCII characters, such as EXIF text) are still checked
+    LC_ALL=C tr -c '\040-\176\t' '\n' < "$src" | LC_ALL=C grep -a '.\{4,\}' | label "$lbl: (text in binary) " >> "$out"
+    return 0
+  fi
   printf '%s\n' "$lbl" >> "$tmp/unreadable"
 }
 emit_file() { # path as listed by git
