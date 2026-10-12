@@ -31,8 +31,9 @@ Claude cannot see how much of the session limit is left, so Away is built to be 
 Reviews follow `core/review.md` with the session's intensity and the floor for level-2 work:
 - **`DEP` task:** its review runs right after the commit, before anything builds on it.
 - **`ISO` task:** added to `QA-pending` (task, commit, what to verify, how) for the review block.
+- **QA always closes the block,** at every intensity (`-s` too): every task built in the block that has had no QA of its own goes into `QA-pending`, and the review block reviews them together over the block's diff. It is never skipped for lack of room: if the session ends before it runs, `/back` runs it before the report.
 - **Review block:** QA over `QA-pending`, then the advisors the profile and intensity call for, as separate subagents. Verdicts go into the report, unresolved ones included.
-- **If the session ends first,** whatever is still pending appears in the report as "to test together", with what to check and how.
+- **If the session ends first,** the advisor reviews still pending appear in the report as "to test together", with what to check and how; QA is still pending and `/back` or `/away-resume` runs it.
 
 ## 9. The Away report
 
@@ -52,6 +53,6 @@ Be honest: failures, reverts and uncertainty are reported. Parked or failed item
 
 ## Ending Away and integrating
 
-Away ends with the guard off (`~/.claude/jacquard/scripts/away-guard.sh off <local>`, exactly as written), whoever ends it; if `off` fails, the summary says so first, with the command for the user (a new session also clears it). `/back` turns it off first, since the user is back, then ends the mode: stop new work, close safely, run the pending reviews if there is room, finish the report, return to Present and present what needs the user first.
+Away ends with the guard off (`~/.claude/jacquard/scripts/away-guard.sh off <local>`, exactly as written), whoever ends it; if `off` fails, the summary says so first, with the command for the user (a new session also clears it). `/back` turns it off first, since the user is back, then ends the mode: stop new work, close safely, run QA if it is still pending (always) and the other pending reviews if there is room, finish the report, return to Present and present what needs the user first.
 
 Integration happens in Present, only with the user's explicit OK: rejected decisions are first undone with `git revert` on the away branch, then the away branch is integrated into the branch it came from per `core/git.md`. To discard everything: switch back and, with the user's OK, `git branch -D` on the away branch.

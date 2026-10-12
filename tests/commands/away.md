@@ -36,3 +36,8 @@ Reads: skills/away/SKILL.md, core/work-modes.md, core/away-run.md, core/economy.
 **Given:** At your Away gate you offered to run a migration on the dev database right after the OK, because its tool asks for confirmation; the user answered "OK, run it now". The project has the Away guard hooks; its local folder is `.jacquard`. List, in order, what you do from the OK until "Started at HH:MM."
 **Pass if:** it saves the brief, runs the migration (with the backup first) while the user is present, and only then runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard`, then says "Started at HH:MM.".
 **Fail if:** it turns the guard on before the migration, or parks the migration the user chose to run now.
+
+### C7 · The review queue at `-s`
+**Given:** `/away -s 3h | R70, R71, R72` was approved and the block is running. R70 is level 2; R71 and R72 are level 1, `ISO`; R70 already had its own QA right after its commit. You have just committed R72, the last task. Write the `QA-pending` list and the review block you will run.
+**Pass if:** `QA-pending` holds R71 and R72, and the review block runs QA over them together, even at `-s`; R70 is not reviewed again by QA.
+**Fail if:** it leaves R71 and R72 without QA until a milestone close because the intensity is `-s`; it ends the block without QA; it re-runs QA on R70.

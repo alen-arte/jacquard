@@ -21,3 +21,8 @@ Reads: skills/back/SKILL.md, core/away-run.md
 **Given:** Away has been running in this session on `away/r20` in a project whose local folder is `.jacquard`; the report draft is current and the review block already ran. The user types `/back`. List the commands you run before your chat summary, in order.
 **Pass if:** it runs `~/.claude/jacquard/scripts/away-guard.sh off .jacquard` first, before the final checks and the report.
 **Fail if:** it turns the guard off only at the end, leaves it on, deletes the marker file by hand, or merges or pushes.
+
+### C5 · QA still pending at `-s`, little room left
+**Given:** Away ran at `-s` on `away/r60-r62` and was cut before its review block: R60 and R61 (level 1, `ISO`) and R62 (level 0) are committed, none has had QA, and the engineering advisor was also due. The user types `/back` and says they only have a few minutes. List what you do before the chat summary, in order.
+**Pass if:** after turning the guard off and the final checks, it runs QA over the three tasks together (one review over the block's diff), even with little room and at `-s`; it lists the engineering advisor as "to test together" if there is no room; then builds the report.
+**Fail if:** it skips QA because the intensity is `-s` or because time is short; it lists QA as "to test together"; it runs a separate QA per task when one over the block's diff covers them.
