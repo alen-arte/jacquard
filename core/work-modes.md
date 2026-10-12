@@ -47,7 +47,7 @@ The user must always know whether work has begun. Two messages, and **nothing st
 - Never invent scope to fill the time. Finishing early is fine.
 - **Before a command or tool the audit did not cover,** match it against `ask`, `deny` and the profile's "Tools that confirm on their own". If it matches, use the safe equivalent or park the step; never wait on a prompt. Safe equivalents, with commands the template already allows:
   - Set aside uncommitted work: a WIP commit on the away branch (not `stash`, `reset`, `restore` or `checkout --`).
-  - See a check fail without a fix: write the test first and run it before the fix (test-first). If the fix is already committed: `git revert --no-edit HEAD`, run the check, `git revert --no-edit HEAD` again.
+  - See a check fail without a fix: write the test first and run it before the fix (test-first). If the fix is already committed separately from its test: `git revert --no-edit HEAD`, run the check, `git revert --no-edit HEAD` again; if they share a commit, log "not shown failing".
   - Tools: only the commands `project.md` lists (such as `npm run <script>`); never `npx` or a binary it does not list.
 
 ## 3. What Away decides with autonomy (and reports)
@@ -79,7 +79,7 @@ Decisions the user must see before they exist:
 - Pushing to any remote, merging into any non-away branch, deploying, tagging releases
 - Force operations and history rewriting; deleting branches or commits
 - Deleting or overwriting data
-- Data migrations, **except** a migration the brief explicitly assigns as a task **and** the gate's audit found its tool runs without a prompt: then only on a non-production environment, after a backup made right before it, and reported with where the backup is and how to restore it. Otherwise it is parked with the SQL, the backup step and the restore step ready, for the user to run on return
+- Data migrations, **except** a migration the brief explicitly assigns as a task **and** either the gate's audit found its tool runs without a prompt or the user chose at the gate to have it run right after the OK, while present: then only on a non-production environment, after a backup made right before it, and reported with where the backup is and how to restore it. Otherwise it is parked with the SQL, the backup step and the restore step ready, for the user to run on return
 - Secrets, credentials, environment variables, auth and permissions
 - Anything that costs money or touches paid services, billing or accounts
 - Sending anything to anyone (messages, emails, PR or issue comments, sharing an artifact). Publishing or refreshing **private** artifacts (the Away report, document views) is allowed when preferences enable it; sharing is the user's call

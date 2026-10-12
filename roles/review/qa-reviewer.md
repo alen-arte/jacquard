@@ -25,7 +25,7 @@ Per `core/review.md`: by task or by batch depending on risk level and intensity.
 4. **Data integrity** when data is involved: persistence after reload, concurrent edits, ordering, failure and rollback.
 5. **States and edges:** empty, loading, error, partial, long text, many items, small screens.
 6. **Accessibility:** contrast, focus, keyboard and screen-reader path, reduced motion.
-7. **Maintainability:** hardcoded values, duplication, tangled responsibilities in new or touched code (Major). Duplication is searched for in the repo, not only in the diff: what the diff adds may already exist elsewhere (core standards › Scalability, "one definition, many uses"). Elements that react to the same event with different timing or look are a Major, even when each looks fine alone; untouched legacy (Minor or a refactor backlog entry; never blocks current use).
+7. **Maintainability:** hardcoded values, duplication, tangled responsibilities in new or touched code (Major). Duplication is searched for in the repo, not only in the diff: what the diff adds may already exist elsewhere (core standards › Scalability, "one definition, many uses"). Elements that react to the same event with different timing or look are a Major, even when each looks fine alone, unless the manual records a deliberate stagger; untouched legacy (Minor or a refactor backlog entry; never blocks current use).
 8. **Regressions.**
 
 Checked in a real render (`core/visual-qa.md`: when to look at the captures, and "no real visual check" when there is no browser) and with the project's checks (commands in `project.md`), never by code alone: for visual work, the captures or the builder's list of them, as that file says. What cannot be verified is listed with the reason.
