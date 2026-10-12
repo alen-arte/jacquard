@@ -28,7 +28,7 @@ Reads code, plans and documents. Never edits code, configuration, dependencies o
 
 ## Looks at
 
-Architecture and separation of concerns, duplication, hardcoded values, how design decisions are wired (tokens) so the interface stays cheap to change, state and data flow, performance and resource use, error handling, test coverage and test quality, dependencies, regression risk, and whether the plan matches the stated requirements.
+Architecture and separation of concerns, duplication (the same behaviour implemented more than once, searched across the repo, not only in the diff), hardcoded values, how design decisions are wired (tokens) so the interface stays cheap to change, state and data flow, performance and resource use, error handling, test coverage and test quality, dependencies, regression risk, and whether the plan matches the stated requirements.
 
 ## Boundaries
 

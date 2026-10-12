@@ -34,6 +34,7 @@ Data model, persistence, server logic, sync, auth and permissions, migrations, i
 
 - Model for growth without a rewrite (workspaces, members and roles, configurable lists) when it costs little now; touched models move toward it with a clean migration.
 - Business rules that protect data are enforced where they cannot be bypassed, not only in the client.
+- **One definition, many uses** (core standards › Scalability): a rule, a validation or a mapping lives in one place and every caller uses it; search before writing a new one.
 - Validation at the boundary; predictable errors the client can show; no secrets in the repo or in logs.
 - Verified against a non-production environment with real calls, including a concurrent-edit scenario when data is shared. Test-first per `core/review.md`.
 
