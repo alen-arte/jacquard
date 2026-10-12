@@ -25,7 +25,8 @@
 # (a binary listed with "=" excepted).
 # The copyright lines of the top-level LICENSE are exempt from terms, not from patterns (files mode).
 # Terms of 5 characters or fewer match only as whole words (a handle like ana_dev needs its own line).
-# Inside allowed binaries only terms of 4+ characters are looked for, and no patterns.
+# Inside allowed binaries: runs of 8+ characters, terms of 4+ characters; patterns only in runs of 24+;
+# base64 is not decoded.
 # Findings name terms by number (their order in the terms file), never by text.
 # Exit: 0 clean · 1 something found · 2 nothing could be checked.
 set -u
@@ -92,7 +93,7 @@ done < "$tmp/allow"
 
 # One stream of labelled lines with everything that would be published.
 out="$tmp/stream"; : > "$out"
-: > "$tmp/unreadable"; : > "$tmp/copyright"; : > "$tmp/binstream"
+: > "$tmp/unreadable"; : > "$tmp/copyright"; : > "$tmp/binstream"; : > "$tmp/binlong"
 # Content of a file or blob as text: UTF-8 as is, 8-bit text read as Windows-1252, UTF-16 converted;
 # anything else is listed as unreadable, unless that path with that exact content is a reviewed binary.
 # With "blob", UTF-8 text is skipped: the patch already holds it; "whole" (a blob git calls binary, left
@@ -130,13 +131,16 @@ inspect() { # source file, label, "" or blob or whole, [path in the repo]
 }
 # Runs of 4+ bytes of readable Latin text in bytes that are mostly not text: printable ASCII, tab, and complete
 # UTF-8 letters of Latin-1 and Latin Extended-A (C2-C5 then 80-BF). Any other byte splits a run, never glues it.
+# One pass per line (a long line of many short pieces stays linear).
 latin_runs() { LC_ALL=C tr -c '\040-\176\t\200-\277\302-\305' '\n' | LC_ALL=C awk '{
-  s = $0
-  while (s != "") {
-    if (match(s, /^([\040-\176\t]|[\302-\305][\200-\277])+/)) { if (RLENGTH >= 4) print substr(s, 1, RLENGTH) }
-    else if (!match(s, /^([\200-\277]+|[\302-\305])/)) RLENGTH = 1
-    s = substr(s, RLENGTH + 1)
-  } }'; }
+  n = length($0); start = 0; i = 1
+  while (i <= n) {
+    c = substr($0, i, 1)
+    if (c >= " " && c <= "~" || c == "\t") { if (!start) start = i; i++ }
+    else if (c >= "\302" && c <= "\305" && i < n && substr($0, i + 1, 1) >= "\200" && substr($0, i + 1, 1) <= "\277") { if (!start) start = i; i += 2 }
+    else { if (start && i - start >= 4) print substr($0, start, i - start); start = 0; i++ }
+  }
+  if (start && n + 1 - start >= 4) print substr($0, start, n + 1 - start) }'; }
 unreadable() { # uses inspect's src, lbl, kind and path
   local id
   # The id of the content as git stores it: a blob is already stored; a working-tree file gets its filters
@@ -145,13 +149,16 @@ unreadable() { # uses inspect's src, lbl, kind and path
 "*) id="" ;; esac # a path with a newline never matches
   if [ -n "$path" ] && [ -n "$id" ] && [ -s "$tmp/binok" ] &&
      E="$id $path" awk '$0 == ENVIRON["E"] { found = 1; exit } END { exit !found }' "$tmp/binok"; then
-    # A reviewed binary: its readable runs (ASCII or UTF-8, and UTF-16 either way) are still checked for
-    # terms of 4+ characters, not for patterns: in compressed image data, email- and path-shaped noise and
-    # 3-letter words are common (measured on random 1 MB files), a whole-word term of 4+ by chance is not
+    # A reviewed binary: its readable runs (ASCII or UTF-8, and UTF-16 either way) of 8+ characters are still
+    # checked for terms of 4+ characters, and runs of 24+ (XMP, EXIF strings) for patterns too. Measured on
+    # random 1-5 MB files: shorter runs give email- and path-shaped noise, 3-letter words and, at 5 MB, a
+    # 4-letter word by chance; no random run reached 18 characters.
     { latin_runs < "$src"
       iconv -c -f UTF-16LE -t UTF-8 < "$src" 2>/dev/null | latin_runs
       iconv -c -f UTF-16BE -t UTF-8 < "$src" 2>/dev/null | latin_runs
-    } | label "$lbl: (text in binary) " >> "$tmp/binstream"
+    } > "$tmp/runs"
+    LC_ALL=C awk 'length($0) >= 24' "$tmp/runs" | label "$lbl: (text in binary) " >> "$tmp/binlong"
+    LC_ALL=C awk 'length($0) >= 8 && length($0) < 24' "$tmp/runs" | label "$lbl: (text in binary) " >> "$tmp/binstream"
     return 0
   fi
   printf '%s\n' "$lbl" >> "$tmp/unreadable"
@@ -275,9 +282,11 @@ LC_ALL=C awk -v unread="$tmp/unreadable" '
       if (best < 0.85) print where " (binary data in base64)" >> unread
       else emit(run, bk)
     } }' "$out" > "$tmp/decoded" || fail "cannot decode base64"
-# Readable text from allowed binaries goes last, for terms only: its line numbers are skipped by the patterns.
-cat "$out" "$tmp/decoded" "$tmp/binstream" > "$tmp/kept"
-nkept=$(( $(wc -l < "$tmp/kept") )); bin_from=$(( nkept - $(wc -l < "$tmp/binstream") + 1 ))
+# Readable text from allowed binaries goes last: long runs, then short ones. Terms of 4+ characters only from
+# bin_from on; patterns skip the short runs, from short_from on (by line number, so no file name imitates them).
+cat "$out" "$tmp/decoded" "$tmp/binlong" "$tmp/binstream" > "$tmp/kept"
+nkept=$(( $(wc -l < "$tmp/kept") )); short_from=$(( nkept - $(wc -l < "$tmp/binstream") + 1 ))
+bin_from=$(( short_from - $(wc -l < "$tmp/binlong") ))
 # Fold (LICENSE's copyright lines at the end, for patterns only); replace allowed texts with a marker without letters.
 cat "$tmp/kept" "$tmp/copyright" | fold > "$tmp/folded0"
 [ "$(( $(wc -l < "$tmp/kept") + $(wc -l < "$tmp/copyright") ))" -eq "$(( $(wc -l < "$tmp/folded0") ))" ] || fail "folding lost lines"
@@ -289,7 +298,7 @@ awk -v allowfile="$tmp/allow" '
     print line }' "$tmp/folded0" > "$tmp/scan" || fail "cannot apply allow lines"
 head -n "$(( bin_from - 1 ))" "$tmp/scan" > "$tmp/folded"
 head -n "$nkept" "$tmp/scan" | tail -n +"$bin_from" > "$tmp/folded.bin" # empty when no binary text
-head -n "$(( bin_from - 1 ))" "$tmp/kept" > "$tmp/kept.main"; cp "$tmp/binstream" "$tmp/kept.bin"
+head -n "$(( bin_from - 1 ))" "$tmp/kept" > "$tmp/kept.main"; cat "$tmp/binlong" "$tmp/binstream" > "$tmp/kept.bin"
 
 found=0
 report() { echo "✗ $1"; printf '%s\n' "$2" | head -20 | cut -c1-300 | sed 's/^/    /'; found=1; }
@@ -299,8 +308,7 @@ report() { echo "✗ $1"; printf '%s\n' "$2" | head -20 | cut -c1-300 | sed 's/^
   Removing the metadata is the real protection; the check reads only plain text inside an allowed file.
   To publish an image or PDF: strip its metadata, review it, then allow that exact file with a line =<id> <path>
   in your terms file (<id>: git hash-object <path>, run in the repo). Any later change refuses it again.
-  Compressed files (zip, docx, gzip…) can never be allowed. A file you already allowed that is still listed
-  has something inside it that cannot be read (data in base64)." "$(cat "$tmp/unreadable")"
+  Compressed files (zip, docx, gzip…) can never be allowed, even when listed." "$(cat "$tmp/unreadable")"
 
 i=0
 while IFS= read -r term; do
@@ -329,7 +337,7 @@ for p in "${patterns[@]}"; do
   # Each match is judged on its own, so an allowed example next to a real value does not hide it.
   lines=$(grep -a -n -o -i -E -- "$p" "$tmp/scan" \
     | grep -a -v -i -E ':[^:]*[@.]example\.(com|org)$|:noreply@anthropic\.com$' | cut -d: -f1 | sort -un \
-    | awk -v a="$bin_from" -v b="$nkept" '$1 < a || $1 > b')
+    | awk -v a="$short_from" -v b="$nkept" '$1 < a || $1 > b')
   [ -z "$lines" ] && continue
   report "pattern: $p" "$(for l in $lines; do sed -n "${l}p" "$tmp/scan"; done)"
 done

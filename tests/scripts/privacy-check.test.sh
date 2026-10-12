@@ -229,6 +229,17 @@ for seed in 11 12 13; do
 done
 [ "$(staged)" = 0 ] || fail "R26-19b the same, staged"
 sed -i.bak -e '/^Ana$/d' -e '/^Juan$/d' "$tmp/terms.bak"
+# Long runs (24+ characters, as in XMP) inside a listed binary are still checked for patterns
+newrepo; u=Users; { png x; printf '\000\001<stRef:filePath>file:///%s/qz/Desktop/mockup.psd</stRef:filePath>\000' "$u"; } > "$r/i.png"; allow i.png
+[ "$(files)" = 1 ] || fail "R26-20 a home path in a long run inside a listed binary must be found"
+[ "$(staged)" = 1 ] || fail "R26-20b the same, staged"
+newrepo; { png x; printf '\000\001<CiEmailWork>qz.gomez%sestudio.com.ar</CiEmailWork>\000' "$at"; } > "$r/i.png"; allow i.png
+[ "$(files)" = 1 ] || fail "R26-21 an email in a long run inside a listed binary must be found"
+# An uncompressed-looking binary (many short pieces on one long line) is read in linear time
+newrepo; { png x; LC_ALL=C awk 'BEGIN { for (i = 0; i < 524288; i++) printf "\200A" }'; } > "$r/raw.png"; allow raw.png
+start=$(date +%s); st=$(files); secs=$(( $(date +%s) - start ))
+[ "$st" = 0 ] || fail "R26-22 a listed 1 MB binary of alternating bytes must pass"
+[ "$secs" -le 15 ] || fail "R26-22b it took ${secs}s (quadratic text extraction?)"
 newrepo; h=home; echo "/$h/someone/x" > "$r/a: (text in binary) b.txt"
 [ "$(files)" = 1 ] || fail "R26-18 a file name that imitates the binary-text label must not hide patterns"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"
