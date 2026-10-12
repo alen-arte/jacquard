@@ -32,7 +32,7 @@ run - on
 
 # On: marker holds this session's id
 run s1 on
-[ "$st" = 0 ] && [ "$(cat "$marker" 2>/dev/null)" = s1 ] || fail "C3 on must write the session id to the marker"
+[ "$st" = 0 ] && [ "$(head -n 1 "$marker" 2>/dev/null)" = s1 ] || fail "C3 on must write the session id to the marker's first line"
 
 # Same session: permission prompt denied with a message telling Claude to park
 run s1 permission '{"session_id":"s1","tool_name":"Bash"}'
@@ -135,16 +135,52 @@ out="$(cd "$tmp" && env -u CLAUDE_PROJECT_DIR CLAUDE_CODE_SESSION_ID=s1 "$guard"
 abs="$tmp/abs"; target="$tmp/target.txt"; echo keep > "$target"
 mkdir -p "$abs/away" && ln -s "$target" "$abs/away/.away-active"
 CLAUDE_CODE_SESSION_ID=s1 "$guard" on "$abs" >/dev/null 2>&1
-[ "$(cat "$target")" = keep ] && [ ! -L "$abs/away/.away-active" ] && [ "$(cat "$abs/away/.away-active")" = s1 ] || fail "C25 on must replace a symlinked marker without writing through it"
+[ "$(cat "$target")" = keep ] && [ ! -L "$abs/away/.away-active" ] && [ "$(head -n 1 "$abs/away/.away-active")" = s1 ] || fail "C25 on must replace a symlinked marker without writing through it"
+
+# Expiry: the marker's second line is the time (epoch seconds) after which the guard stops denying
+now="$(date +%s)"
+expiry() { sed -n 2p "$marker"; }
+run s1 on
+e="$(expiry)"
+[ -n "$e" ] && [ "$e" -gt $((now + 11 * 3600)) ] && [ "$e" -le $((now + 13 * 3600 + 60)) ] || fail "C29 on without an end time must expire about 12 h later plus the margin (got '$e')"
+CLAUDE_CODE_SESSION_ID=s1 "$guard" on .local 23:59 >/dev/null 2>&1
+e="$(expiry)"
+[ -n "$e" ] && [ "$e" -gt "$now" ] && [ "$e" -le $((now + 25 * 3600 + 60)) ] || fail "C30 on with an end time must expire after the next 23:59 plus the margin (got '$e')"
+for bad in 24:00 7:5 ab:cd 12:60 "12:00 x" "12:00;x"; do
+  rm -f "$marker"
+  CLAUDE_CODE_SESSION_ID=s1 "$guard" on .local "$bad" >/dev/null 2>&1; st=$?
+  [ "$st" = 2 ] && [ ! -e "$marker" ] || fail "C31 on with a malformed end time must exit 2 and write no marker: '$bad'"
+done
+printf 's1\n%s\n' $((now - 60)) > "$marker"
+run s1 permission '{"session_id":"s1","tool_name":"Bash"}'
+[ -z "$out" ] && [ ! -e "$marker" ] || fail "C32 an expired marker must not deny, and is cleared"
+printf 's1\n%s\n' $((now - 60)) > "$marker"
+run s1 elicitation '{"session_id":"s1"}'
+[ -z "$out" ] || fail "C33 an expired marker must not decline"
+printf 's1\n%s\n' $((now + 3600)) > "$marker"
+run s1 permission '{"session_id":"s1","tool_name":"Bash"}'
+case "$out" in *'"behavior": "deny"'*) ;; *) fail "C34 a marker before its expiry must still deny";; esac
+printf 's1\n' > "$marker"
+run s1 permission '{"session_id":"s1","tool_name":"Bash"}'
+case "$out" in *'"behavior": "deny"'*) ;; *) fail "C35 a marker without an expiry line (kit 0.2.7) must still deny";; esac
+printf 's1\n%s\n' $((now - 60)) > "$marker"
+run s1 off
+[ "$st" = 0 ] && [ ! -e "$marker" ] || fail "C36 off must clear this session's expired marker"
+printf 's1\nnot-a-number\n' > "$marker"
+run s1 permission '{"session_id":"s1","tool_name":"Bash"}'
+case "$out" in *'"behavior": "deny"'*) ;; *) fail "C37 a garbled expiry line must fail safe (keep denying), not error";; esac
+rm -f "$marker"
 
 # Every on/off the rules spell matches an allow rule of the permissions template exactly
+# (on takes an optional end time, so its rule ends in " *", which also matches the bare command)
 kit="$here/../.."
 template="$kit/templates/project/claude-settings.local.template.json"
 spelled="$(grep -rhoE '[~$A-Za-z/._{}-]*away-guard\.sh (on|off) <local>' "$kit/core" "$kit/skills" | sort -u)"
 [ -n "$spelled" ] || fail "C26 no on/off spelling found in core/ or skills/"
 grep -q 'away-guard.sh on' "$template" || fail "C26 the permissions template has no guard rules (template change not committed?)"
 printf '%s\n' "$spelled" | while IFS= read -r c; do
-  rule="Bash($(printf '%s' "$c" | sed 's/<local>/{{LOCAL_FOLDER}}/'))"
+  rule="$(printf '%s' "$c" | sed 's/<local>/{{LOCAL_FOLDER}}/')"
+  case "$c" in *" on "*) rule="Bash($rule *)" ;; *) rule="Bash($rule)" ;; esac
   grep -qF "\"$rule\"" "$template" || echo "✗ C26 no allow rule for: $c"
 done | grep . && fails=$((fails + 1))
 

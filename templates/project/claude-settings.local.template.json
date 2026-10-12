@@ -13,7 +13,7 @@
       "Bash(git revert *)",
       "Bash(date)",
       "Bash(date +*)",
-      "Bash(~/.claude/jacquard/scripts/away-guard.sh on {{LOCAL_FOLDER}})",
+      "Bash(~/.claude/jacquard/scripts/away-guard.sh on {{LOCAL_FOLDER}} *)",
       "Bash(~/.claude/jacquard/scripts/away-guard.sh off {{LOCAL_FOLDER}})",
       "Bash(~/.claude/jacquard/scripts/roadmap-index.sh *)",
       "Edit(/{{LOCAL_FOLDER}}/**)",
