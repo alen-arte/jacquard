@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5
+- **Archiving of finished batches** (`core/docs-system.md`): before every block of work (Away gate, or the first task of a batch in Present) Claude asks, in one line, whether to move each complete batch (all items ✅ or ❌) to `roadmap-done.md`; only the user's OK moves it. The roadmap keeps a `📦` line with the IDs, which the status index counts as Done (`scripts/roadmap-index.sh`). Rejected items and approved/rejected proposals still move at the next edit without asking.
+- The Away gate's "needs you first" now says ⚖️ (it still said `⏸`).
+
 ## 0.2.4
 - **Seven status marks** (`core/docs-system.md`): ⬜ Waiting · ⚖️ Decide (the user picks an option) · 👀 Review (built in dev, no OK yet) · 🚀 Staged (approved, only the release is left) · ✅ Done (in production) · 🔵 Approved (proposals) · ❌ Rejected (`R` or `P`, always with a reason). Replaces 🟡 and the `⏸` flag. Away ends at 👀; only the user's OK moves 👀 → 🚀; only the release moves 🚀 → ✅.
 - **Rejected items are logged**: ❌ needs `rejected:` and `why:`, and the item moves to `roadmap-done.md` under "Rejected" at the next edit.

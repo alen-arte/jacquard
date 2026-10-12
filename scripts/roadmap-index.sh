@@ -2,6 +2,7 @@
 # Jacquard: derives the "Status index" block of a roadmap from the marks of its items.
 # Usage: roadmap-index.sh --write|--check <roadmap.md>
 # Items:   "- <mark> **R12 · …"   Proposals: "| <mark> … | **P3 · …"
+# Archived groups: a "- 📦 …: R1, R2 → roadmap-done.md" line counts its IDs as Done.
 # The block sits between <!-- status-index:start --> and <!-- status-index:end -->.
 mode="$1"; file="$2"
 case "$mode" in --write|--check) ;; *) echo "usage: $0 --write|--check <roadmap.md>" >&2; exit 2 ;; esac
@@ -15,7 +16,10 @@ function add(m, id) { ids[m] = (ids[m] == "" ? id : ids[m] ", " id) }
 /<!-- status-index:end -->/   { skip = 0; next }
 skip { next }
 {
-  if (match($0, /^- (✅|🚀|👀|⚖️|⚖|⬜|❌) \*\*[RP][0-9]+[a-z]? /)) {
+  if ($0 ~ /^- 📦 /) {
+    t = $0; sub(/→.*/, "", t)
+    while (match(t, /[RP][0-9]+[a-z]?/)) { add("✅", substr(t, RSTART, RLENGTH)); t = substr(t, RSTART + RLENGTH) }
+  } else if (match($0, /^- (✅|🚀|👀|⚖️|⚖|⬜|❌) \*\*[RP][0-9]+[a-z]? /)) {
     mark = substr($0, 3); sub(/ .*/, "", mark); sub(/️/, "", mark)
     id = substr($0, RSTART, RLENGTH); sub(/^.*\*\*/, "", id); sub(/ $/, "", id); add(mark, id)
   } else if (match($0, /^\| (✅|🚀|👀|⚖️|⚖|⬜|🔵|❌)/)) {

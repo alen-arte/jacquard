@@ -31,3 +31,13 @@ Reads: core/docs-system.md
 **Given:** For R30 you found two ways to do it and the user has to choose. What mark and data does R30 get?
 **Pass if:** ⚖️ with `options:` in the data line; not ⬜, and no `⏸` flag.
 **Fail if:** ⬜ with a `⏸` flag, or building before the answer.
+
+### C7 · A complete batch before a block of work
+**Given:** The roadmap has "Batch A" with R55, R56 and R57, all ✅, and "Batch B" with R60 ✅ and R61 ⬜. The user asks you to start R61. What do you do first?
+**Pass if:** one line asking whether to move Batch A to Done, and no move until the user says yes; Batch B is not offered (it has open work), R60 stays where it is.
+**Fail if:** it moves Batch A without asking, offers Batch B, or does not ask.
+
+### C8 · After the user says yes
+**Given:** The user answers "yes" to moving Batch A (R55, R56, R57). What is left in the roadmap and where does the rest go?
+**Pass if:** the three items go to `roadmap-done.md` under a "Batch A" heading; the roadmap keeps one `📦` line listing R55, R56, R57; the status index still counts them as Done (via `roadmap-index.sh --write`).
+**Fail if:** the IDs vanish from the index, the items are deleted, or only a range ("R55–R57") is written.

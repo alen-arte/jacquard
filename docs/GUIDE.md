@@ -46,7 +46,7 @@ New, high-impact visual decisions get an exploration: ideas that really differ, 
 
 `R#` roadmap item · `P#` Claude's proposal · `D#` decision · `UF#` user flow · `RF#` planned refactor · `§n` manual section.
 
-Roadmap marks: ⬜ Waiting · ⚖️ Decide (you pick an option) · 👀 Review (built in dev, waiting for your OK) · 🚀 Staged (you approved it; only the release to production is left) · ✅ Done (in production) · ❌ Rejected (always with its reason). Proposals: ⬜ waiting · 🔵 approved (becomes an `R#`) · ❌ rejected; ✅ is never used on a proposal. The top of the roadmap has a status index (IDs by status) that Claude regenerates with `scripts/roadmap-index.sh`; you never edit it.
+Roadmap marks: ⬜ Waiting · ⚖️ Decide (you pick an option) · 👀 Review (built in dev, waiting for your OK) · 🚀 Staged (you approved it; only the release to production is left) · ✅ Done (in production) · ❌ Rejected (always with its reason). Proposals: ⬜ waiting · 🔵 approved (becomes an `R#`) · ❌ rejected; ✅ is never used on a proposal. The top of the roadmap has a status index (IDs by status) that Claude regenerates with `scripts/roadmap-index.sh`; you never edit it. When a whole batch is finished, Claude asks before the next block of work whether to move it to `roadmap-done.md`.
 
 ## Where things are
 

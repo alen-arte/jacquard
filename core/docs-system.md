@@ -98,7 +98,11 @@ Applies whenever the user brings feedback, ideas or a change of direction to pla
 
 ## Archiving
 
-At each phase or milestone close, finished roadmap items move to `roadmap-done.md`, leaving one summary line per group in the roadmap. Rejected items and proposals are archived there too, under "Rejected" (see Status marks). Superseded decisions stay in `decisions.md`, marked "superseded by D#". Nothing is deleted; it is moved out of the hot path.
+A **complete group** is a roadmap section (batch, phase) whose items are all ✅ or ❌.
+
+- **When to ask:** every time a block of work is about to run (the Away gate, or the first task of a batch in Present), even in the same session where the group closed, if any group is complete, ask in one line: "Batch A is complete: move it to Done?". Only the user's OK moves it. A ✅ inside a group with open work is never moved.
+- **How it moves:** the group's ✅ items go to `roadmap-done.md` under a heading with the group's name, and the roadmap keeps one line: `- 📦 **Batch A:** R55, R56, R57 → roadmap-done.md` (list every ID; the status index counts them as Done). Nothing is deleted.
+- **Rejected items and proposals** (🔵 and ❌) move at the next roadmap edit without asking, under "Rejected" (see Status marks). Superseded decisions stay in `decisions.md`, marked "superseded by D#". Nothing is deleted; it is moved out of the hot path.
 
 ## Language
 
