@@ -90,7 +90,13 @@ Let commands read the kit and your preferences without asking each time. Add to 
 
 Each project's own rules (writes to its local folder, git safety net) come from kickoff.
 
-**The installed kit is a trust boundary.** Its scripts run from hooks on every permission prompt and session start, and from allow rules without asking, so a change to them could run anything. Change `~/.claude/jacquard` only by installing a release tag (step 1, "Updating the installed kit"), never by editing it. Each project's permissions deny edits there (`Edit(~/.claude/jacquard/**)`); add the same rule to `permissions.deny` in `~/.claude/settings.json` to cover every project, including those set up before 0.2.8. The rule stops Claude's file tools, the file commands Claude Code recognizes in the terminal (`cat`, `sed`, `tee`…) and redirections, but not every program (`cp`, a script that writes files itself): for a hard wall, use Claude Code's sandbox.
+**The installed kit is a trust boundary.** Its scripts run from hooks (on permission prompts, MCP questions and session start) and from allow rules without asking, so a change to them could run anything. Change `~/.claude/jacquard` only by installing a release tag yourself, in a terminal (step 1, or "Updating the installed kit" below), never by editing it. Each project's permissions deny edits there; add the same rule to your user settings to cover every project, including those set up before 0.2.8:
+
+```json
+"permissions": { "deny": ["Edit(~/.claude/jacquard/**)"] }
+```
+
+The rule refuses Claude's file tools and the writing commands Claude Code recognizes in the terminal (`sed -i`, `tee`) when they name the path in full. It does not refuse everything: a redirect written with `~` or `$HOME` asks instead of being refused, and other programs (`cp`, a script that writes files itself) and git operations inside the folder (`checkout`, `reset`) are not covered. For a hard wall, use Claude Code's sandbox.
 
 ## 5. First use
 
