@@ -16,6 +16,10 @@ Each file gives a command, a role or a core rule to a subagent with no knowledge
 4. A case that fails at light runs again at standard before any rule changes. Fails at both: the rule is unclear or wrong, fix it. Fails only at light: note it and fix the rule only if a clearer wording costs nothing.
 5. Log one line per run in `<local>/tests-log.md`: date, files, passed / failed (IDs), subagent runs.
 
+## Script tests
+
+Shell scripts with logic have their own tests in `tests/scripts/` (`tests/scripts/away-guard.test.sh`): run them after changing the script and before tagging a release. They need no subagent.
+
 ## Writing a test file
 
 ```

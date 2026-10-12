@@ -9,6 +9,7 @@ Claude Code evolves fast. Check the official documentation and adapt these steps
 - `CLAUDE.local.md` is loaded and is not tracked; `@~/...` imports work from it; the first external import shows an approval dialog.
 - Imports and skills work through symbolic links.
 - The permission rule syntax used in `templates/project/settings.local.json`.
+- The hook events the Away guard uses (`PermissionRequest`, `Elicitation`, `SessionStart`), their decision output, and that `CLAUDE_CODE_SESSION_ID` matches the hooks' `session_id` in Bash and hook subprocesses.
 
 Last verified with Claude Code 2.1.296 (2026-10-11). Worth knowing:
 - Model and effort can be set per subagent launch and per skill turn (`effort` in a skill's frontmatter); the main session's model is yours (`/model`, `/effort`). `core/economy.md` uses these.
@@ -22,6 +23,7 @@ Last verified with Claude Code 2.1.296 (2026-10-11). Worth knowing:
 - When a skill and a command share a name, the skill wins for project commands; for `~/.claude/commands/` it is undocumented, hence the stop rule in step 2.
 - Deny rules are a safety net, not a wall: a variant such as `git -C . push` can escape a pattern.
 - Permission modes decide whether Claude Code asks before each action, not what Claude decides or reports. Away needs **auto** mode (Shift+Tab): the default mode asks before every edit and an unattended block stalls. Deny rules apply in every mode.
+- A `PermissionRequest` hook runs whenever Claude Code is about to show a permission prompt, whatever the mode. The Away guard (`scripts/away-guard.sh`, hooks in the permissions template) uses it to deny prompts in the Away session only; it never allows anything. Hooks from settings files run only after the workspace trust dialog is accepted.
 
 ## 1. The kit
 

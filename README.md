@@ -33,7 +33,7 @@ roles/        role library and role template
 skills/       commands: /kickoff, /away, /back, /away-resume, /rigor, /jacquard-update, /retro, /debate
 templates/    project files and guiding documents
 personal/     template for your private layer
-scripts/      privacy check and git hooks for publishing
+scripts/      privacy check, git hooks for publishing, Away guard
 docs/         guide
 ```
 
