@@ -14,12 +14,17 @@
 #   One term per line; "# ..." comments. A line "!Name <email>" allows that exact commit identity
 #   (e.g. your public no-reply identity); it must be a full identity and contain one of your terms.
 # Matching ignores case and accents (both sides folded to ASCII with iconv; required).
-# Not covered: encoded content (UTF-16, compressed, base64). LICENSE's copyright line is allowed.
+# Encoded content: UTF-16 is converted and checked; base64 runs (standard or URL-safe, 8+ characters,
+# delimited by other characters) are decoded and checked too; binary or compressed content cannot be
+# read, so it is refused. The copyright lines of the top-level LICENSE are allowed (files mode).
 # Findings name terms by number (their order in the terms file), never by text.
 # Exit: 0 clean · 1 something found · 2 nothing could be checked.
 set -u
 set -o pipefail
-export LC_ALL=C.UTF-8
+# A UTF-8 locale where there is one (C.UTF-8 on Linux, en_US.UTF-8 on macOS); iconv names its encodings anyway.
+if locale -a 2>/dev/null | grep -qix 'c\.utf-\{0,1\}8'; then export LC_ALL=C.UTF-8
+elif locale -a 2>/dev/null | grep -qx 'en_US\.UTF-8'; then export LC_ALL=en_US.UTF-8
+else export LC_ALL=C; fi
 
 fail() { echo "✗ $1: nothing was checked." >&2; exit 2; }
 mode=files
@@ -27,7 +32,7 @@ case "${1:-}" in --staged) mode=staged; shift ;; --objects) mode=objects; shift 
 repo="${1:-.}"
 terms_file="${2:-${JACQUARD_PRIVACY_TERMS:-$HOME/repos/jacquard-personal/privacy-terms.txt}}"
 
-for tool in iconv awk git grep sed; do command -v "$tool" >/dev/null 2>&1 || fail "$tool is missing"; done
+for tool in iconv awk git grep sed od; do command -v "$tool" >/dev/null 2>&1 || fail "$tool is missing"; done
 ids=""
 [ "$mode" = objects ] && ids=$(cat)
 cd "$repo" 2>/dev/null || fail "cannot enter $repo"
@@ -47,7 +52,7 @@ sed -e '1s/^\xEF\xBB\xBF//' -e 's/\r$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]
 grep -v '^!' "$tmp/raw" | awk '!seen[tolower($0)]++' > "$tmp/terms" || fail "the terms file has no terms"
 fold < "$tmp/terms" > "$tmp/terms.f"
 grep '^!' "$tmp/raw" | cut -c2- | fold > "$tmp/allow" || true
-nterms=$(wc -l < "$tmp/terms")
+nterms=$(( $(wc -l < "$tmp/terms") ))
 # An allow line must be a full identity, "Name <user@host>", and contain one of the terms.
 while IFS= read -r a; do
   printf '%s\n' "$a" | grep -q -E '^[^ <>][^<>]* <[^<>@ ]+@[^<>@ ]+\.[^<>@ ]+>$' || fail "an allow line (!...) must be a full identity: !Name <user@host>"
@@ -61,19 +66,56 @@ done < "$tmp/allow"
 
 # One stream of labelled lines with everything that would be published.
 out="$tmp/stream"; : > "$out"
+: > "$tmp/unreadable"
+# Content of a file or blob as text: plain text as is, UTF-16 converted; anything else is listed as unreadable.
+inspect() { # source file, label
+  local src="$1" lbl="$2" magic from=""
+  magic=$(od -An -tx1 -N6 "$src" | tr -d ' \n') || fail "cannot read $lbl"
+  case "$magic" in 1f8b*|504b0304*|504b0506*|504b0708*|425a68*|fd377a585a00*|28b52ffd*|377abcaf271c*)
+    printf '%s\n' "$lbl" >> "$tmp/unreadable"; return ;; esac
+  if [ "$(tr -cd '\000' < "$src" | head -c 1 | wc -c)" -eq 0 ]; then
+    label "$lbl: " < "$src" >> "$out" || fail "cannot read $lbl"; return
+  fi
+  case "$magic" in # a BOM, else the NUL of the first character tells the byte order
+    fffe*|feff*) from=UTF-16 ;;
+    00*) [ "${magic:2:2}" != 00 ] && from=UTF-16BE ;;
+    ??00*) from=UTF-16LE ;;
+  esac
+  if [ -n "$from" ] && iconv -f "$from" -t UTF-8 < "$src" > "$tmp/conv" 2>/dev/null \
+     && [ "$(tr -d '\t\n\r' < "$tmp/conv" | tr -cd '\000-\037' | head -c 1 | wc -c)" -eq 0 ]; then
+    label "$lbl: " < "$tmp/conv" >> "$out"
+  else
+    printf '%s\n' "$lbl" >> "$tmp/unreadable"
+  fi
+}
 emit_file() { # path as listed by git
   local f="$1"
   printf '%s: (path)\n' "$f" | label "" >> "$out"
   if [ -L "$f" ]; then printf '(link to) %s\n' "$(readlink -- "$f")" | label "$f: " >> "$out"; return; fi
   [ -f "$f" ] || return 0
   [ -r "$f" ] || fail "cannot read $f"
-  tr -d '\000' < "$f" | label "$f: " >> "$out" || fail "cannot read $f"
+  if [ "$f" = LICENSE ]; then # its copyright lines are allowed, the rest is checked
+    grep -a -v -E '^Copyright ' -- "$f" > "$tmp/license"; inspect "$tmp/license" "$f"
+  else
+    inspect "$f" "$f"
+  fi
+}
+emit_blobs() { # label, then numstat -z records on stdin; blobs git calls binary are inspected; rev prefix in $blob_rev
+  local lbl="$1" rec p
+  while IFS= read -r -d '' rec; do
+    case "$rec" in "-	-	"*) p="${rec#-	-	}"
+      git cat-file blob "$blob_rev:$p" > "$tmp/blob" || fail "cannot read $p"
+      inspect "$tmp/blob" "$lbl$p" ;; esac
+  done
 }
 emit_commit() { # commit id
   local c="$1"
   git log -1 --format="(identity) %an <%ae> | %cn <%ce>%n%B" "$c" | label "commit $c: " >> "$out" || fail "cannot read commit $c"
   git diff-tree -m -r --root --no-commit-id --name-only -z "$c" | tr '\0' '\n' | label "commit $c: (path) " >> "$out" || fail "cannot list paths of $c"
   git show -m --format= --root --no-renames --text -p "$c" | added | tr -d '\000' | label "commit $c: " >> "$out" || fail "cannot read changes of $c"
+  blob_rev="$c"
+  git diff-tree -m -r --root --no-commit-id --no-renames --diff-filter=d --numstat -z "$c" > "$tmp/numstat" || fail "cannot list changes of $c"
+  emit_blobs "commit $c: " < "$tmp/numstat"
 }
 
 case "$mode" in
@@ -81,10 +123,10 @@ case "$mode" in
     if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       git ls-files -z --cached --others --exclude-standard > "$tmp/list" || fail "cannot list files"
     else
-      find . -type f -not -path './.git/*' -printf '%P\0' > "$tmp/list" || fail "cannot list files"
+      find . -type f -not -path './.git/*' -print0 > "$tmp/list" || fail "cannot list files"
     fi
-    listed=$(tr -cd '\0' < "$tmp/list" | wc -c)
-    while IFS= read -r -d '' f; do emit_file "$f"; done < "$tmp/list"
+    listed=$(( $(tr -cd '\0' < "$tmp/list" | wc -c) ))
+    while IFS= read -r -d '' f; do emit_file "${f#./}"; done < "$tmp/list"
     scanned=$(grep -a -c ': (path)$' "$out")
     [ "$scanned" -ge "$listed" ] || fail "listed $listed files but scanned $scanned"
     what="$listed files"
@@ -94,6 +136,9 @@ case "$mode" in
     { git var GIT_AUTHOR_IDENT && git var GIT_COMMITTER_IDENT; } | sed -E 's/ [0-9]+ [+-][0-9]{4}$//' | label "staged: (identity) " >> "$out" || fail "cannot read identity"
     git diff --cached --name-only -z | tr '\0' '\n' | label "staged: (path) " >> "$out" || fail "cannot list staged paths"
     git diff --cached --no-renames --text -p | added | tr -d '\000' | label "staged: " >> "$out" || fail "cannot read staged changes"
+    blob_rev=""
+    git diff --cached --no-renames --diff-filter=d --numstat -z > "$tmp/numstat" || fail "cannot list staged changes"
+    emit_blobs "staged: " < "$tmp/numstat"
     what="staged changes"
     ;;
   objects)
@@ -111,8 +156,27 @@ case "$mode" in
     ;;
 esac
 
-# Drop LICENSE's copyright line; fold; replace allowed texts with a marker that holds no letters.
-grep -a -v -E '^LICENSE: Copyright ' "$out" > "$tmp/kept" || true
+# Decode base64 runs (8+ characters, not all lowercase letters) into extra lines: printable bytes kept,
+# control bytes become spaces. Byte-wise, hence LC_ALL=C.
+LC_ALL=C awk '
+  BEGIN { a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+          for (i = 1; i <= 64; i++) v[substr(a, i, 1)] = i - 1; v["-"] = 62; v["_"] = 63 }
+  function dec(s,   out, i, n, bits, nb, b) {
+    out = ""; bits = 0; nb = 0; n = length(s)
+    for (i = 1; i <= n; i++) {
+      bits = bits * 64 + v[substr(s, i, 1)]; nb += 6
+      if (nb >= 8) { nb -= 8; b = int(bits / 2 ^ nb); bits -= b * 2 ^ nb
+        out = out ((b >= 32 && b < 127) || b >= 128 ? sprintf("%c", b) : " ") }
+    }
+    return out
+  }
+  { p = index($0, ": "); lbl = (p ? substr($0, 1, p + 1) : ""); rest = $0
+    while (match(rest, /[A-Za-z0-9+\/_-]+/)) {
+      run = substr(rest, RSTART, RLENGTH); rest = substr(rest, RSTART + RLENGTH)
+      if (length(run) >= 8 && run !~ /^[a-z]+$/) { d = dec(run); if (d ~ /[^ ]/) print lbl "(base64) " d }
+    } }' "$out" > "$tmp/decoded" || fail "cannot decode base64"
+cat "$out" "$tmp/decoded" > "$tmp/kept"
+# Fold; replace allowed texts with a marker that holds no letters.
 fold < "$tmp/kept" > "$tmp/folded0"
 [ "$(wc -l < "$tmp/kept")" -eq "$(wc -l < "$tmp/folded0")" ] || fail "folding lost lines"
 awk -v allowfile="$tmp/allow" '
@@ -124,6 +188,7 @@ awk -v allowfile="$tmp/allow" '
 
 found=0
 report() { echo "✗ $1"; printf '%s\n' "$2" | head -20 | sed 's/^/    /'; found=1; }
+[ -s "$tmp/unreadable" ] && report "cannot be checked (binary, compressed or unknown encoding): remove it or publish it another way" "$(cat "$tmp/unreadable")"
 
 i=0
 while IFS= read -r term; do
