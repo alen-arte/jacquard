@@ -1,5 +1,6 @@
 {
   "permissions": {
+    "additionalDirectories": ["{{PERSONAL_PROJECT_FOLDER}}"],
     "allow": [
       "Bash(git status *)",
       "Bash(git log *)",
@@ -14,6 +15,7 @@
       "Bash(date +*)",
       "Bash(~/.claude/jacquard/scripts/away-guard.sh on {{LOCAL_FOLDER}})",
       "Bash(~/.claude/jacquard/scripts/away-guard.sh off {{LOCAL_FOLDER}})",
+      "Bash(~/.claude/jacquard/scripts/roadmap-index.sh *)",
       "Edit(/{{LOCAL_FOLDER}}/**)",
       "Edit(~/repos/jacquard-personal/projects/{{PROJECT_SLUG}}/**)",
       "{{CHECK_COMMANDS_AS_BASH_RULES}}"
