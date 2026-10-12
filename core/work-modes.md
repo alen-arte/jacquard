@@ -27,9 +27,10 @@ The user must always know whether work has begun. Two messages, and **nothing st
 
 **Message 1, the gate** (fast, short, in the reply language). Do not analyse every task or propose designs here. Run `date` and `git status`, read the brief once and write:
 - **Understood:** the scope in 2–4 lines and the tasks in order, each tagged `DEP` (a later task in the block builds on it) or `ISO` (nothing later needs it), with its risk level. If the brief cites roadmap IDs, use them. If it says "everything you can", pick from the roadmap's Now and Next. If the brief looks bigger than one session, one line saying so.
-- **Needs you first:** roadmap items in scope marked ⚖️ (decide) or `🔑` (permission), and any complete group to archive ("Batch A is complete: move it to Done?", `core/docs-system.md`, Archiving), and anything the brief explicitly assigns that needs a permission (a migration, a dependency). Each with a default.
+- **Needs you first:** roadmap items in scope marked ⚖️ (decide) or `🔑` (permission), and any complete group to archive ("Batch A is complete: move it to Done?", `core/docs-system.md`, Archiving), anything the brief explicitly assigns that needs a permission (a migration, a dependency), and whatever the permission audit finds. Each with a default.
 - **Time, branch, intensity, cost:** start time, end time, the away branch and the branch it integrates into (`core/git.md`; a new name if the session is on `main`), intensity (`core/review.md`: arguments, else session, else project default), and the estimated cost in subagent runs (`core/economy.md`).
-- **Permission check:** append `GATE HH:MM` to the journal now, so any permission prompt for `<local>/away/` appears while the user is still here.
+- **Permission audit:** for each task, list the tools and commands it will need beyond editing files (git operations, scripts, MCP tools) and match them against `permissions` in the project and user settings (deny, then ask, then allow) and against the profile's "Tools that confirm on their own". A tool allowed in settings can still ask (an MCP server that confirms schema changes): authorized is not the same as prompt-free. Anything that would ask goes under **Needs you first** with two options: the user allows it now, or that task (or that step) is parked from the start. Nothing that asks is discovered mid-block. Then append `GATE HH:MM` to the journal, so a prompt for `<local>/away/` appears while the user is still here.
+- **Memory check:** read the user's feedback memories that mention Away, permissions or migrations, if any. If one contradicts this file or the profile, it is a rule conflict (core standards): show both, and park the affected task until the user answers.
 - **Permission mode:** Away runs in **auto** mode (Shift+Tab): in the default mode every edit asks and the block stalls at the first prompt. Deny rules hold in every mode; an action the auto classifier blocks is logged and work continues. Remind the user in one line, together with the model and effort that preferences ask for in Away, if any; the mode changes nothing in these rules.
 - **Only if real:** a conflict (the brief contradicts itself or a confirmed decision; uncommitted changes in the tree) or something genuinely unclear about what the user wants, each with a default. What the brief leaves open ("you decide", "propose") is not a question: decide it during the work and report it.
 - **Last line, always the same meaning:** "I haven't started yet. Give me the OK and I'll start." No question mark, no alternatives.
@@ -44,6 +45,10 @@ The user must always know whether work has begun. Two messages, and **nothing st
 - If checks fail and about three reasonable attempts don't fix it: revert to the last good commit, log it, move on.
 - Verify before moving on: the project's checks (`project.md`) and a real render for visual work (`core/visual-qa.md`). Checks that need a person (the profile lists them) are logged as pending for the user.
 - Never invent scope to fill the time. Finishing early is fine.
+- **Before a command the audit did not cover,** match it against `ask` and `deny`. If it matches, use the safe equivalent or park the step; never wait on a prompt. Safe equivalents:
+  - Keep or set aside uncommitted work: a WIP commit on the away branch, or `git diff > <local>/away/<name>.patch` then `git apply -R` it (not `stash`, `reset`, `restore` or `checkout --` when the project's settings ask for them).
+  - Compare with and without a change: commit it, then `git apply -R` its patch, run the check, `git apply` it back.
+  - Tools: only the commands in `project.md` (the project's scripts, such as `npm run <script>`), never `npx` or an ad-hoc binary.
 
 ## 3. What Away decides with autonomy (and reports)
 
@@ -74,7 +79,7 @@ Decisions the user must see before they exist:
 - Pushing to any remote, merging into any non-away branch, deploying, tagging releases
 - Force operations and history rewriting; deleting branches or commits
 - Deleting or overwriting data
-- Data migrations, **except** a migration the brief explicitly assigns as a task: then only on a non-production environment, after a backup made right before it, and reported with where the backup is and how to restore it
+- Data migrations, **except** a migration the brief explicitly assigns as a task **and** the gate's audit found its tool runs without a prompt: then only on a non-production environment, after a backup made right before it, and reported with where the backup is and how to restore it. Otherwise it is parked with the SQL, the backup step and the restore step ready, for the user to run on return
 - Secrets, credentials, environment variables, auth and permissions
 - Anything that costs money or touches paid services, billing or accounts
 - Sending anything to anyone (messages, emails, PR or issue comments, sharing an artifact). Publishing or refreshing **private** artifacts (the Away report, document views) is allowed when preferences enable it; sharing is the user's call

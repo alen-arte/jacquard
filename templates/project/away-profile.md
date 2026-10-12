@@ -32,6 +32,10 @@ Universal rules: `~/.claude/jacquard/core/work-modes.md`. This file only adds.
 
 {{EXTRA_LIMITS, default none}} (e.g. shared planning files that are read-only, branches never to touch)
 
+## Tools that confirm on their own
+
+Allowed in settings but still ask before acting, so the gate's permission audit treats them as asking: {{SELF_CONFIRMING_TOOLS, default none known; e.g. "Supabase MCP `apply_migration` and destructive SQL (`execute_sql` with DROP, DELETE, TRUNCATE)"}}. Add one whenever a block meets a new one.
+
 ## Shared files Away may write
 
 The exception in `work-modes.md` section 5, approved by the user: {{SHARED_WRITABLE, default none}}
