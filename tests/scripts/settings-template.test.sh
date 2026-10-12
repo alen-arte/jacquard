@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 # Tests for templates/project/claude-settings.local.template.json. Run from anywhere: tests/scripts/settings-template.test.sh
 # Exits 0 when every case passes; prints one line per failure.
-here="$(cd "$(dirname "$0")" && pwd)"
-template="$here/../../templates/project/claude-settings.local.template.json"
+. "$(dirname "$0")/lib.sh"
+template="$kit/templates/project/claude-settings.local.template.json"
 [ -f "$template" ] || { echo "✗ $template missing"; exit 1; }
-fails=0
-fail() { echo "✗ $1"; fails=$((fails + 1)); }
 
 # S1 · The template is valid JSON as shipped (placeholders sit inside strings)
 if command -v python3 >/dev/null; then
@@ -32,7 +30,7 @@ for m in --check --write; do
 done
 printf '%s\n' "$allow" | grep -q 'roadmap-index\.sh.*\*' && fail "S4 roadmap-index.sh rule with a wildcard"
 # Every rule for a kit script the rules spell is matched by the spelling in core/
-grep -qF '~/.claude/jacquard/scripts/roadmap-index.sh --write <local>/docs/roadmap.md' "$here/../../core/docs-system.md" || fail "S4b core/docs-system.md spells roadmap-index.sh differently from the allow rule"
+grep -qF '~/.claude/jacquard/scripts/roadmap-index.sh --write <local>/docs/roadmap.md' "$kit/core/docs-system.md" || fail "S4b core/docs-system.md spells roadmap-index.sh differently from the allow rule"
 
 # S5 · The local folder can be written from the terminal through its link
 grep -qF '"additionalDirectories": ["{{PERSONAL_PROJECT_FOLDER}}"]' "$template" || fail "S5 no additionalDirectories entry for the personal project folder"
@@ -47,5 +45,4 @@ grep -qF '"Edit(~/.claude/jacquard/**)"' "$template" || fail "S7 no Edit deny fo
 awk '/"deny": \[/ { on = 1; next } on && /\]/ { exit } on' "$template" | grep -qF '"Edit(~/.claude/jacquard/**)"' || fail "S7 the Edit rule for ~/.claude/jacquard/** must be in deny"
 grep -qE '"(Write|MultiEdit|NotebookEdit)\(' "$template" && fail "S7 a Write/MultiEdit/NotebookEdit path rule is never consulted: use Edit(path)"
 
-[ "$fails" = 0 ] && echo "✓ settings-template: all cases pass" && exit 0
-exit 1
+finish "settings-template"

@@ -1,16 +1,12 @@
 #!/bin/sh
 # Tests for scripts/away-guard.sh. Run from anywhere: tests/scripts/away-guard.test.sh
 # Exits 0 when every case passes; prints one line per failure.
-here="$(cd "$(dirname "$0")" && pwd)"
-guard="$here/../../scripts/away-guard.sh"
+. "$(dirname "$0")/lib.sh"
+guard="$kit/scripts/away-guard.sh"
 [ -x "$guard" ] || { echo "✗ $guard missing or not executable"; exit 1; }
 
-tmp="$(mktemp -d)" || exit 1
-trap 'rm -rf "$tmp"' EXIT
 export CLAUDE_PROJECT_DIR="$tmp"
 marker="$tmp/.local/away/.away-active"
-fails=0
-fail() { echo "✗ $1"; fails=$((fails + 1)); }
 
 # run <session id or "-"> <subcommand> [stdin]: output in $out, status in $st
 run() {
@@ -173,7 +169,6 @@ rm -f "$marker"
 
 # Every on/off the rules spell matches an allow rule of the permissions template exactly
 # (on takes an optional end time, so its rule ends in " *", which also matches the bare command)
-kit="$here/../.."
 template="$kit/templates/project/claude-settings.local.template.json"
 spelled="$(grep -rhoE '[~$A-Za-z/._{}-]*away-guard\.sh (on|off) <local>' "$kit/core" "$kit/skills" | sort -u)"
 [ -n "$spelled" ] || fail "C26 no on/off spelling found in core/ or skills/"
@@ -184,5 +179,4 @@ printf '%s\n' "$spelled" | while IFS= read -r c; do
   grep -qF "\"$rule\"" "$template" || echo "✗ C26 no allow rule for: $c"
 done | grep . && fails=$((fails + 1))
 
-[ "$fails" = 0 ] && echo "✓ away-guard: all cases pass" && exit 0
-echo "✗ away-guard: $fails failing"; exit 1
+finish "away-guard"

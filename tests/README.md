@@ -18,7 +18,7 @@ Each file gives a command, a role or a core rule to a subagent with no knowledge
 
 ## Script tests
 
-Shell scripts with logic have their own tests in `tests/scripts/` (`<script>.test.sh`; the git hooks and the pre-commit guard in `git-hooks.test.sh`): `tests/scripts/run.sh` runs them all. Run it after changing a script and before tagging a release. They need no subagent.
+Shell scripts with logic have their own tests in `tests/scripts/` (`<script>.test.sh`; the git hooks and the pre-commit guard in `git-hooks.test.sh`), which share their setup through `tests/scripts/lib.sh` (scratch folder, `fail`, isolated git identity, `finish`): `tests/scripts/run.sh` runs them all. Run it after changing a script and before tagging a release. They need no subagent.
 
 ## Writing a test file
 

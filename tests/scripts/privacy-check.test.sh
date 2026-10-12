@@ -1,18 +1,12 @@
 #!/usr/bin/env bash
 # Tests for scripts/privacy-check.sh. Run from anywhere: tests/scripts/privacy-check.test.sh
 # Exits 0 when every case passes; prints one line per failure.
-here="$(cd "$(dirname "$0")" && pwd)"
-check="$here/../../scripts/privacy-check.sh"
+. "$(dirname "$0")/lib.sh"
+check="$kit/scripts/privacy-check.sh"
 [ -x "$check" ] || { echo "✗ $check missing or not executable"; exit 1; }
 
-tmp="$(mktemp -d)" || exit 1
-trap 'rm -rf "$tmp"' EXIT
 export JACQUARD_PRIVACY_TERMS="$tmp/terms.txt"
 printf 'Muñoz\nsecretterm\n' > "$JACQUARD_PRIVACY_TERMS"
-export GIT_AUTHOR_NAME=Tester GIT_AUTHOR_EMAIL=tester@example.com GIT_COMMITTER_NAME=Tester GIT_COMMITTER_EMAIL=tester@example.com
-export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
-fails=0
-fail() { echo "✗ $1"; fails=$((fails + 1)); }
 
 n=0
 g() { (cd "$r" && git "$@"); }
@@ -268,5 +262,4 @@ d="$tmp/plain"; mkdir -p "$d/sub" && echo "clean" > "$d/sub/a.md"
 echo "secretterm" > "$d/sub/b.md"
 "$check" "$d" >/dev/null 2>&1; [ $? = 1 ] || fail "R7-6 a term in a folder outside git must be found"
 
-[ "$fails" = 0 ] && echo "✓ privacy-check: all cases pass" && exit 0
-echo "✗ privacy-check: $fails failing"; exit 1
+finish "privacy-check"

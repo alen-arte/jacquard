@@ -1,17 +1,10 @@
 #!/bin/sh
 # Tests for scripts/hooks/pre-push and templates/project/pre-commit-guard.
 # Run from anywhere: tests/scripts/git-hooks.test.sh. Exits 0 when every case passes.
-here="$(cd "$(dirname "$0")" && pwd)"
-kit="$here/../.."
+. "$(dirname "$0")/lib.sh"
 prepush="$kit/scripts/hooks/pre-push"
-tmp="$(mktemp -d)" || exit 1
-trap 'rm -rf "$tmp"' EXIT
 export JACQUARD_PRIVACY_TERMS="$tmp/terms.txt"
 printf 'secretterm\n' > "$JACQUARD_PRIVACY_TERMS"
-export GIT_AUTHOR_NAME=Tester GIT_AUTHOR_EMAIL=tester@example.com GIT_COMMITTER_NAME=Tester GIT_COMMITTER_EMAIL=tester@example.com
-export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
-fails=0
-fail() { echo "✗ $1"; fails=$((fails + 1)); }
 zero=0000000000000000000000000000000000000000
 
 # pre-push: history that only a private remote had must be checked before it reaches a new URL
@@ -60,5 +53,4 @@ rm -f .git/CHERRY_PICK_HEAD
 mkdir -p .jacquard && echo n > .jacquard/n.md && git switch -q r1-work 2>/dev/null; git add -A .jacquard 2>/dev/null
 "$guard" >/dev/null 2>&1 && fail "G6 staged local files must be refused"
 
-[ "$fails" = 0 ] && echo "✓ git hooks: all cases pass" && exit 0
-echo "✗ git hooks: $fails failing"; exit 1
+finish "git hooks"

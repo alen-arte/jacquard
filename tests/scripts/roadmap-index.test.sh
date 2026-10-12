@@ -1,14 +1,9 @@
 #!/bin/sh
 # Tests for scripts/roadmap-index.sh. Run from anywhere: tests/scripts/roadmap-index.test.sh
 # Exits 0 when every case passes; prints one line per failure.
-here="$(cd "$(dirname "$0")" && pwd)"
-script="$here/../../scripts/roadmap-index.sh"
+. "$(dirname "$0")/lib.sh"
+script="$kit/scripts/roadmap-index.sh"
 [ -x "$script" ] || { echo "✗ $script missing or not executable"; exit 1; }
-
-tmp="$(mktemp -d)" || exit 1
-trap 'rm -rf "$tmp"' EXIT
-fails=0
-fail() { echo "✗ $1"; fails=$((fails + 1)); }
 
 # A well-formed roadmap: the block between whole-line markers is rewritten from the marks
 f="$tmp/ok.md"
@@ -31,5 +26,4 @@ cp "$f" "$f.orig"
 "$script" --write "$f" >/dev/null 2>&1; st=$?
 [ "$st" = 2 ] && cmp -s "$f" "$f.orig" || fail "R4 an end marker before the start must be refused and the file left untouched"
 
-[ "$fails" = 0 ] && echo "✓ roadmap-index: all cases pass" && exit 0
-exit 1
+finish "roadmap-index"
