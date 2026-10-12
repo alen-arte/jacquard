@@ -14,7 +14,7 @@
 # second line, when the guard expires (epoch seconds): the end time plus a margin, or a default
 # when the block has no end time, so a user who comes back without /back is not left with a guard
 # that denies every prompt. A marker without that line (kit 0.2.7) never expires.
-margin=3600            # after the end time
+margin=10800           # after the end time: room for the closing reviews, which run after it
 no_end_time=43200      # a block with no end time: 12 h from on
 cmd="$1"; local_dir="$2"; end="$3"
 case "$cmd" in on|off|permission|elicitation|session-start) ;; *)
@@ -61,7 +61,7 @@ next_time() {
 case "$cmd" in
   on)
     [ -n "$CLAUDE_CODE_SESSION_ID" ] || { echo "✗ away-guard: CLAUDE_CODE_SESSION_ID is not set (older Claude Code?): Away runs without the guard" >&2; exit 1; }
-    if [ -f "$marker" ] && ! mine; then
+    if [ -f "$marker" ] && ! owner; then
       echo "away-guard: another session's Away marker was here; that session loses its guard" >&2
     fi
     if [ -n "$end" ]; then expires=$(( $(next_time) + margin )); else expires=$(( $(date +%s) + no_end_time )); fi

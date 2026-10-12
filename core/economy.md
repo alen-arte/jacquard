@@ -42,7 +42,7 @@ What the kit controls: the model and effort of each **subagent** it launches (se
 
 ## Estimating cost
 
-Before an Away block, `-sss`, a debate or an exploration, count the subagents it will launch (reviews, passes, critics) from the task list and the intensity table, and write it as one line: "≈ 6 subagent runs (4 standard, 2 strong)". Claude cannot see how much of the user's usage limit is left: never guess it, never present an estimate as a measurement. `/usage` shows real attribution afterwards.
+Before an Away block, `-sss`, a debate or an exploration, count the subagents it will launch (reviews, passes, critics) from the task list and the intensity table (in Away, plus the QA that closes the block), and write it as one line: "≈ 6 subagent runs (4 standard, 2 strong)". Claude cannot see how much of the user's usage limit is left: never guess it, never present an estimate as a measurement. `/usage` shows real attribution afterwards.
 
 ## Launching subagents
 

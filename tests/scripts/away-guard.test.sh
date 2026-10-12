@@ -138,10 +138,10 @@ now="$(date +%s)"
 expiry() { sed -n 2p "$marker"; }
 run s1 on
 e="$(expiry)"
-[ -n "$e" ] && [ "$e" -gt $((now + 11 * 3600)) ] && [ "$e" -le $((now + 13 * 3600 + 60)) ] || fail "C29 on without an end time must expire about 12 h later plus the margin (got '$e')"
+[ -n "$e" ] && [ "$e" -gt $((now + 11 * 3600)) ] && [ "$e" -le $((now + 13 * 3600 + 60)) ] || fail "C29 on without an end time must expire about 12 h later (got '$e')"
 CLAUDE_CODE_SESSION_ID=s1 "$guard" on .local 23:59 >/dev/null 2>&1
 e="$(expiry)"
-[ -n "$e" ] && [ "$e" -gt "$now" ] && [ "$e" -le $((now + 25 * 3600 + 60)) ] || fail "C30 on with an end time must expire after the next 23:59 plus the margin (got '$e')"
+[ -n "$e" ] && [ "$e" -gt "$now" ] && [ "$e" -le $((now + 27 * 3600 + 60)) ] || fail "C30 on with an end time must expire after the next 23:59 plus the margin (got '$e')"
 for bad in 24:00 7:5 ab:cd 12:60 "12:00 x" "12:00;x"; do
   rm -f "$marker"
   CLAUDE_CODE_SESSION_ID=s1 "$guard" on .local "$bad" >/dev/null 2>&1; st=$?

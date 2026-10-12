@@ -158,13 +158,14 @@ newrepo; echo "k: $(printf 'by secretterm' | iconv -t UTF-16LE | base64)" > "$r/
 
 # R26: a binary reviewed by hand is allowed by path and content id ("=<id> <path>" in the terms file)
 png() { printf '\211PNG\r\n\032\n\000\000\000\rIHDR%s' "$1"; }
+# allow <path>: the terms file becomes the base terms plus one exception for that file of the current repo
+allow() { cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=%s %s\n' "$(cd "$r" && git hash-object -- "$1")" "$1" >> "$JACQUARD_PRIVACY_TERMS"; }
 newrepo; mkdir -p "$r/img dir"; png one > "$r/img dir/i.png"
 id=$(git hash-object --no-filters "$r/img dir/i.png")
 out=$("$check" "$r" 2>&1); st=$?
 [ "$st" = 1 ] || fail "R26-1 an unlisted binary must still be refused"
 case "$out" in *EXIF*'='*) ;; *) fail "R26-2 the refusal must explain image metadata (EXIF) and how to allow a reviewed file";; esac
-cp "$JACQUARD_PRIVACY_TERMS" "$tmp/terms.bak"
-printf '=%s img dir/i.png\n' "$id" >> "$JACQUARD_PRIVACY_TERMS"
+cp "$JACQUARD_PRIVACY_TERMS" "$tmp/terms.bak"; allow "img dir/i.png"
 [ "$(files)" = 0 ] || fail "R26-3 a binary listed with its path and id must pass (path with a space)"
 [ "$(staged)" = 0 ] || fail "R26-4 the same, staged"
 g commit -qm img; g rev-parse HEAD | "$check" --objects "$r" >/dev/null 2>&1; [ $? = 0 ] || fail "R26-5 the same, pushed"
@@ -174,21 +175,20 @@ png two > "$r/img dir/i.png"
 png one > "$r/img dir/i.png"; cp "$r/img dir/i.png" "$r/other.png"
 [ "$(files)" = 1 ] || fail "R26-7 the same content at another path must be refused"
 rm "$r/other.png"; echo "by secretterm" > "$r/note.txt"
-printf '=%s note.txt\n' "$(git hash-object --no-filters "$r/note.txt")" >> "$JACQUARD_PRIVACY_TERMS"
+allow note.txt
 [ "$(files)" = 1 ] || fail "R26-8 an exception never exempts text: its terms are still found"
 rm "$r/note.txt"
 newrepo; echo "by secretterm" > "$r/a.md"
 printf '=%s a.md\n' "$id" >> "$JACQUARD_PRIVACY_TERMS"
 [ "$(files)" = 1 ] || fail "R26-9 exception lines must not be read as terms or hide other findings"
 newrepo; { png x; printf '\000\000Artist\000by Secretterm\000'; } > "$r/i.png"
-cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=%s i.png\n' "$(git hash-object --no-filters "$r/i.png")" >> "$JACQUARD_PRIVACY_TERMS"
+allow i.png
 [ "$(files)" = 1 ] || fail "R26-11 a term in a reviewed binary's readable text (EXIF author) must still be found"
 [ "$(staged)" = 1 ] || fail "R26-11b the same, staged"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=nothex i.png\n' >> "$JACQUARD_PRIVACY_TERMS"
 newrepo; "$check" "$r" >/dev/null 2>&1; [ $? = 2 ] || fail "R26-10 a malformed exception line must stop the check (exit 2)"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=\n' >> "$JACQUARD_PRIVACY_TERMS"
 newrepo; "$check" "$r" >/dev/null 2>&1; [ $? = 2 ] || fail "R26-10b a bare = line must stop the check (exit 2)"
-allow() { cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf '=%s %s\n' "$(cd "$r" && git hash-object -- "$1")" "$1" >> "$JACQUARD_PRIVACY_TERMS"; }
 # A path with a newline never matches an exception line, not even its second line
 newrepo; png one > "$r/ok.png"; allow ok.png; nl="x
 $(cd "$r" && git hash-object -- ok.png) ok.png"; png one > "$r/$nl"
@@ -234,6 +234,15 @@ newrepo; { png x; LC_ALL=C awk 'BEGIN { for (i = 0; i < 524288; i++) printf "\20
 start=$(date +%s); st=$(files); secs=$(( $(date +%s) - start ))
 [ "$st" = 0 ] || fail "R26-22 a listed 1 MB binary of alternating bytes must pass"
 [ "$secs" -le 15 ] || fail "R26-22b it took ${secs}s (quadratic text extraction?)"
+# A lone accented name of 6 bytes (UTF-8 or UTF-16LE) is found; a 3-letter term in a long run is found
+newrepo; { png x; printf '\000\001Mu\303\261oz\000\001'; } > "$r/i.png"; allow i.png
+[ "$(files)" = 1 ] || fail "R26-23 a lone 6-byte UTF-8 name inside a listed binary must be found"
+newrepo; { png x; printf '\000\000'; utf16le "Muñoz"; printf '\000\000\001'; } > "$r/i.png"; allow i.png
+[ "$(files)" = 1 ] || fail "R26-23b the same in UTF-16LE, at an odd offset"
+printf 'Ana\n' >> "$tmp/terms.bak"
+newrepo; { png x; printf '\000\001<dc:description>Mockup made by Ana for the client</dc:description>\000'; } > "$r/i.png"; allow i.png
+[ "$(files)" = 1 ] || fail "R26-24 a 3-letter term in a long run inside a listed binary must be found"
+sed -i.bak -e '/^Ana$/d' "$tmp/terms.bak"
 newrepo; h=home; echo "/$h/someone/x" > "$r/a: (text in binary) b.txt"
 [ "$(files)" = 1 ] || fail "R26-18 a file name that imitates the binary-text label must not hide patterns"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"

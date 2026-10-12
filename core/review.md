@@ -24,7 +24,7 @@ Default `-ss`. The most specific setting wins: per message > per Away block (`/a
 | Domain advisor | standard · normal | when its trigger fires | same | same |
 | Design critic on rendered results (`design-exploration.md` step 7) | standard · normal | at milestone close | same | + at each batch close that built an explored design |
 
-**Always, at every level:** the builder checks visual work in a real render (`visual-qa.md`), and searches for existing equivalents before building (core standards › Scalability). That is verification, not review. **In Away,** QA over everything the block built closes every block, whatever the intensity (`away-run.md` section 8).
+**Always, at every level:** the builder checks visual work in a real render (`visual-qa.md`), and searches for existing equivalents before building (core standards › Scalability). That is verification, not review. **In Away,** QA closes every block at every intensity, over the tasks that had none (`away-run.md` section 8).
 
 **Missing role:** if the project has no file for a reviewer this table or the floor calls for, run it from the kit's role file (`~/.claude/jacquard/roles/review/`). The floor never drops. A domain advisor that was never created is not improvised: say "no domain review".
 

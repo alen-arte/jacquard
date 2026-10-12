@@ -12,10 +12,10 @@ start='<!-- status-index:start -->'; end='<!-- status-index:end -->'
 [ "$(awk -v s="$start" -v e="$end" '$0 == s { o = o "s" } $0 == e { o = o "e" } END { print o }' "$file")" = se ] ||
   { echo "✗ $file needs one '$start' line followed by one '$end' line" >&2; exit 2; }
 
-line="$(awk '
+line="$(awk -v s="$start" -v e="$end" '
 function add(m, id) { ids[m] = (ids[m] == "" ? id : ids[m] ", " id) }
-$0 == "<!-- status-index:start -->" { skip = 1 }
-$0 == "<!-- status-index:end -->"   { skip = 0; next }
+$0 == s { skip = 1 }
+$0 == e { skip = 0; next }
 skip { next }
 {
   if (match($0, /^- (✅|🚀|👀|⚖️|⚖|⬜|❌) \*\*[RP][0-9]+[a-z]? /)) {
@@ -39,9 +39,9 @@ END {
 }' "$file")"
 
 tmp="$(mktemp)"
-awk -v line="$line" '
-$0 == "<!-- status-index:start -->" { print; print line; skip = 1; next }
-$0 == "<!-- status-index:end -->"   { skip = 0 }
+awk -v line="$line" -v s="$start" -v e="$end" '
+$0 == s { print; print line; skip = 1; next }
+$0 == e { skip = 0 }
 !skip { print }' "$file" > "$tmp"
 
 if [ "$mode" = "--check" ]; then

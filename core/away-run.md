@@ -30,10 +30,9 @@ Claude cannot see how much of the session limit is left, so Away is built to be 
 
 Reviews follow `core/review.md` with the session's intensity and the floor for level-2 work:
 - **`DEP` task:** its review runs right after the commit, before anything builds on it.
-- **`ISO` task:** added to `QA-pending` (task, commit, what to verify, how) for the review block.
-- **QA always closes the block,** at every intensity (`-s` too): every task built in the block that has had no QA of its own goes into `QA-pending`, and the review block reviews them together over the block's diff. It is never skipped for lack of room: if the session ends before it runs, `/back` runs it before the report.
+- **`ISO` task, and any task without its own QA:** into `QA-pending` (task, commit, what to verify, how). QA over `QA-pending` closes every block at every intensity (`-s` too), together over the block's diff, never skipped for lack of room.
 - **Review block:** QA over `QA-pending`, then the advisors the profile and intensity call for, as separate subagents. Verdicts go into the report, unresolved ones included.
-- **If the session ends first,** the advisor reviews still pending appear in the report as "to test together", with what to check and how; QA is still pending and `/back` or `/away-resume` runs it.
+- **If the session ends first,** `/back` or `/away-resume` runs the pending QA before the report; pending advisor reviews go into the report as "to test together", with what to check and how.
 
 ## 9. The Away report
 

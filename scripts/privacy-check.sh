@@ -24,9 +24,9 @@
 # text is checked; binary or compressed content, also inside base64, cannot be read, so it is refused
 # (a binary listed with "=" excepted).
 # The copyright lines of the top-level LICENSE are exempt from terms, not from patterns (files mode).
-# Terms of 5 characters or fewer match only as whole words (a handle like ana_dev needs its own line).
-# Inside allowed binaries: runs of 8+ characters, terms of 4+ characters; patterns only in runs of 24+;
-# base64 is not decoded.
+# Terms of 5 characters or fewer (short_term_max) match only as whole words (a handle like ana_dev needs its own line).
+# Inside allowed binaries (thresholds named below): runs of 6+ bytes; every term in runs of 24+, which also
+# get patterns; only terms of 4+ characters in shorter runs; base64 is not decoded.
 # Findings name terms by number (their order in the terms file), never by text.
 # Exit: 0 clean · 1 something found · 2 nothing could be checked.
 set -u
@@ -37,6 +37,11 @@ elif locale -a 2>/dev/null | grep -qx 'en_US\.UTF-8'; then export LC_ALL=en_US.U
 else export LC_ALL=C; fi
 
 fail() { echo "✗ $1: nothing was checked." >&2; exit 2; }
+# Thresholds, measured on random 1-5 MB binaries (R26, R31): shorter runs and terms match by chance.
+short_term_max=5        # terms this short (characters) match only as whole words
+bin_run_min=6           # readable runs inside an allowed binary shorter than this (bytes) are ignored
+bin_term_min=4          # in runs shorter than bin_pattern_run_min, only terms this long or longer
+bin_pattern_run_min=24  # runs this long (bytes) get every term and the patterns
 mode=files
 case "${1:-}" in --staged) mode=staged; shift ;; --objects) mode=objects; shift ;; esac
 repo="${1:-.}"
@@ -129,18 +134,18 @@ inspect() { # source file, label, "" or blob or whole, [path in the repo]
     unreadable
   fi
 }
-# Runs of 4+ bytes of readable Latin text in bytes that are mostly not text: printable ASCII, tab, and complete
-# UTF-8 letters of Latin-1 and Latin Extended-A (C2-C5 then 80-BF). Any other byte splits a run, never glues it.
+# Runs of bin_run_min+ bytes of readable Latin text in bytes that are mostly not text: printable ASCII, tab, and
+# complete UTF-8 letters of Latin-1 and Latin Extended-A (C2-C5 then 80-BF). Any other byte splits a run.
 # One pass per line (a long line of many short pieces stays linear).
-latin_runs() { LC_ALL=C tr -c '\040-\176\t\200-\277\302-\305' '\n' | LC_ALL=C awk '{
+latin_runs() { LC_ALL=C tr -c '\040-\176\t\200-\277\302-\305' '\n' | LC_ALL=C awk -v min="$bin_run_min" '{
   n = length($0); start = 0; i = 1
   while (i <= n) {
     c = substr($0, i, 1)
     if (c >= " " && c <= "~" || c == "\t") { if (!start) start = i; i++ }
     else if (c >= "\302" && c <= "\305" && i < n && substr($0, i + 1, 1) >= "\200" && substr($0, i + 1, 1) <= "\277") { if (!start) start = i; i += 2 }
-    else { if (start && i - start >= 4) print substr($0, start, i - start); start = 0; i++ }
+    else { if (start && i - start >= min) print substr($0, start, i - start); start = 0; i++ }
   }
-  if (start && n + 1 - start >= 4) print substr($0, start, n + 1 - start) }'; }
+  if (start && n + 1 - start >= min) print substr($0, start, n + 1 - start) }'; }
 unreadable() { # uses inspect's src, lbl, kind and path
   local id
   # The id of the content as git stores it: a blob is already stored; a working-tree file gets its filters
@@ -149,16 +154,18 @@ unreadable() { # uses inspect's src, lbl, kind and path
 "*) id="" ;; esac # a path with a newline never matches
   if [ -n "$path" ] && [ -n "$id" ] && [ -s "$tmp/binok" ] &&
      E="$id $path" awk '$0 == ENVIRON["E"] { found = 1; exit } END { exit !found }' "$tmp/binok"; then
-    # A reviewed binary: its readable runs (ASCII or UTF-8, and UTF-16 either way) of 8+ characters are still
-    # checked for terms of 4+ characters, and runs of 24+ (XMP, EXIF strings) for patterns too. Measured on
-    # random 1-5 MB files: shorter runs give email- and path-shaped noise, 3-letter words and, at 5 MB, a
-    # 4-letter word by chance; no random run reached 18 characters.
+    # A reviewed binary: its readable runs (ASCII or UTF-8, and UTF-16 either way) are still checked. Long runs
+    # (XMP, EXIF strings) for every term and the patterns; shorter ones for longer terms only: in random data
+    # they give email- and path-shaped noise and short words by chance, and no random run reached 18 bytes.
+    # UTF-16 text can start at an odd offset: each byte order is decoded from both offsets.
     { latin_runs < "$src"
-      iconv -c -f UTF-16LE -t UTF-8 < "$src" 2>/dev/null | latin_runs
-      iconv -c -f UTF-16BE -t UTF-8 < "$src" 2>/dev/null | latin_runs
+      for enc in UTF-16LE UTF-16BE; do
+        iconv -c -f "$enc" -t UTF-8 < "$src" 2>/dev/null | latin_runs
+        tail -c +2 "$src" | iconv -c -f "$enc" -t UTF-8 2>/dev/null | latin_runs
+      done
     } > "$tmp/runs"
-    LC_ALL=C awk 'length($0) >= 24' "$tmp/runs" | label "$lbl: (text in binary) " >> "$tmp/binlong"
-    LC_ALL=C awk 'length($0) >= 8 && length($0) < 24' "$tmp/runs" | label "$lbl: (text in binary) " >> "$tmp/binstream"
+    LC_ALL=C awk -v m="$bin_pattern_run_min" 'length($0) >= m' "$tmp/runs" | label "$lbl: (text in binary) " >> "$tmp/binlong"
+    LC_ALL=C awk -v m="$bin_pattern_run_min" 'length($0) < m' "$tmp/runs" | label "$lbl: (text in binary) " >> "$tmp/binstream"
     return 0
   fi
   printf '%s\n' "$lbl" >> "$tmp/unreadable"
@@ -282,11 +289,10 @@ LC_ALL=C awk -v unread="$tmp/unreadable" '
       if (best < 0.85) print where " (binary data in base64)" >> unread
       else emit(run, bk)
     } }' "$out" > "$tmp/decoded" || fail "cannot decode base64"
-# Readable text from allowed binaries goes last: long runs, then short ones. Terms of 4+ characters only from
-# bin_from on; patterns skip the short runs, from short_from on (by line number, so no file name imitates them).
+# Readable text from allowed binaries goes last: long runs, then short ones. From short_from on (by line number,
+# so no file name imitates them) patterns are skipped and only terms of bin_term_min+ characters are looked for.
 cat "$out" "$tmp/decoded" "$tmp/binlong" "$tmp/binstream" > "$tmp/kept"
 nkept=$(( $(wc -l < "$tmp/kept") )); short_from=$(( nkept - $(wc -l < "$tmp/binstream") + 1 ))
-bin_from=$(( short_from - $(wc -l < "$tmp/binlong") ))
 # Fold (LICENSE's copyright lines at the end, for patterns only); replace allowed texts with a marker without letters.
 cat "$tmp/kept" "$tmp/copyright" | fold > "$tmp/folded0"
 [ "$(( $(wc -l < "$tmp/kept") + $(wc -l < "$tmp/copyright") ))" -eq "$(( $(wc -l < "$tmp/folded0") ))" ] || fail "folding lost lines"
@@ -296,9 +302,9 @@ awk -v allowfile="$tmp/allow" '
     for (i = 1; i <= n; i++) while ((p = index(low, allow[i])) > 0) {
       line = substr(line, 1, p-1) "<=>" substr(line, p + length(allow[i])); low = tolower(line) }
     print line }' "$tmp/folded0" > "$tmp/scan" || fail "cannot apply allow lines"
-head -n "$(( bin_from - 1 ))" "$tmp/scan" > "$tmp/folded"
-head -n "$nkept" "$tmp/scan" | tail -n +"$bin_from" > "$tmp/folded.bin" # empty when no binary text
-head -n "$(( bin_from - 1 ))" "$tmp/kept" > "$tmp/kept.main"; cat "$tmp/binlong" "$tmp/binstream" > "$tmp/kept.bin"
+head -n "$(( short_from - 1 ))" "$tmp/scan" > "$tmp/folded"
+head -n "$nkept" "$tmp/scan" | tail -n +"$short_from" > "$tmp/folded.bin" # empty when no short binary runs
+head -n "$(( short_from - 1 ))" "$tmp/kept" > "$tmp/kept.main"; cp "$tmp/binstream" "$tmp/kept.bin"
 
 found=0
 report() { echo "✗ $1"; printf '%s\n' "$2" | head -20 | cut -c1-300 | sed 's/^/    /'; found=1; }
@@ -316,9 +322,9 @@ while IFS= read -r term; do
   orig=$(sed -n "${i}p" "$tmp/terms")
   # A term of 5 characters or fewer matches only as a whole word: inside hashes and tokens it shows up by chance.
   # (Only when it starts and ends with a letter or digit: "@ana" keeps matching after any character.)
-  w=""; [ "${#orig}" -le 5 ] && case "$orig" in [[:alnum:]]*[[:alnum:]]|[[:alnum:]]) w=-w ;; esac
-  # Readable text inside allowed binaries: terms of 4+ characters only.
-  bin=""; [ "${#orig}" -ge 4 ] && bin=.bin
+  w=""; [ "${#orig}" -le "$short_term_max" ] && case "$orig" in [[:alnum:]]*[[:alnum:]]|[[:alnum:]]) w=-w ;; esac
+  # Short readable runs inside allowed binaries: longer terms only.
+  bin=""; [ "${#orig}" -ge "$bin_term_min" ] && bin=.bin
   hits=$(grep -a -h -i $w -F -- "$term" "$tmp/folded" ${bin:+"$tmp/folded.bin"})
   # Terms that do not fold cleanly (non-Latin scripts) are also matched as written.
   case "$term" in *'?'*) hits="$hits$(grep -a -h -i $w -F -- "$orig" "$tmp/kept.main" ${bin:+"$tmp/kept.bin"})" ;; esac

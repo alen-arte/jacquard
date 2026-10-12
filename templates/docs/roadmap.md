@@ -7,7 +7,7 @@
 <!-- status-index:start -->
 <!-- status-index:end -->
 
-> Derived from the marks below; never edit by hand. After changing a mark, Claude runs `~/.claude/jacquard/scripts/roadmap-index.sh --write` on this file (core/docs-system.md, Status index).
+> Derived from the marks below; never edit by hand. After changing a mark, Claude runs `~/.claude/jacquard/scripts/roadmap-index.sh --write {{LOCAL_FOLDER}}/docs/roadmap.md` (core/docs-system.md, Status index).
 
 ## ▶ Now · Next · Later
 

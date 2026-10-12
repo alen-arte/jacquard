@@ -28,7 +28,7 @@ Jacquard gives every project the same hidden structure: standards that set the b
 
 | | What changes |
 |---|---|
-| `-s` light | Tests always; independent reviews mostly at milestones |
+| `-s` light | Tests always; independent reviews mostly at milestones, and QA at the end of every Away block |
 | `-ss` normal (default) | Reviews per batch; sensitive work reviewed per task |
 | `-sss` hardened | Reviews per task, more tests, advisors per batch |
 
