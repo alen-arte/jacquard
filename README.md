@@ -31,6 +31,7 @@ The Jacquard loom wove flowers and figures from punched cards: a hidden pattern 
 core/         standards (always loaded) and on-demand rules
 roles/        role library and role template
 skills/       commands: /kickoff, /away, /back, /away-resume, /rigor, /jacquard-update, /retro, /debate
+agents/       reviewer subagents (read-only): QA
 templates/    project files and guiding documents
 personal/     template for your private layer
 scripts/      privacy check, git hooks for publishing, Away guard

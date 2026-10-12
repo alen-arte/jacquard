@@ -44,7 +44,7 @@ A batch is a group of related tasks closed together (one or several roadmap item
 
 ## Running a review
 
-- One general-purpose subagent per review (never Explore or Plan: they do not load the core standards), at its row's tier and effort, both passed explicitly: the model and effort come from `tiers` in preferences, and "normal" is the tier's own effort (without `tiers`, the session's). Level-2 work is never reviewed below its row's tier, whatever the budget.
+- One subagent per review, at its row's tier and effort, both passed explicitly: the model and effort come from `tiers` in preferences, and "normal" is the tier's own effort (without `tiers`, the session's). Level-2 work is never reviewed below its row's tier, whatever the budget. QA runs as the `jacquard-qa-reviewer` subagent when it is installed (`INSTALL.md` step 2): read-only tools and a turn cap, so it cannot run the checks and the prompt carries their results and the captures. Every other review, and QA where that subagent is not installed, runs as a general-purpose subagent (never Explore or Plan: they do not load the core standards).
 - The prompt names the role file and the handoff note, and passes the diff, the files in point 6 of the handoff note and only the document sections cited by ID. A diff alone cannot show that a behaviour already exists elsewhere: QA and the engineering advisor also search the repo for equivalents of what the diff adds; an advisor triggered by QA gets QA's finding and its files. It never pastes or re-reads the always-loaded files: the subagent already has them.
 - The reviewer returns only its verdict and findings; a follow-up round continues the same subagent when the environment allows it.
 - The verdict and every open finding go into the report.

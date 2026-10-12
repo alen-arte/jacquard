@@ -51,10 +51,23 @@ done
 
 For each name skipped: back up the existing skill or command and ask before replacing it.
 
+Link the reviewer subagents into `~/.claude/agents/` the same way (today only `jacquard-qa-reviewer`; each adds one line to every session's context):
+
+```bash
+mkdir -p ~/.claude/agents
+for a in ~/.claude/jacquard/agents/*.md; do
+  n=$(basename "$a")
+  if [ -e ~/.claude/agents/"$n" ]; then echo "skip $n: already exists"; continue; fi
+  ln -s "$a" ~/.claude/agents/"$n"
+done
+```
+
+Check with `/agents` that `jacquard-qa-reviewer` is listed.
+
 After updating the kit, remove links left dangling by a renamed or deleted skill (for example `kit-update`, now `jacquard-update`); this only touches broken links that point into the kit:
 
 ```bash
-for l in ~/.claude/skills/*; do
+for l in ~/.claude/skills/* ~/.claude/agents/*; do
   [ -L "$l" ] && [ ! -e "$l" ] && case "$(readlink "$l")" in *jacquard*) echo "removing dangling link $l"; rm "$l";; esac
 done
 ```
