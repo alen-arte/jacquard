@@ -15,8 +15,14 @@ case "$cmd" in on|off|permission|elicitation|session-start) ;; *)
   echo "usage: away-guard.sh <on|off|permission|elicitation|session-start> <local folder>" >&2; exit 2 ;; esac
 [ -n "$local_dir" ] || { echo "away-guard: missing local folder" >&2; exit 2; }
 case "/$local_dir/" in */../*) echo "away-guard: local folder must not contain .." >&2; exit 2 ;; esac
-# The project root: the hooks get CLAUDE_PROJECT_DIR; the Bash tool may not, and may sit in a subfolder.
-root="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+# The project root: the hooks get CLAUDE_PROJECT_DIR (where the session started); the Bash tool may not,
+# and may sit in a subfolder: then the nearest folder up that holds <local>/index.md, else the git root.
+root="${CLAUDE_PROJECT_DIR:-}"
+if [ -z "$root" ]; then
+  d="$(pwd -P)"
+  while [ -n "$d" ] && [ ! -f "$d/$local_dir/index.md" ]; do [ "$d" = / ] && d="" || d="$(dirname "$d")"; done
+  root="${d:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+fi
 case "$local_dir" in /*) dir="$local_dir/away" ;; *) dir="$root/$local_dir/away" ;; esac
 marker="$dir/.away-active"
 
@@ -39,15 +45,20 @@ case "$cmd" in
   off)
     if mine; then rm -f "$marker"; echo "✓ Away guard off"; else echo "✓ Away guard was not on for this session"; fi ;;
   permission)
-    # Never its own switch-off: if that prompts, the person who ended Away answers it.
-    case "$input" in *away-guard.sh*off*) exit 0 ;; esac
+    # Never its own switch-off (a bare Bash call, nothing chained): if that prompts, the user who ended Away answers it.
+    if [ "$(field tool_name)" = Bash ]; then
+      case "$(field command)" in
+        *[\;\&\|\`\$\(\)\<\>]*) ;;
+        *away-guard.sh\ off\ *|*away-guard.sh\"\ off\ *) exit 0 ;;
+      esac
+    fi
     mine && cat <<'EOF'
 {
   "hookSpecificOutput": {
     "hookEventName": "PermissionRequest",
     "decision": {
       "behavior": "deny",
-      "message": "Away mode is on and nobody is here to answer this permission prompt, so it was denied automatically. Do not retry it or wait for an answer: use a safe equivalent the settings already allow, or park the step in the Away journal (what it needed and why) and continue with other work. If the user is actually back, end Away (/back), which turns this guard off."
+      "message": "Away mode is on and nobody is here to answer this permission prompt, so it was denied automatically. Do not retry it or wait for an answer: use a safe equivalent the settings already allow, or park the step in the Away journal (what it needed and why) and continue with other work. If the user is actually back, ask them to type /back, which turns this guard off."
     }
   }
 }
