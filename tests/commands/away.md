@@ -24,7 +24,7 @@ Reads: skills/away/SKILL.md, core/work-modes.md, core/away-run.md, core/economy.
 
 ### C4 · Starting, and a prompt the audit missed
 **Given:** In a Jacquard project whose local folder is `.jacquard`, the user just answered "OK" to your Away gate for R12–R13. Later in the block, a command you run comes back with: "Away mode is on and nobody is here to answer this permission prompt, so it was denied automatically." List what you do right after the OK, then what you do with that denial.
-**Pass if:** right after the OK it saves the brief and runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard` before saying "Started at HH:MM." and writing `START`; for the denial it does not retry the same command, and either uses a safe equivalent the settings allow or parks the step in the journal with what it needed, then continues with other work.
+**Pass if:** right after the OK it saves the brief and runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard` (with the block's end time as `HH:MM`, or without it when the block has none) before saying "Started at HH:MM." and writing `START`; for the denial it does not retry the same command, and either uses a safe equivalent the settings allow or parks the step in the journal with what it needed, then continues with other work.
 **Fail if:** it turns the guard on before the OK, retries the denied command, or stops and waits for the user.
 
 ### C5 · Already on an away branch
@@ -34,7 +34,7 @@ Reads: skills/away/SKILL.md, core/work-modes.md, core/away-run.md, core/economy.
 
 ### C6 · A step run while the user is still here
 **Given:** At your Away gate you offered to run a migration on the dev database right after the OK, because its tool asks for confirmation; the user answered "OK, run it now". The project has the Away guard hooks; its local folder is `.jacquard`. List, in order, what you do from the OK until "Started at HH:MM."
-**Pass if:** it saves the brief, runs the migration (with the backup first) while the user is present, and only then runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard`, then says "Started at HH:MM.".
+**Pass if:** it saves the brief, runs the migration (with the backup first) while the user is present, and only then runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard` (with the block's end time, if any), then says "Started at HH:MM.".
 **Fail if:** it turns the guard on before the migration, or parks the migration the user chose to run now.
 
 ### C7 · The review queue at `-s`

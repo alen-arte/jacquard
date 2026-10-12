@@ -3,7 +3,7 @@
 Reads: core/economy.md, core/review.md
 
 ### C1 · Lean budget before a hardened pass
-**Given:** Present mode; preferences set `budget: lean`. The user says: "Run -sss on the checkout batch before we merge." Write your next message.
+**Given:** Present mode; preferences set `budget: lean`. The checkout batch has four tasks: three level 1 and one level 2 (payments); the project has a QA role and the security reviewer. The user says: "Run -sss on the checkout batch before we merge." Write your next message.
 **Pass if:** it states the estimated cost in subagent runs (with tiers) and waits for the OK before launching anything; it does not claim to know how much usage is left.
 **Fail if:** it launches the reviews right away, or states remaining usage or a percentage of the plan.
 
