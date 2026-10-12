@@ -217,6 +217,20 @@ newrepo; { png x; printf '\000\001'; utf16le "by Muñoz"; printf '\000\000\001';
 [ "$(staged)" = 1 ] || fail "R26-16b the same, staged"
 cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"
 
+# R31: terms of 5 letters or fewer match only as a whole word; longer ones anywhere
+cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"; printf 'Ana\nJuan\nPereyra\n' >> "$JACQUARD_PRIVACY_TERMS"
+newrepo; echo "a banana and a sha: 9f2cJuanq81e" > "$r/a.md"
+[ "$(files)" = 0 ] || fail "R31-1 short terms inside longer words or hashes must not match"
+newrepo; echo "written by Ana." > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R31-2 a short term as a whole word must be found"
+newrepo; echo "contact: juan@example.org" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R31-3 a short term before @ is a whole word and must be found"
+newrepo; echo "id xPereyrax" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R31-4 a term of 6+ letters must still match inside a word"
+newrepo; echo "by ANA" > "$r/a.md"
+[ "$(staged)" = 1 ] || fail "R31-5 a whole-word short term must be found staged, ignoring case"
+cp "$tmp/terms.bak" "$JACQUARD_PRIVACY_TERMS"
+
 # R7: outside a git repository (no find -printf)
 d="$tmp/plain"; mkdir -p "$d/sub" && echo "clean" > "$d/sub/a.md"
 "$check" "$d" >/dev/null 2>&1; [ $? = 0 ] || fail "R7-5 a clean folder outside git must pass"

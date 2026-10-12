@@ -24,6 +24,7 @@
 # text is checked; binary or compressed content, also inside base64, cannot be read, so it is refused
 # (a binary listed with "=" excepted).
 # The copyright lines of the top-level LICENSE are exempt from terms, not from patterns (files mode).
+# Terms of 5 characters or fewer match only as whole words (a handle like ana_dev needs its own line).
 # Findings name terms by number (their order in the terms file), never by text.
 # Exit: 0 clean · 1 something found · 2 nothing could be checked.
 set -u
@@ -292,9 +293,11 @@ i=0
 while IFS= read -r term; do
   i=$((i+1))
   orig=$(sed -n "${i}p" "$tmp/terms")
-  hits=$(grep -a -i -F -- "$term" "$tmp/folded")
+  # A term of 5 characters or fewer matches only as a whole word: inside hashes and tokens it shows up by chance.
+  w=""; [ "${#orig}" -le 5 ] && w=-w
+  hits=$(grep -a -i $w -F -- "$term" "$tmp/folded")
   # Terms that do not fold cleanly (non-Latin scripts) are also matched as written.
-  case "$term" in *'?'*) hits="$hits$(grep -a -i -F -- "$orig" "$tmp/kept")" ;; esac
+  case "$term" in *'?'*) hits="$hits$(grep -a -i $w -F -- "$orig" "$tmp/kept")" ;; esac
   [ -n "$hits" ] && report "term #$i" "$hits"
 done < "$tmp/terms.f"
 
