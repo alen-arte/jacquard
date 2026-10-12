@@ -16,14 +16,18 @@ case "$cmd" in on|off|permission|elicitation|session-start) ;; *)
 [ -n "$local_dir" ] || { echo "away-guard: missing local folder" >&2; exit 2; }
 case "/$local_dir/" in */../*) echo "away-guard: local folder must not contain .." >&2; exit 2 ;; esac
 # The project root: the hooks get CLAUDE_PROJECT_DIR (where the session started); the Bash tool may not,
-# and may sit in a subfolder: then the nearest folder up that holds <local>/index.md, else the git root.
+# and may sit in a subfolder: then the nearest folder up that holds <local>/index.md. None: refuse.
 root="${CLAUDE_PROJECT_DIR:-}"
 if [ -z "$root" ]; then
   d="$(pwd -P)"
   while [ -n "$d" ] && [ ! -f "$d/$local_dir/index.md" ]; do [ "$d" = / ] && d="" || d="$(dirname "$d")"; done
-  root="${d:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+  root="$d"
 fi
-case "$local_dir" in /*) dir="$local_dir/away" ;; *) dir="$root/$local_dir/away" ;; esac
+case "$local_dir" in
+  /*) dir="$local_dir/away" ;;
+  *) [ -n "$root" ] || { echo "✗ away-guard: no $local_dir/index.md here or above $(pwd -P), and no CLAUDE_PROJECT_DIR" >&2; exit 1; }
+     dir="$root/$local_dir/away" ;;
+esac
 marker="$dir/.away-active"
 
 # Hooks get their input on stdin, and its session id decides; on and off use the environment's.
@@ -41,16 +45,15 @@ case "$cmd" in
       echo "away-guard: another session's Away marker was here; that session loses its guard" >&2
     fi
     mkdir -p "$dir" && rm -f "$marker" && printf '%s\n' "$CLAUDE_CODE_SESSION_ID" > "$marker" || exit 1
-    echo "✓ Away guard on for this session" ;;
+    echo "✓ Away guard on for this session ($marker)" ;;
   off)
-    if mine; then rm -f "$marker"; echo "✓ Away guard off"; else echo "✓ Away guard was not on for this session"; fi ;;
+    if mine; then rm -f "$marker"; echo "✓ Away guard off"; else echo "✓ Away guard was not on for this session ($marker)"; fi ;;
   permission)
-    # Never its own switch-off (a bare Bash call, nothing chained): if that prompts, the user who ended Away answers it.
+    # Never its own switch-off, spelled exactly as the rules do (no escapes, nothing chained):
+    # if that prompts, the user who ended Away answers it.
     if [ "$(field tool_name)" = Bash ]; then
-      case "$(field command)" in
-        *[\;\&\|\`\$\(\)\<\>]*) ;;
-        *away-guard.sh\ off\ *|*away-guard.sh\"\ off\ *) exit 0 ;;
-      esac
+      raw="$(printf '%s' "$input" | tr '\n' ' ' | grep -o '"command" *: *"[^"\\]*"' | head -n 1 | sed 's/^"command" *: *"//; s/"$//')"
+      case "$raw" in "~/.claude/jacquard/scripts/away-guard.sh off $local_dir"|"$HOME/.claude/jacquard/scripts/away-guard.sh off $local_dir") exit 0 ;; esac
     fi
     mine && cat <<'EOF'
 {

@@ -85,12 +85,14 @@ out="$(CLAUDE_CODE_SESSION_ID=s1 "$guard" on ../x 2>/dev/null)"; st=$?
 
 # The guard never denies its own switch-off (a misspelt or unallowed off must still reach the user)
 run s1 on
-run s1 permission '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"~/.claude/jacquard/scripts/away-guard.sh off .jacquard/"}}'
+run s1 permission '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"~/.claude/jacquard/scripts/away-guard.sh off .local"}}'
 [ -z "$out" ] || fail "C18 the guard's own off command must not be denied"
 for inp in '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"git commit -m \"away-guard.sh: turn off on /back\""}}' \
            '{"session_id":"s1","tool_name":"Read","tool_input":{"file_path":"scripts/away-guard.sh","offset":10}}' \
            '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"bash -c \"true; echo away-guard.sh off x\""}}' \
-           '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"~/.claude/jacquard/scripts/away-guard.sh off .jacquard; git push"}}'; do
+           '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"~/.claude/jacquard/scripts/away-guard.sh off .jacquard; git push"}}' \
+           '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"~/.claude/jacquard/scripts/away-guard.sh off .local \\"x\\"; git push"}}' \
+           '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"~/.claude/jacquard/scripts/away-guard.sh off .local\ngit push"}}'; do
   run s1 permission "$inp"
   case "$out" in *'"behavior": "deny"'*) ;; *) fail "C18b only the bare off command is exempt: $inp";; esac
 done
@@ -113,7 +115,7 @@ case "$err" in *"another session"*) ;; *) fail "C22 on over another session's ma
 run s2 off
 
 # Without CLAUDE_PROJECT_DIR, on/off resolve the repo root, not the current folder
-repo="$tmp/repo"; mkdir -p "$repo/sub" && git init -q "$repo"
+repo="$tmp/repo"; mkdir -p "$repo/sub" "$repo/.local" && git init -q "$repo" && echo x > "$repo/.local/index.md"
 ( cd "$repo/sub" && env -u CLAUDE_PROJECT_DIR CLAUDE_CODE_SESSION_ID=s1 "$guard" on .local >/dev/null 2>&1 )
 [ -f "$repo/.local/away/.away-active" ] && [ ! -e "$repo/sub/.local" ] || fail "C23 on from a subfolder must write the marker at the repo root"
 ( cd "$repo/sub" && env -u CLAUDE_PROJECT_DIR CLAUDE_CODE_SESSION_ID=s1 "$guard" off .local >/dev/null 2>&1 )
@@ -125,6 +127,10 @@ mkdir -p "$repo/pkg/.local" && echo x > "$repo/pkg/.local/index.md"
 [ -f "$repo/pkg/.local/away/.away-active" ] || fail "C27 on must use the nearest folder that holds <local>/index.md"
 ( cd "$repo/pkg" && env -u CLAUDE_PROJECT_DIR CLAUDE_CODE_SESSION_ID=s1 "$guard" off .local >/dev/null 2>&1 )
 
+# Outside any project (no <local>/index.md up the tree, no CLAUDE_PROJECT_DIR), on and off refuse
+out="$(cd "$tmp" && env -u CLAUDE_PROJECT_DIR CLAUDE_CODE_SESSION_ID=s1 "$guard" on .nowhere 2>&1)"; st=$?
+[ "$st" = 1 ] && [ ! -e "$tmp/.nowhere" ] || fail "C28 on outside a project must fail and write nothing"
+
 # An absolute local folder is used as is; a symlink at the marker is replaced, not followed
 abs="$tmp/abs"; target="$tmp/target.txt"; echo keep > "$target"
 mkdir -p "$abs/away" && ln -s "$target" "$abs/away/.away-active"
@@ -135,6 +141,7 @@ CLAUDE_CODE_SESSION_ID=s1 "$guard" on "$abs" >/dev/null 2>&1
 kit="$here/../.."
 spelled="$(grep -rhoE '[~$A-Za-z/._{}-]*away-guard\.sh (on|off) <local>' "$kit/core" "$kit/skills" | sort -u)"
 [ -n "$spelled" ] || fail "C26 no on/off spelling found in core/ or skills/"
+grep -q 'away-guard.sh on' "$kit/templates/project/settings.local.json" || fail "C26 the permissions template has no guard rules (template change not committed?)"
 printf '%s\n' "$spelled" | while IFS= read -r c; do
   rule="Bash($(printf '%s' "$c" | sed 's/<local>/{{LOCAL_FOLDER}}/'))"
   grep -qF "\"$rule\"" "$kit/templates/project/settings.local.json" || echo "✗ C26 no allow rule for: $c"

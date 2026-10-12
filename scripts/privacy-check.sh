@@ -49,10 +49,13 @@ case "$(printf 'P\303\251rez\n' | fold)" in
 esac
 # Added lines of a patch, labelled: only inside hunks, so a line whose text starts with "++ " is kept.
 # The top-level LICENSE's added copyright lines go to the copyright stream (exempt from terms only).
-added() { LC_ALL=C L="$1" awk -v cr="$tmp/copyright" '
+# A copyright line is exempt only when it is just years and a holder name (no address, number or email).
+holder_re='^Copyright ([(][cC][)] )?[0-9][0-9, -]* [^0-9,@+<>/:]+$'
+added() { LC_ALL=C L="$1" awk -v cr="$tmp/copyright" -v re="$holder_re" '
   /^diff --git /{ h = 0; lic = ($0 == "diff --git a/LICENSE b/LICENSE"); next }
   /^@@/{ h = 1; next }
-  h && /^\+/{ gsub(/\000/, ""); if (lic && /^\+Copyright /) print ENVIRON["L"] "(copyright) " $0 >> cr; else print ENVIRON["L"] $0 }'; }
+  h && /^\+/{ gsub(/\000/, ""); t = substr($0, 2)
+               if (lic && t ~ re && length(t) <= 100) print ENVIRON["L"] "(copyright) " t >> cr; else print ENVIRON["L"] t }'; }
 # Prefix every line with a label, safely for any file name. Byte-wise tools run with LC_ALL=C (BSD tr and
 # awk stop at invalid UTF-8 under a UTF-8 locale).
 label() { LC_ALL=C L="$1" awk '{print ENVIRON["L"] $0}'; }
@@ -91,6 +94,8 @@ inspect() { # source file, label, [blob]
     if iconv -f UTF-8 -t UTF-8 < "$src" > /dev/null 2>&1; then
       [ "$kind" = blob ] || label "$lbl: " < "$src" >> "$out" || fail "cannot read $lbl"
     elif iconv -c -f CP1252 -t UTF-8 < "$src" > "$tmp/conv" 2>/dev/null; then
+      # Mostly UTF-8 with a stray byte, or 8-bit text: read it both ways.
+      [ "$kind" = blob ] || iconv -c -f UTF-8 -t UTF-8 < "$src" 2>/dev/null | label "$lbl: " >> "$out"
       label "$lbl: " < "$tmp/conv" >> "$out"
     else
       printf '%s\n' "$lbl" >> "$tmp/unreadable"
@@ -117,8 +122,8 @@ emit_file() { # path as listed by git
   [ -f "$f" ] || return 0
   [ -r "$f" ] || fail "cannot read $f"
   if [ "$f" = LICENSE ]; then # its copyright lines are exempt from terms (kept for patterns); the rest is checked
-    grep -a -E '^Copyright ' -- "$f" | label "LICENSE: (copyright) " >> "$tmp/copyright"
-    grep -a -v -E '^Copyright ' -- "$f" > "$tmp/license"; inspect "$tmp/license" "$f"
+    LC_ALL=C awk -v re="$holder_re" '$0 ~ re && length($0) <= 100' "$f" | label "LICENSE: (copyright) " >> "$tmp/copyright"
+    LC_ALL=C awk -v re="$holder_re" '!($0 ~ re && length($0) <= 100)' "$f" > "$tmp/license"; inspect "$tmp/license" "$f"
   else
     inspect "$f" "$f"
   fi
@@ -186,7 +191,6 @@ LC_ALL=C awk -v unread="$tmp/unreadable" '
   BEGIN { a = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
           for (i = 1; i <= 64; i++) v[substr(a, i, 1)] = i - 1; v["-"] = 62; v["_"] = 63
           for (i = 0; i < 256; i++) chr[i] = sprintf("%c", i); for (i = 0; i <= 16; i++) pw[i] = 2 ^ i }
-  function text(b) { return (b >= 32 && b < 127) || b >= 128 || b == 9 }
   function score(s, k,   n, i, bits, nb, b, good, tot) { # share of printable ASCII bytes, from a sample
     n = length(s); if (n > k + 4000) n = k + 4000; bits = 0; nb = 0; good = 0; tot = 0
     for (i = k + 1; i <= n; i++) {
@@ -195,27 +199,34 @@ LC_ALL=C awk -v unread="$tmp/unreadable" '
     }
     return tot ? good / tot : 0
   }
-  function emit(s, k,   n, i, bits, nb, b, frag, fl) { # one line per text fragment of 4+ bytes
-    n = length(s); bits = 0; nb = 0; frag = ""; fl = 0
+  function add(c) { if (fl < 4) { frag = frag c; if (++fl == 4) printf "%s(base64) %s", lbl, frag } else printf "%s", c }
+  function cut() { if (fl >= 4) printf "\n"; frag = ""; fl = 0; need = 0 }
+  # One line per text fragment of 4+ characters: printable ASCII, or a complete UTF-8 sequence.
+  function emit(s, k,   n, i, bits, nb, b, pend) {
+    n = length(s); bits = 0; nb = 0; frag = ""; fl = 0; need = 0
     for (i = k + 1; i <= n; i++) {
       bits = bits * 64 + v[substr(s, i, 1)]; nb += 6
       if (nb < 8) continue
       nb -= 8; b = int(bits / pw[nb]); bits -= b * pw[nb]
       if (b == 0) continue
-      if (text(b)) {
-        if (fl < 4) { frag = frag chr[b]; if (++fl == 4) printf "%s(base64) %s", lbl, frag }
-        else printf "%s", chr[b]
-      } else { if (fl >= 4) printf "\n"; frag = ""; fl = 0 }
+      if (need) {
+        if (b >= 128 && b < 192) { pend = pend chr[b]; if (--need == 0) add(pend); continue }
+        cut()
+      }
+      if ((b >= 32 && b < 127) || b == 9) add(chr[b])
+      else if (b >= 194 && b <= 244) { need = (b >= 240 ? 3 : (b >= 224 ? 2 : 1)); pend = chr[b] }
+      else cut()
     }
-    if (fl >= 4) printf "\n"
+    cut()
   }
   { p = index($0, ": "); lbl = (p ? substr($0, 1, p + 1) : ""); where = (p ? substr($0, 1, p - 1) : "line " NR)
-    gsub(/=+/, "& ")   # padding ends a run, and counts toward its length
-    n = split($0, parts, /[^A-Za-z0-9+\/_=-]+/)
+    body = (p ? substr($0, p + 2) : $0)   # the label (a path) is not decoded
+    gsub(/=+/, "& ", body)   # padding ends a run, and counts toward its length
+    n = split(body, parts, /[^A-Za-z0-9+\/_=-]+/)
     for (j = 1; j <= n; j++) {
       run = parts[j]; len = length(run); sub(/=+$/, "", run)
       if (len < 8 || run ~ /^[a-z]+$/) continue
-      if (run ~ /^(H4sI|UEsDB|QlpoO|\/Td6WFo|KLUv|eJ[A-Za-z0-9+\/])/) { print where " (compressed data in base64)" >> unread; continue }
+      if (len >= 24 && run ~ /^(H4sIA|UEsDB|QlpoO|\/Td6WFo|KLUv\/|eJ[w-z]|eN[o-r]|eAE)/) { print where " (compressed data in base64)" >> unread; continue }
       if (len < 256) { for (k = 0; k < 4; k++) emit(run, k); continue }
       best = -1; for (k = 0; k < 4; k++) { sc = score(run, k); if (sc > best) { best = sc; bk = k } }
       if (best < 0.85) print where " (binary data in base64)" >> unread

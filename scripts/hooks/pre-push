@@ -12,7 +12,8 @@ ids="$tmp/ids"; : > "$ids"
 # What the remote at this URL has now. Not the tracking refs: after a remote set-url they describe the old URL.
 # If it cannot be listed (in 60 s where `timeout` exists), nothing counts as published and every commit is checked.
 : > "$tmp/have"
-limit=""; command -v timeout >/dev/null 2>&1 && limit="timeout 60"
+# --foreground keeps the terminal for an SSH passphrase or host-key prompt (GNU timeout); no limit without it.
+limit=""; timeout --foreground 5 true >/dev/null 2>&1 && limit="timeout --foreground 60"
 if GIT_TERMINAL_PROMPT=0 $limit git ls-remote -- "$url" > "$tmp/remote" 2>/dev/null; then
   cut -f1 "$tmp/remote" | sort -u | sed 's/$/^{commit}/' | git cat-file --batch-check='%(objectname) %(objecttype)' \
     | awk '$2 == "commit" { print "^" $1 }' > "$tmp/have"

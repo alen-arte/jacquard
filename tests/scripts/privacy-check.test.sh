@@ -118,6 +118,29 @@ g rev-parse HEAD | "$check" --objects "$r" >/dev/null 2>&1; [ $? = 0 ] || fail "
 newrepo; mkdir "$r/x" && echo "Copyright 2026 secretterm" > "$r/x/LICENSE"
 [ "$(staged)" = 1 ] || fail "R7-10 a staged LICENSE elsewhere gets no exception"
 
+newrepo; echo "Copyright (c) 2026 secretterm" > "$r/LICENSE"
+[ "$(files)" = 0 ] || fail "R7-1b a (c) copyright line must be allowed"
+[ "$(staged)" = 0 ] || fail "R7-8c the same, staged"
+newrepo; echo "Copyright 2026 secretterm, 12 Some Street, +1 555 0100" > "$r/LICENSE"
+[ "$(staged)" = 1 ] || fail "R7-11 a copyright line with more than a holder name gets no exception"
+[ "$(files)" = 1 ] || fail "R7-11b the same in files mode"
+
+# A mostly-UTF-8 file with one stray byte keeps its accents
+newrepo; printf 'by Mu\303\261oz \240\n' > "$r/m.txt"
+[ "$(files)" = 1 ] || fail "R6-28 UTF-8 text with one stray byte must still match accented terms"
+
+# A long plain line is not taken for binary base64 in commit checks
+newrepo; head -c 9000 /dev/zero | tr '\0' 'a' > "$r/long.txt"; echo >> "$r/long.txt"
+[ "$(staged)" = 0 ] || fail "R6-29 a long all-lowercase line must pass staged, as in files mode"
+
+# Many short random hashes (a lockfile) are not decoded into false findings; real words are not "compressed"
+newrepo; i=0; while [ $i -lt 3000 ]; do printf '"integrity": "sha512-%s"\n' "$(head -c 64 /dev/urandom | base64 | tr -d '\n')"; i=$((i+1)); done > "$r/lock.json"
+[ "$(files)" = 0 ] || fail "R6-30 random integrity hashes must pass"
+newrepo; echo "const eJsonParser = 1; see KLUvFooBar and H4sIcons" > "$r/a.js"
+[ "$(files)" = 0 ] || fail "R6-31 identifiers that look like compressed prefixes must pass"
+newrepo; echo "k: $(printf 'from Muñoz' | base64)" > "$r/a.md"
+[ "$(files)" = 1 ] || fail "R6-32 an accented term in base64 must still be found"
+
 # More encodings and binaries
 newrepo; utf16be() { printf '%s' "$1" | iconv -f UTF-8 -t UTF-16BE; }; utf16be "written by Muñoz" > "$r/u.txt"
 [ "$(files)" = 1 ] || fail "R6-22 a term in UTF-16BE without BOM must be found"
