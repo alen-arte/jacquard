@@ -41,5 +41,11 @@ grep -qF '"additionalDirectories": ["{{PERSONAL_PROJECT_FOLDER}}"]' "$template" 
 grep -qF '"Bash(git add *settings.local.json*)"' "$template" || fail "S6 deny rule for git add *settings.local.json* is missing"
 case "$(basename "$template")" in *settings.local.json*) fail "S6 the template's name matches its own deny rule";; esac
 
+# S7 · The installed kit is a trust boundary: no file tool may change it (its scripts run from hooks and allow rules).
+# Claude Code consults only Edit(path) for writes; a Write(path) rule is accepted but never matched.
+grep -qF '"Edit(~/.claude/jacquard/**)"' "$template" || fail "S7 no Edit deny for ~/.claude/jacquard/**"
+awk '/"deny": \[/ { on = 1; next } on && /\]/ { exit } on' "$template" | grep -qF '"Edit(~/.claude/jacquard/**)"' || fail "S7 the Edit rule for ~/.claude/jacquard/** must be in deny"
+grep -qE '"(Write|MultiEdit|NotebookEdit)\(' "$template" && fail "S7 a Write/MultiEdit/NotebookEdit path rule is never consulted: use Edit(path)"
+
 [ "$fails" = 0 ] && echo "✓ settings-template: all cases pass" && exit 0
 exit 1

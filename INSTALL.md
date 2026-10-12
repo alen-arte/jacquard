@@ -17,7 +17,7 @@ Last verified with Claude Code 2.1.296 (2026-10-11; the permissions page re-chec
 - Every subagent except the built-in Explore and Plan loads `CLAUDE.local.md` and its imports.
 - Claude Code's Chrome integration does not run in WSL; a headless browser run from the command line works for `render_check`.
 - Imports outside the project, including through a link such as `.jacquard`, load **only after the approval dialog is accepted**. Until then nothing from Jacquard loads, silently.
-- `~/.claude/` is a protected folder: writes there always ask, whatever the rules say. That is why the personal layer, which projects write into, lives in `~/repos/`.
+- `~/.claude/` is a protected folder: allow rules never pre-approve a write there; it asks in the default mode and goes to the classifier in auto mode (an explicit deny still blocks it). That is why the personal layer, which projects write into, lives in `~/repos/`, and why the installed kit needs its own deny (step 4).
 - Permission rules on a link must match both the link and its target to allow; either one to deny. A terminal write through a link that leads outside the working directories asks even in auto mode, unless the target is a working directory: hence `additionalDirectories` for the personal project folder.
 - Read-only commands (`ls`, `cat`, `grep`, `find` without actions, `diff`, read-only `git`) run without asking and need no rule; a prefix rule such as `Bash(sed *)` would also allow their writing forms.
 - `CLAUDE.local.md` is not ignored by git on its own; kickoff excludes it in `.git/info/exclude`.
@@ -89,6 +89,8 @@ Let commands read the kit and your preferences without asking each time. Add to 
 ```
 
 Each project's own rules (writes to its local folder, git safety net) come from kickoff.
+
+**The installed kit is a trust boundary.** Its scripts run from hooks on every permission prompt and session start, and from allow rules without asking, so a change to them could run anything. Change `~/.claude/jacquard` only by installing a release tag (step 1, "Updating the installed kit"), never by editing it. Each project's permissions deny edits there (`Edit(~/.claude/jacquard/**)`); add the same rule to `permissions.deny` in `~/.claude/settings.json` to cover every project, including those set up before 0.2.8. The rule stops Claude's file tools, the file commands Claude Code recognizes in the terminal (`cat`, `sed`, `tee`…) and redirections, but not every program (`cp`, a script that writes files itself): for a hard wall, use Claude Code's sandbox.
 
 ## 5. First use
 

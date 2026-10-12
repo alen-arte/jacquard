@@ -50,6 +50,7 @@
       "{{DEPLOY_CLI_AS_BASH_RULES}}"
     ],
     "deny": [
+      "Edit(~/.claude/jacquard/**)",
       "Bash(git push -f*)",
       "Bash(git push * -f*)",
       "Bash(git push *--force*)",
