@@ -1,6 +1,7 @@
 #!/bin/sh
 # Jacquard pre-commit guard (local, untracked):
-# 1. nobody commits on the main branch; work reaches it by integrating a branch (the first commit of a new repo is allowed);
+# 1. nobody commits on the main branch, or on a detached HEAD outside a rebase; work reaches main by integrating
+#    a branch (the first commit of a new repo is allowed);
 # 2. the personal local files never enter the index, whatever command staged them.
 main="{{MAIN}}"                    # the main branch, from project.md
 local_re="{{LOCAL_FOLDER_REGEX}}"  # the local folder with dots escaped, e.g. \.jacquard
@@ -13,6 +14,14 @@ branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
 if [ "$branch" = "$main" ] && git rev-parse --verify -q HEAD >/dev/null \
    && [ ! -f "$gitdir/MERGE_HEAD" ] && [ ! -f "$gitdir/SQUASH_MSG" ]; then
   echo "Jacquard: commits on '$main' are not allowed. Create a branch: git switch -c <id-short-name>" >&2
+  exit 1
+fi
+# A detached HEAD outside a rebase, cherry-pick, revert or bisect: the commit would belong to no branch
+# (and could reach main later with a push of HEAD).
+if [ -z "$branch" ] && git rev-parse --verify -q HEAD >/dev/null \
+   && [ ! -d "$gitdir/rebase-merge" ] && [ ! -d "$gitdir/rebase-apply" ] \
+   && [ ! -f "$gitdir/CHERRY_PICK_HEAD" ] && [ ! -f "$gitdir/REVERT_HEAD" ] && [ ! -f "$gitdir/BISECT_LOG" ]; then
+  echo "Jacquard: HEAD is detached, so this commit would belong to no branch. Create one first: git switch -c <id-short-name>" >&2
   exit 1
 fi
 staged="$(git diff --cached --name-only -z | tr '\0' '\n')" || exit 1

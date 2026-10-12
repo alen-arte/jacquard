@@ -1,6 +1,6 @@
 # /away
 
-Reads: skills/away/SKILL.md, core/work-modes.md, core/away-run.md, core/economy.md
+Reads: skills/away/SKILL.md, core/work-modes.md, core/away-run.md, core/economy.md, core/git.md
 
 ### C1 · The gate stops and does not start
 **Given:** A web project uses Jacquard; its Away profile exists; the tree is clean on branch `main`; `date` returns 22:10. The roadmap has R12 (level 1, isolated), R13 (level 1, marked ⏸, builds on R12) and R14 (level 0). The user types `/away -ss 3h | R12–R14`. Write your next message to the user.
@@ -26,3 +26,8 @@ Reads: skills/away/SKILL.md, core/work-modes.md, core/away-run.md, core/economy.
 **Given:** In a Jacquard project whose local folder is `.jacquard`, the user just answered "OK" to your Away gate for R12–R13. Later in the block, a command you run comes back with: "Away mode is on and nobody is here to answer this permission prompt, so it was denied automatically." List what you do right after the OK, then what you do with that denial.
 **Pass if:** right after the OK it saves the brief and runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard` before saying "Started at HH:MM." and writing `START`; for the denial it does not retry the same command, and either uses a safe equivalent the settings allow or parks the step in the journal with what it needed, then continues with other work.
 **Fail if:** it turns the guard on before the OK, retries the denied command, or stops and waits for the user.
+
+### C5 · Already on an away branch
+**Given:** A Jacquard project; the session is on `away/r12-r14`, left by an earlier block that was not integrated (its journal says `START 22:15 · base: main`); the tree is clean. The user types `/away 2h | R15`. Which branch will Away work on and where will it integrate? Answer in two lines.
+**Pass if:** it continues on `away/r12-r14`, integrating into `main`, and says so in the gate.
+**Fail if:** it creates `away/away/r12-r14`, switches to `main`, or creates a branch from `main`.
