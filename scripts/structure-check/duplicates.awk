@@ -1,9 +1,11 @@
 # Duplicate names for structure-check.sh: top-level (unindented) function definitions whose name appears in more than
 # one file of the same language family (JS/TS, Python, shell). Declaration files (.d.ts) are skipped.
 # Prints "name<TAB>every file, comma-separated<TAB>the files to flag, space-separated", for names this change touches.
-# Variables: list (files to read), changed (this change's files), all (1: every name counts), ignore (" name name ").
+# Variables: list (files to read), changed (this change's files), all (1: every name counts), ignore (" name name "),
+# defs (1: print every definition as "name<TAB>file" instead, for comparing with the base).
 function add(fam, name, f,   k) {
   if (index(ignore, " " name " ")) return
+  if (defs) { print name "\t" f; return }
   k = fam SUBSEP name; label[k] = name
   if (!((k, f) in got)) { got[k, f] = 1; where[k] = where[k] (where[k] == "" ? "" : ", ") f; nfiles[k]++ }
   if ((all || (f in mine)) && !((k, f) in marked)) { marked[k, f] = 1; hit[k] = hit[k] (hit[k] == "" ? "" : " ") f }

@@ -50,14 +50,22 @@ cp "$script" "$tmp/alone.sh"; out="$("$tmp/alone.sh" 2>&1)"; st=$?
 [ "$st" = 2 ] && has "nothing was checked" || fail "S1d without its awk parts it must exit 2, never pass (got $st: $out)"
 
 start 2; echo "const w = 2;" >> src/big.ts
-sc --base main; [ "$st" = 1 ] && has "✗ size.*src/big.ts" || fail "S2 a file past the cap that grew must fail (got $st: $out)"
+sc --base main; [ "$st" = 1 ] && has "✗ size.*src/big.ts.*grew: put the new code in a new module" ||
+  fail "S2 a file past the cap that grew must fail, pointing to a new module rather than a split (got $st: $out)"
 flagged src/big.ts || fail "S3 the flagged line must name the file (got: $out)"
 
 start 3; sed -i.bak '1d' src/big.ts; rm -f src/big.ts.bak
-sc; [ "$st" = 0 ] && has "⚠ size.*src/big.ts.*did not grow" || fail "S4 a file past the cap that shrank only warns (got $st: $out)"
+sc; [ "$st" = 0 ] && has "^Touched, not made worse, not flagged: 1 past the cap" && ! has "size\|^Flagged" ||
+  fail "S4 a file past the cap that shrank is only counted on the not-made-worse line (got $st: $out)"
 
 start 4; lines src/mid.ts 7
-sc; [ "$st" = 0 ] && has "⚠ size.*src/mid.ts" || fail "S5 a file past the warning only warns (got $st: $out)"
+sc; [ "$st" = 0 ] && has "⚠ size.*src/mid.ts.*crossed the warning" || fail "S5 a file that crossed the warning only warns (got $st: $out)"
+git add -A; git commit -q -m mid7; git switch -q -C w4b
+lines src/mid.ts 6
+sc --base w4; [ "$st" = 0 ] && has "^Touched, not made worse, not flagged: 1 past the warning" && ! has "^Flagged" ||
+  fail "S5b a file already past the warning that did not grow is not flagged (got $st: $out)"
+lines src/mid.ts 8
+sc --base w4; has "⚠ size.*src/mid.ts.*(was 7), past the warning of 5 and grew" || fail "S5c a file past the warning that grew warns (got $st: $out)"
 
 start 5; lines src/new.ts 11
 sc; [ "$st" = 1 ] && has "✗ size.*src/new.ts" || fail "S6 a new untracked file past the cap must fail (got $st: $out)"
@@ -74,7 +82,8 @@ printf '%s\n' "export * from '../d';" > src/e/index.ts
 sc; [ "$st" = 1 ] && has "✗ cycle.*src/e/index.ts" || fail "S8 a cycle through a folder's index must fail (got $st: $out)"
 
 start 8; echo "export const c = 3;" >> src/c1.ts
-sc; [ "$st" = 0 ] && has "⚠ cycle.*src/c1.ts" || fail "S9 touching a file in an existing cycle only warns (got $st: $out)"
+sc; [ "$st" = 0 ] && has "⚠ cycle.*src/c1.ts" && flagged src/c1.ts && ! flagged src/c2.ts ||
+  fail "S9 touching a file in an existing cycle only warns, flagging only the touched file (got $st: $out)"
 
 start 9
 printf '%s\n' "import { a } from './c1';" 'export const c = 3;' > src/c3.ts
@@ -86,7 +95,9 @@ printf '%s\n' 'import type {' '  G,' "} from './g';" 'export const f = 1;' > src
 printf '%s\n' "import { f } from './f';" 'export type G = number;' > src/g.ts
 printf '%s\n' "// import { i } from './i';" "const m = import('./i');" > src/h.ts
 printf '%s\n' "import { h } from './h';" > src/i.ts
-sc; [ "$st" = 0 ] && ! has "cycle" || fail "S11 type-only imports, dynamic import() and commented imports are not cycles (got $st: $out)"
+printf '%s\n' '/*' "import { k } from './k';" '*/' 'export const j = 1;' > src/j.ts
+printf '%s\n' "import { j } from './j';" > src/k.ts
+sc; [ "$st" = 0 ] && ! has "cycle" || fail "S11 type-only imports, dynamic import() and commented imports (also in a multi-line block) are not cycles (got $st: $out)"
 
 start 11; mkdir -p tests
 printf '%s\n' 'export function formatDate() {}' 'export const render = () => 1;' 'export async function GET() {}' > src/other.ts
@@ -99,6 +110,9 @@ sc; [ "$st" = 0 ] && has "⚠ duplicate.*formatDate: src/other.ts, src/util.ts" 
 has "nested.ts\|other.test.ts\|types.d.ts" && fail "S13 nested functions, test files and .d.ts files are left out (got: $out)"
 has "duplicate.*render\|duplicate.*GET" && fail "S13b names that repeat by convention (seeded, or from project.md) are not duplicates (got: $out)"
 flagged src/other.ts && ! flagged src/util.ts || fail "S13c a duplicate flags only this change's files (got: $out)"
+git add -A; git commit -q -m dups; git switch -q -C w11b
+echo "export const z = 1;" >> src/other.ts
+sc --base w11; has "not flagged: .*1 duplicate names" && ! has "⚠ duplicate" || fail "S13d a duplicate that was already there is not flagged again (got $st: $out)"
 
 start 12
 printf '%s\n' "const c = '#1a2b3c';" 'const d = "rgb(1, 2, 3)";' 'const e = "&#123;";' 'const f = "rgb(var(--x))";' \
@@ -106,6 +120,12 @@ printf '%s\n' "const c = '#1a2b3c';" 'const d = "rgb(1, 2, 3)";' 'const e = "&#1
 echo ':root { --ok: #00ff00; }' >> src/styles/tokens.css
 sc; [ "$st" = 0 ] && has "⚠ colour.*src/view.tsx: 2 colour" || fail "S14 two loose colours in a view warn, with their count (got $st: $out)"
 has "tokens.css" && fail "S15 colours in the tokens file are not loose (got: $out)"
+git add -A; git commit -q -m colours; git switch -q -C w12b
+echo "const z = 1;" >> src/view.tsx
+sc --base w12; has "not flagged: .*1 with colour literals" && ! has "⚠ colour" || fail "S15b colours already there are not flagged again (got $st: $out)"
+echo "const y = '#abcdef'; // see #1234" >> src/view.tsx
+sc --base w12; has "⚠ colour.*src/view.tsx: 3 colour literals outside the tokens (was 2" ||
+  fail "S15c a colour added to a file that had some warns, a trailing comment does not count (got $st: $out)"
 
 start 13; lines src/generated/huge.ts 60
 sc; [ "$st" = 0 ] && ! has "huge" || fail "S16 exempt files are skipped (got $st: $out)"
@@ -126,8 +146,8 @@ sc --project "$tmp/default.md"; [ "$st" = 1 ] && has "✗ size.*src/new.ts" && h
 start 17; mkdir -p src/moved
 git mv src/big.ts src/moved/big.ts; git mv src/c1.ts src/c1b.ts
 printf '%s\n' "import { a } from './c1b';" 'export const b = 2;' > src/c2.ts
-sc; [ "$st" = 0 ] && has "⚠ size.*src/moved/big.ts.*did not grow" && has "⚠ cycle.*src/c1b.ts" ||
-  fail "S21 a moved legacy file and a moved file of an existing cycle only warn (got $st: $out)"
+sc; [ "$st" = 0 ] && has "not flagged: 1 past the cap" && ! has "size" && has "⚠ cycle.*src/c1b.ts" ||
+  fail "S21 a moved legacy file is not made worse, and a moved file of an existing cycle only warns (got $st: $out)"
 
 start 18
 printf '%s\n' '{' '  "compilerOptions": {' '    "baseUrl": ".",' '    "paths": { "@/*": ["./src/*"] }' '  }' '}' > tsconfig.json

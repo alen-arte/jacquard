@@ -10,12 +10,14 @@
 # Settings come from project.md › Code limits (default <repo>/.jacquard/project.md): the numbers after "warn at" and
 # "cap at", and the values in backticks on the lines for tokens, exempt files and names that repeat by convention;
 # without it, the core defaults. The first line says which.
+# Only what the change made worse is reported (--all: everything):
 # ✗ (blocking): a code file past the cap that grew or is new; an import cycle between JS/TS files (relative or tsconfig
 #   "paths" imports) that is new or grew, or with --all any cycle.
-# ⚠ (warning): past the warning; past the cap without growing; an existing cycle that did not grow; the same top-level
-#   function name in several files of one language; colour literals outside the token files.
+# ⚠ (warning): a file that crossed the warning, grew past it, or is new past it; an existing cycle through a touched
+#   file; a top-level function name this change added in a second file of one language; colour literals it added
+#   outside the token files. Touched debt it did not make worse is one "Touched, not made worse" line, not flagged.
 # Exit 0: no ✗ · 1: at least one ✗ · 2: usage or git error. The last line is "✓ no findings" or "Flagged: <files>",
-# the files a reviewer reads whole (for a duplicate, only this change's files); paths with spaces are not supported there.
+# the files a reviewer reads whole (only this change's files, except a new cycle); paths with spaces are not supported there.
 set -f
 export LC_ALL=C
 
@@ -25,8 +27,8 @@ import_ext='js jsx ts tsx mjs cjs mts cts'
 colour_ext='css scss sass less html js jsx ts tsx mjs cjs mts cts vue svelte astro'
 exempt='*.min.* *.generated.* *generated/* *fixtures/* dist/ build/ vendor/'
 tokens='*token* *theme*'
-test_globs='*.test.* *.spec.* *__tests__/* tests/ test/ */tests/* */test/*'
-repeat_names='main usage die GET POST PUT PATCH DELETE HEAD OPTIONS generateMetadata generateStaticParams generateViewport generateImageMetadata generateSitemaps Page Layout Template Loading Error GlobalError NotFound Default Image sitemap robots manifest load loader action meta links headers middleware'
+test_globs='*.test.* *.spec.* *_test.* test_*.py */test_*.py tests.py */tests.py conftest.py */conftest.py *__tests__/* tests/ test/ */tests/* */test/*'
+repeat_names='main usage die GET POST PUT PATCH DELETE HEAD OPTIONS generateMetadata generateStaticParams generateViewport generateImageMetadata generateSitemaps getStaticProps getStaticPaths getServerSideProps Page Layout Template Loading Error GlobalError NotFound Default Image sitemap robots manifest load loader action meta links headers middleware handler'
 colour_lines_shown=5
 here="$(cd "$(dirname "$0")" && pwd)/structure-check"
 
@@ -120,25 +122,48 @@ aliases > "$tmp/aliases" || failed aliases
 followed="$(awk -F '\t' '{ printf "%s%s → %s", (NR > 1 ? ", " : ""), $1, $2 } END { if (NR == 0) printf "none" }' "$tmp/aliases")"
 echo "structure-check: $(awk 'END { print NR }' "$tmp/code") code files $scope (warn $warn · cap $cap; settings: $settings; import aliases: $followed)"
 
-block=0; warns=0; flagged=""
+block=0; warns=0; flagged=""; pre_warn=0; pre_cap=0; pre_colour=0; pre_dup=0
 flag() { for _f; do case " $flagged " in *" $_f "*) ;; *) flagged="${flagged:+$flagged }$_f" ;; esac; done; }
 report() { printf '%s %s  %s\n' "$1" "$2" "$3"; if [ "$1" = "✗" ]; then block=$((block + 1)); else warns=$((warns + 1)); fi; }
 tab="$(printf '\t')"
+# lookup <file> <key> <column>: the value in that column of the first line whose other column is <key>
+lookup() { awk -F "$tab" -v k="$2" -v c="$3" '$(3 - c) == k { print $c; exit }' "$1"; }
 
-# Sizes
-awk -v list="$tmp/code" 'BEGIN { while ((getline f < list) > 0) { n = 0; while ((getline l < f) > 0) n++; close(f); print n "\t" f } }' > "$tmp/sizes"
+# Base copies of this change's code files, under their current names (renames resolved): the "before" of each finding
+mkdir "$tmp/cbase" || die "cannot create a temporary folder"
+: > "$tmp/cbase.list"
+if [ "$all" != 1 ]; then
+  while IFS= read -r f; do
+    p="$(lookup "$tmp/renames" "$f" 2)"; [ -n "$p" ] || p="$f"
+    inside "$p" && git cat-file -e "$mb:$p" 2>/dev/null || continue
+    case "$f" in */*) mkdir -p "$tmp/cbase/${f%/*}" ;; esac
+    git show "$mb:$p" > "$tmp/cbase/$f" || die "cannot read $p at the base"
+    printf '%s\n' "$f" >> "$tmp/cbase.list"
+  done < "$tmp/code"
+fi
+
+# Sizes: only what this change made worse is flagged
+count_lines() { awk -v list="$1" 'BEGIN { while ((getline f < list) > 0) { n = 0; while ((getline l < f) > 0) n++; close(f); print n "\t" f } }'; }
+count_lines "$tmp/code" > "$tmp/sizes"
+(cd "$tmp/cbase" && count_lines "$tmp/cbase.list") > "$tmp/sizes.base"
 while IFS="$tab" read -r n f; do
   [ "$n" -gt "$warn" ] || continue
-  flag "$f"
-  if [ "$n" -le "$cap" ]; then report "⚠" size "$f: $n lines, past the warning of $warn"; continue; fi
-  if [ "$all" = 1 ]; then report "⚠" size "$f: $n lines, past the cap of $cap (log an RF)"; continue; fi
-  was_path="$(awk -F "$tab" -v f="$f" '$1 == f { print $2; exit }' "$tmp/renames")"; [ -n "$was_path" ] || was_path="$f"
-  if git cat-file -e "$mb:$was_path" 2>/dev/null; then
-    was="$(git show "$mb:$was_path" | awk 'END { print NR }')"
-    if [ "$n" -gt "$was" ]; then report "✗" size "$f: $n lines (was $was), past the cap of $cap and grew: split it first"
-    else report "⚠" size "$f: $n lines (was $was), past the cap of $cap, did not grow (legacy: log an RF)"; fi
-  else report "✗" size "$f: $n lines, new and past the cap of $cap: split it"
-  fi
+  was="$(lookup "$tmp/sizes.base" "$f" 1)"
+  if [ "$all" = 1 ]; then
+    flag "$f"
+    if [ "$n" -gt "$cap" ]; then report "⚠" size "$f: $n lines, past the cap of $cap (log an RF)"
+    else report "⚠" size "$f: $n lines, past the warning of $warn"; fi
+  elif [ -z "$was" ]; then
+    flag "$f"
+    if [ "$n" -gt "$cap" ]; then report "✗" size "$f: $n lines, new and past the cap of $cap: split it"
+    else report "⚠" size "$f: $n lines, new and past the warning of $warn"; fi
+  elif [ "$n" -gt "$cap" ]; then
+    if [ "$n" -gt "$was" ]; then
+      flag "$f"; report "✗" size "$f: $n lines (was $was), past the cap of $cap and grew: put the new code in a new module, or cite the plan's exception"
+    else pre_cap=$((pre_cap + 1)); fi
+  elif [ "$was" -le "$warn" ]; then flag "$f"; report "⚠" size "$f: $n lines (was $was), crossed the warning of $warn"
+  elif [ "$n" -gt "$was" ]; then flag "$f"; report "⚠" size "$f: $n lines (was $was), past the warning of $warn and grew"
+  else pre_warn=$((pre_warn + 1)); fi
 done < "$tmp/sizes"
 
 # Import cycles
@@ -164,38 +189,56 @@ else
     (cd "$tmp/base" && aliases > "$tmp/base.aliases" && edges "$tmp/base.js" "$tmp/base.aliases" > "$tmp/base.edges") || failed "base imports"
     awk -f "$here/cycles.awk" "$tmp/base.edges" > "$tmp/before" || failed "base cycles"
   fi
-  awk -v before="$tmp/before" -v renames="$tmp/renames" '
+  # An old cycle flags only the files this change touched
+  awk -v before="$tmp/before" -v renames="$tmp/renames" -v list="$tmp/code" '
     BEGIN { while ((getline l < renames) > 0) { split(l, r, "\t"); old[r[1]] = r[2] }
+      while ((getline l < list) > 0) changed[l] = 1
       while ((getline l < before) > 0) { nb++; n = split(l, m, ", "); for (i = 1; i <= n; i++) in_b[nb, m[i]] = 1 } }
-    { n = split($0, m, ", "); was = 0
+    { n = split($0, m, ", "); was = 0; mine = ""
+      for (i = 1; i <= n; i++) if (m[i] in changed) mine = mine (mine == "" ? "" : " ") m[i]
       for (j = 1; j <= nb && !was; j++) { was = 1; for (i = 1; i <= n; i++) { p = (m[i] in old) ? old[m[i]] : m[i]; if (!((j, p) in in_b)) { was = 0; break } } }
-      print (was ? "old" : "new") "\t" $0 }' "$tmp/touched" > "$tmp/cycles.marked"
+      print (was ? "old" : "new") "\t" $0 "\t" mine }' "$tmp/touched" > "$tmp/cycles.marked"
 fi
-while IFS="$tab" read -r kind members; do
-  flag $(printf '%s' "$members" | sed 's/, / /g')
+while IFS="$tab" read -r kind members mine; do
   case "$kind" in
-    new) report "✗" cycle "$members: import cycle, new or grown: break it (an import used only for types can be written 'import type')" ;;
-    all) report "✗" cycle "$members: import cycle (log an RF; a change that grows it is blocked)" ;;
-    *) report "⚠" cycle "$members: existing import cycle, not grown (log an RF)" ;;
+    new) flag $(printf '%s' "$members" | sed 's/, / /g')
+      report "✗" cycle "$members: import cycle, new or grown: break it (an import used only for types can be written 'import type')" ;;
+    all) flag $(printf '%s' "$members" | sed 's/, / /g'); report "✗" cycle "$members: import cycle (log an RF; a change that grows it is blocked)" ;;
+    *) flag $mine; report "⚠" cycle "$members: existing import cycle, not grown (log an RF)" ;;
   esac
 done < "$tmp/cycles.marked"
 
-# The same top-level function name in several files (tests left out)
+# The same top-level function name in several files (tests left out); a duplicate counts when this change added it
 filter "$tmp/all" "$code_ext" notests > "$tmp/dup.files"
 awk -v list="$tmp/dup.files" -v changed="$tmp/code" -v all="$all" -v ignore=" $repeat_names " -f "$here/duplicates.awk" > "$tmp/dups.raw" || failed duplicates
 sort "$tmp/dups.raw" > "$tmp/dups"
-while IFS="$tab" read -r name files mine; do
+(cd "$tmp/cbase" && awk -v list="$tmp/cbase.list" -v changed=/dev/null -v all=0 -v defs=1 -v ignore=" $repeat_names " -f "$here/duplicates.awk") > "$tmp/defs.base" || failed "base duplicates"
+awk -F "$tab" -v base="$tmp/defs.base" 'BEGIN { while ((getline l < base) > 0) { split(l, d, "\t"); had[d[1], d[2]] = 1 } }
+  { n = split($3, m, " "); new = 0; for (i = 1; i <= n; i++) if (!(($1, m[i]) in had)) new = 1; print (new ? "new" : "old") "\t" $0 }' "$tmp/dups" > "$tmp/dups.marked"
+while IFS="$tab" read -r kind name files mine; do
+  if [ "$kind" = old ]; then pre_dup=$((pre_dup + 1)); continue; fi
   flag $mine
   report "⚠" duplicate "$name: $files (one definition, many uses: extract it, or rename if they differ)"
-done < "$tmp/dups"
+done < "$tmp/dups.marked"
 
-# Colour literals outside the token files (tests left out)
+# Colour literals outside the token files (tests left out); a file counts when this change added some
 filter "$tmp/targets" "$colour_ext" notests | while IFS= read -r f; do in_list "$f" $tokens || printf '%s\n' "$f"; done > "$tmp/colour.files"
 awk -v list="$tmp/colour.files" -v shown="$colour_lines_shown" -f "$here/colours.awk" > "$tmp/colours" || failed colours
+(cd "$tmp/cbase" && awk -v list="$tmp/colour.files" -v shown=0 -f "$here/colours.awk") > "$tmp/colours.base" || failed "base colours"
 while IFS="$tab" read -r f n at; do
+  b="$(lookup "$tmp/colours.base" "$f" 2)"; [ -n "$b" ] || b=0
+  if [ "$n" -le "$b" ]; then pre_colour=$((pre_colour + 1)); continue; fi
   flag "$f"
-  report "⚠" colour "$f: $n colour literals outside the tokens (lines $at)"
+  report "⚠" colour "$f: $n colour literals outside the tokens (was $b; lines $at)"
 done < "$tmp/colours"
+
+# Debt this change touched without making it worse: one line, not flagged
+pre=""
+[ "$pre_cap" = 0 ] || pre="$pre, $pre_cap past the cap (log an RF if there is none)"
+[ "$pre_warn" = 0 ] || pre="$pre, $pre_warn past the warning"
+[ "$pre_dup" = 0 ] || pre="$pre, $pre_dup duplicate names"
+[ "$pre_colour" = 0 ] || pre="$pre, $pre_colour with colour literals"
+[ -z "$pre" ] || echo "Touched, not made worse, not flagged: ${pre#, } (details: --all)"
 
 if [ $((block + warns)) = 0 ]; then echo "✓ no findings"; exit 0; fi
 echo "$block blocking · $warns warnings"

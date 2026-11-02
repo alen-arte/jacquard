@@ -44,10 +44,12 @@ BEGIN {
   }
   while ((getline f < list) > 0) { exists[f] = 1; files[++nf] = f }
   for (j = 1; j <= nf; j++) {
-    f = files[j]; typ = 0
+    f = files[j]; typ = 0; inc = 0
     while ((getline line < f) > 0) {
-      if (line ~ /^[ \t]*\/\*/ && index(line, "*/")) line = substr(line, index(line, "*/") + 2)
-      else if (line ~ /^[ \t]*(\/\/|\/\*|\*([ \t\/]|$))/) continue
+      # Block comments, also across lines: only what follows the closing */ is read
+      if (inc) { if (!index(line, "*/")) continue; line = substr(line, index(line, "*/") + 2); inc = 0 }
+      if (line ~ /^[ \t]*\/\*/) { if (!index(line, "*/")) { inc = 1; continue } line = substr(line, index(line, "*/") + 2) }
+      if (line ~ /^[ \t]*(\/\/|\*([ \t\/]|$))/) continue
       if (line ~ /^[ \t]*(import|export)[ \t]+type[ \t{]/) typ = 1
       else if (line ~ /^[ \t]*(import|export)[ \t]/) typ = 0
       while (match(line, /(from|import|require\()[ \t]*["\047][^"\047]+["\047]/)) {
