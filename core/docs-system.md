@@ -77,6 +77,16 @@ Under the "How to read it" note, the roadmap carries one line per status listing
 
 It is derived, never edited by hand: after any change of mark, Claude edits **only the item** and then runs `~/.claude/jacquard/scripts/roadmap-index.sh --write <local>/docs/roadmap.md`, spelled exactly so (the allow rule matches only that), which rewrites the block between the marker lines from the marks of the items. `--check` instead of `--write` exits 1 if the block is out of date. The pre-commit hook does not run it, so run `--check` before a roadmap edit is committed.
 
+## Refactor backlog
+
+Each `RF#` carries a **class**, by whether each new change makes it more expensive, and an **area** (a module or folder of the module map), so the debt in one area can be counted:
+
+- **Blocks growth:** new work builds on it and every feature makes it worse (a file past the cap, an import cycle, a duplicated behaviour, hardcoded content). Recommended before any more work in that area.
+- **Soon:** contained risk. Recommended before the next work in that area.
+- **Can wait:** optimisation or tidiness that does not get worse with time.
+
+The class is a recommendation; the user always decides when (core standards › Scalability).
+
 ## Closing an item
 
 When a roadmap item is marked ✅, its data line also records `reviews` (independent reviews run), `findings` (Blocker/Major/Minor) and `rework` (reverts and fix commits after the first review). `/retro` reads these lines instead of the history.

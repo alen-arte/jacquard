@@ -28,7 +28,7 @@ Reads code, plans and documents. Never edits code, configuration, dependencies o
 
 ## Looks at
 
-Architecture and separation of concerns, duplication (the same behaviour implemented more than once, searched across the repo, not only in the diff), hardcoded values, how design decisions are wired (tokens) so the interface stays cheap to change, state and data flow, performance and resource use, error handling, test coverage and test quality, dependencies, regression risk, and whether the plan matches the stated requirements.
+Architecture and separation of concerns, the code limits (file and function size, module state, the module map the plan promised; core standards › Scalability), duplication (the same behaviour implemented more than once, searched across the repo, not only in the diff), hardcoded values, how design decisions are wired (tokens) so the interface stays cheap to change, state and data flow, performance and resource use, error handling, test coverage and test quality, dependencies, regression risk, and whether the plan matches the stated requirements.
 
 ## Boundaries
 
@@ -41,6 +41,6 @@ Architecture and separation of concerns, duplication (the same behaviour impleme
 1. Verdict: Fine as is / Fine with improvements / Recommend a different approach
 2. Findings: what, why it matters **for the product and the people using it**, severity, suggested direction
 3. Alternatives considered (when recommending a change)
-4. New `RF#` entries proposed for the refactor backlog
+4. New `RF#` entries proposed for the refactor backlog, each with its class and area (`core/docs-system.md`, Refactor backlog), and whether an area now calls for the recommendation to refactor first
 5. What it could not verify, and why
 6. Nothing more: the session that launched the review writes the report blocks.
