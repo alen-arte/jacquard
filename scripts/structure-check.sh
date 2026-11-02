@@ -1,7 +1,7 @@
 #!/bin/sh
 # Jacquard: mechanical structure check for code (core standards › Scalability). Needs git and POSIX tools.
-# It only reads, and only inside the repo: symlinks and paths that leave it (git can store ".." entries) are skipped;
-# its own copies of base files live in a temporary folder removed on exit.
+# It only reads: in the repo (symlinks and paths that leave it, which git can store as ".." entries, are skipped),
+# plus the --project file and its own parts. It writes only its temporary folder, removed on exit.
 # Usage: structure-check.sh [--base <ref>] [--all] [--project <project.md>]
 #   default  the files changed against the merge base with <ref> (default: main, master, origin/main, origin/master),
 #            committed, uncommitted and untracked; a renamed file is compared with its old path when the rename is
@@ -204,7 +204,7 @@ while IFS="$tab" read -r kind members mine; do
     new) flag $(printf '%s' "$members" | sed 's/, / /g')
       report "✗" cycle "$members: import cycle, new or grown: break it (an import used only for types can be written 'import type')" ;;
     all) flag $(printf '%s' "$members" | sed 's/, / /g'); report "✗" cycle "$members: import cycle (log an RF; a change that grows it is blocked)" ;;
-    *) flag $mine; report "⚠" cycle "$members: existing import cycle, not grown (log an RF)" ;;
+    *) flag $mine; report "⚠" cycle "$members: existing import cycle, not grown (log an RF if there is none)" ;;
   esac
 done < "$tmp/cycles.marked"
 
@@ -229,7 +229,8 @@ while IFS="$tab" read -r f n at; do
   b="$(lookup "$tmp/colours.base" "$f" 2)"; [ -n "$b" ] || b=0
   if [ "$n" -le "$b" ]; then pre_colour=$((pre_colour + 1)); continue; fi
   flag "$f"
-  report "⚠" colour "$f: $n colour literals outside the tokens (was $b; lines $at)"
+  if [ "$all" = 1 ]; then report "⚠" colour "$f: $n colour literals outside the tokens (lines $at)"
+  else report "⚠" colour "$f: $n colour literals outside the tokens (was $b; lines $at)"; fi
 done < "$tmp/colours"
 
 # Debt this change touched without making it worse: one line, not flagged

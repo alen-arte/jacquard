@@ -19,7 +19,7 @@ Default `-ss`. The most specific setting wins: per message > per Away block (`/a
 | Test-first (TDD) | — | level-2 logic | level 1–2 logic | all logic, plus edge and negative cases |
 | End-to-end tests | — | before integrating | affected flows per batch; full suite before integrating | affected flows per task; full suite per batch |
 | Independent QA | standard · normal (strong for level 2 with `budget: generous`; light only for pure consistency sweeps) | level 2 per task; the rest at milestone close | level 2 per task; level 1 per batch | every task |
-| Engineering advisor | strong · high | before structural changes; on the affected area when duplication is found that the task did not resolve (by QA, or by the builder outside the task's scope; a structure-check warning counts once confirmed: Running a review) | + at each milestone close | + at each batch close |
+| Engineering advisor | strong · high | before structural changes; on the affected area when duplication is found that the task did not resolve (by QA, or by the builder outside the task's scope; a structure-check duplicate warning counts once confirmed: Running a review) | + at each milestone close | + at each batch close |
 | Security and privacy | strong · high | level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations | same | + at each batch close |
 | Domain advisor | standard · normal | when its trigger fires | same | same |
 | Design critic on rendered results (`design-exploration.md` step 7) | standard · normal | at milestone close | same | + at each batch close that built an explored design |

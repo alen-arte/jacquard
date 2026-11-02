@@ -185,8 +185,9 @@ printf '%s\n' 'export const make = (' '  n: number,' ') => n;' 'export function 
 printf '%s\n' 'export const total = (4 + 5) * 6;' > src/m3.ts
 sc; has "⚠ duplicate.*make: src/m1.ts, src/m2.ts" && ! has "ToString\|total" ||
   fail "S23b typed and multi-line arrows count, a name containing 'function' is read whole, expressions are not functions (got $st: $out)"
-printf '%s\n' '* { color: #333; }' '/* #444 */' > src/reset.css
-sc; has "⚠ colour.*src/reset.css: 1 colour" || fail "S23c a universal-selector line is not a comment (got: $out)"
+printf '%s\n' '* { color: #333; }' '/* #444 */' '/*' '  .old { color: #555; }' '*/' > src/reset.css
+sc; has "⚠ colour.*src/reset.css: 1 colour" || fail "S23c a universal-selector line is not a comment; colours inside block comments, also across lines, do not count (got: $out)"
+sc --all; has "⚠ colour.*src/reset.css: 1 colour literals outside the tokens (lines 1)" || fail "S23d --all names no base count (got: $out)"
 
 cd "$r" || exit 1; start 20
 sc --project .jacquard/project.md; [ "$st" = 0 ] && has "settings: .*project.md" || fail "S24 a relative --project path is read (got $st: $out)"
