@@ -49,8 +49,10 @@ Verified in official documentation on {{DATE}}; recheck when upgrading.
 
 - **File size:** warn at {{FILE_WARN, default "core default"}} lines · cap at {{FILE_CAP, default "core default"}} · **Function size:** flag past {{FUNCTION_FLAG, default "core default"}} lines
 - **Areas** (modules or folders, for counting refactor debt): {{AREAS, default "set in the walking skeleton"}}
-- **Where configuration, tokens and copy live:** {{CONFIG_PATHS, e.g. "src/config/, src/styles/tokens.css, src/copy/"; default "set in the walking skeleton"}}
-- **Files exempt from the size limits:** {{SIZE_EXEMPT, default "generated files and fixtures"}}
+- **Where configuration, tokens and copy live:** {{CONFIG_PATHS, each in backticks, e.g. "`src/config/`, `src/styles/tokens.css`, `src/copy/`"; default "set in the walking skeleton"}}
+- **Files exempt from the code limits:** {{SIZE_EXEMPT, globs in backticks, e.g. "`src/generated/*`"; default "generated files and fixtures"}}
+
+The kit's `structure-check.sh` reads these lines: the numbers, and the paths and globs in backticks.
 - **Per-frame budget** (code that runs every frame): {{FRAME_BUDGET_MS, default "none"}}
 
 ## Environments
