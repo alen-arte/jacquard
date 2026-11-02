@@ -2,7 +2,8 @@
 # Jacquard: mechanical structure check for code (core standards › Scalability). Reads only; needs git and POSIX tools.
 # Usage: structure-check.sh [--base <ref>] [--all] [--project <project.md>]
 #   default  the files changed against the merge base with <ref> (default: main, master, origin/main, origin/master),
-#            committed, uncommitted and untracked; a renamed file is compared with its old path
+#            committed, uncommitted and untracked; a renamed file is compared with its old path when the rename is
+#            staged or committed (git mv, or git add after mv)
 #   --all    every file in the repo, once, to measure existing debt
 # Settings come from project.md › Code limits (default <repo>/.jacquard/project.md): the numbers after "warn at" and
 # "cap at", and the values in backticks on the lines for tokens, exempt files and names that repeat by convention;
@@ -23,7 +24,7 @@ colour_ext='css scss sass less html js jsx ts tsx mjs cjs mts cts vue svelte ast
 exempt='*.min.* *.generated.* *generated/* *fixtures/* dist/ build/ vendor/'
 tokens='*token* *theme*'
 test_globs='*.test.* *.spec.* *__tests__/* tests/ test/ */tests/* */test/*'
-repeat_names='main usage die GET POST PUT PATCH DELETE HEAD OPTIONS generateMetadata generateStaticParams generateViewport Page Layout Loading NotFound load loader action meta links headers middleware'
+repeat_names='main usage die GET POST PUT PATCH DELETE HEAD OPTIONS generateMetadata generateStaticParams generateViewport generateImageMetadata generateSitemaps Page Layout Template Loading Error GlobalError NotFound Default Image sitemap robots manifest load loader action meta links headers middleware'
 colour_lines_shown=5
 here="$(cd "$(dirname "$0")" && pwd)/structure-check"
 
@@ -39,6 +40,7 @@ while [ $# -gt 0 ]; do
     *) usage ;;
   esac
 done
+for p in edges cycles duplicates colours; do [ -f "$here/$p.awk" ] || die "nothing was checked: $here/$p.awk is missing"; done
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not inside a git repository"
 cd "$root" || die "cannot enter $root"
 [ -n "$project" ] || project="$root/.jacquard/project.md"
@@ -79,13 +81,16 @@ aliases() {
   for _c in tsconfig.json jsconfig.json; do
     [ -f "$_c" ] && awk '
       match($0, /"baseUrl"[ \t]*:[ \t]*"[^"]*"/) { s = substr($0, RSTART, RLENGTH); sub(/^"baseUrl"[ \t]*:[ \t]*"/, "", s); sub(/"$/, "", s); b = s }
+      pend != "" && match($0, /"[^"]*\*"/) { key[++n] = pend; tgt[n] = substr($0, RSTART + 1, RLENGTH - 3); pend = ""; next }
       match($0, /"[^"]*\*"[ \t]*:[ \t]*\[[ \t]*"[^"]*\*"/) { s = substr($0, RSTART, RLENGTH); k = s; sub(/^"/, "", k); sub(/\*".*/, "", k)
-        t = s; sub(/.*\[[ \t]*"/, "", t); sub(/\*"$/, "", t); key[++n] = k; tgt[n] = t }
-      END { if (b == "") b = "."; for (i = 1; i <= n; i++) print key[i] "\t" b "/" tgt[i] }' "$_c"
+        t = s; sub(/.*\[[ \t]*"/, "", t); sub(/\*"$/, "", t); key[++n] = k; tgt[n] = t; next }
+      match($0, /"[^"]*\*"[ \t]*:[ \t]*\[[ \t]*$/) { k = substr($0, RSTART + 1); sub(/\*".*/, "", k); pend = k }
+      END { for (i = 1; i <= n; i++) { p = (b == "" || b == "." ? "" : b "/") tgt[i]; while (sub(/^\.\//, "", p)) ; print key[i] "\t" p } }' "$_c"
   done
   return 0
 }
 edges() { awk -v list="$1" -v exts="$import_ext" -v aliases="$2" -f "$here/edges.awk"; }
+failed() { die "nothing was checked: the $1 step failed"; }
 
 git ls-files -z --cached --others --exclude-standard | tr '\0' '\n' | sort -u | existing > "$tmp/all"
 : > "$tmp/renames"
@@ -97,14 +102,16 @@ else
     [ -n "$base" ] || die "no main or master branch, local or on origin: pass --base <ref>"
   fi
   git rev-parse -q --verify "$base^{commit}" >/dev/null || die "unknown base: $base"
-  mb="$(git merge-base "$base" HEAD)" || die "no common history with $base"
+  mb="$(git merge-base "$base" HEAD)" || die "no common history with $base (a shallow clone?)"
   git diff -z -M --name-status --diff-filter=d "$mb" | tr '\0' '\n' |
     awk -v ren="$tmp/renames" '/^R/ { getline o; getline n; print n; print n "\t" o > ren; next } { getline p; print p }' > "$tmp/diff"
   { cat "$tmp/diff"; git ls-files -z --others --exclude-standard | tr '\0' '\n'; } | sort -u | existing > "$tmp/targets"
   scope="changed against $base"
 fi
 filter "$tmp/targets" "$code_ext" > "$tmp/code"
-echo "structure-check: $(awk 'END { print NR }' "$tmp/code") code files $scope (warn $warn · cap $cap; settings: $settings)"
+aliases > "$tmp/aliases" || failed aliases
+followed="$(awk -F '\t' '{ printf "%s%s → %s", (NR > 1 ? ", " : ""), $1, $2 } END { if (NR == 0) printf "none" }' "$tmp/aliases")"
+echo "structure-check: $(awk 'END { print NR }' "$tmp/code") code files $scope (warn $warn · cap $cap; settings: $settings; import aliases: $followed)"
 
 block=0; warns=0; flagged=""
 flag() { for _f; do case " $flagged " in *" $_f "*) ;; *) flagged="${flagged:+$flagged }$_f" ;; esac; done; }
@@ -128,9 +135,9 @@ while IFS="$tab" read -r n f; do
 done < "$tmp/sizes"
 
 # Import cycles
-aliases > "$tmp/aliases"
 filter "$tmp/all" "$import_ext" > "$tmp/js"
-edges "$tmp/js" "$tmp/aliases" | awk -f "$here/cycles.awk" > "$tmp/cycles"
+edges "$tmp/js" "$tmp/aliases" > "$tmp/edges" || failed imports
+awk -f "$here/cycles.awk" "$tmp/edges" > "$tmp/cycles" || failed cycles
 if [ "$all" = 1 ]; then
   sed "s/^/all$tab/" "$tmp/cycles" > "$tmp/cycles.marked"
 else
@@ -147,7 +154,8 @@ else
       case "$f" in */*) mkdir -p "$tmp/base/${f%/*}" ;; esac
       git show "$mb:$f" > "$tmp/base/$f" || die "cannot read $f at the base"
     done < "$tmp/base.js"
-    (cd "$tmp/base" && aliases > "$tmp/base.aliases" && edges "$tmp/base.js" "$tmp/base.aliases") | awk -f "$here/cycles.awk" > "$tmp/before"
+    (cd "$tmp/base" && aliases > "$tmp/base.aliases" && edges "$tmp/base.js" "$tmp/base.aliases" > "$tmp/base.edges") || failed "base imports"
+    awk -f "$here/cycles.awk" "$tmp/base.edges" > "$tmp/before" || failed "base cycles"
   fi
   awk -v before="$tmp/before" -v renames="$tmp/renames" '
     BEGIN { while ((getline l < renames) > 0) { split(l, r, "\t"); old[r[1]] = r[2] }
@@ -167,7 +175,8 @@ done < "$tmp/cycles.marked"
 
 # The same top-level function name in several files (tests left out)
 filter "$tmp/all" "$code_ext" notests > "$tmp/dup.files"
-awk -v list="$tmp/dup.files" -v changed="$tmp/code" -v all="$all" -v ignore=" $repeat_names " -f "$here/duplicates.awk" | sort > "$tmp/dups"
+awk -v list="$tmp/dup.files" -v changed="$tmp/code" -v all="$all" -v ignore=" $repeat_names " -f "$here/duplicates.awk" > "$tmp/dups.raw" || failed duplicates
+sort "$tmp/dups.raw" > "$tmp/dups"
 while IFS="$tab" read -r name files mine; do
   flag $mine
   report "⚠" duplicate "$name: $files (one definition, many uses: extract it, or rename if they differ)"
@@ -175,7 +184,7 @@ done < "$tmp/dups"
 
 # Colour literals outside the token files (tests left out)
 filter "$tmp/targets" "$colour_ext" notests | while IFS= read -r f; do in_list "$f" $tokens || printf '%s\n' "$f"; done > "$tmp/colour.files"
-awk -v list="$tmp/colour.files" -v shown="$colour_lines_shown" -f "$here/colours.awk" > "$tmp/colours"
+awk -v list="$tmp/colour.files" -v shown="$colour_lines_shown" -f "$here/colours.awk" > "$tmp/colours" || failed colours
 while IFS="$tab" read -r f n at; do
   flag "$f"
   report "⚠" colour "$f: $n colour literals outside the tokens (lines $at)"

@@ -43,7 +43,11 @@ start() { git reset -q --hard; git clean -qfd; git switch -q -C "w$1" main; }
 
 start 1; echo "more" >> README.md
 sc; [ "$st" = 0 ] && has "no findings" || fail "S1 a change with no code must pass with 'no findings' (got $st: $out)"
-has "warn 5 · cap 10; settings: .*project.md" || fail "S1b the limits come from the Code limits section only (got: $out)"
+has "warn 5 · cap 10; settings: .*project.md; import aliases: none" || fail "S1b the limits come from the Code limits section only, and the aliases are named (got: $out)"
+printf '%s\n' '## Stack' > "$tmp/nolimits.md"
+sc --project "$tmp/nolimits.md"; has "warn 300 · cap 500; settings: core defaults (.*has no Code limits section)" || fail "S1c a project.md without Code limits says so (got: $out)"
+cp "$script" "$tmp/alone.sh"; out="$("$tmp/alone.sh" 2>&1)"; st=$?
+[ "$st" = 2 ] && has "nothing was checked" || fail "S1d without its awk parts it must exit 2, never pass (got $st: $out)"
 
 start 2; echo "const w = 2;" >> src/big.ts
 sc --base main; [ "$st" = 1 ] && has "✗ size.*src/big.ts" || fail "S2 a file past the cap that grew must fail (got $st: $out)"
@@ -131,17 +135,38 @@ printf '%s\n' "import { b } from '@/lib/b';" > src/a.ts
 mkdir -p src/lib; printf '%s\n' "import { a } from '@/a';" > src/lib/b.ts
 printf '%s\n' "const x = require('./y');" > src/x.js
 printf '%s\n' "const y = require('./x');" > src/y.js
-sc; [ "$st" = 1 ] && has "✗ cycle.*src/a.ts, src/lib/b.ts" && has "✗ cycle.*src/x.js, src/y.js" ||
-  fail "S22 cycles through tsconfig paths aliases and require() must fail (got $st: $out)"
+printf '%s\n' "/* eslint-disable */ import { q } from './q2';" > src/q1.ts
+printf '%s\n' "import { p } from './q1';" > src/q2.ts
+sc; [ "$st" = 1 ] && has "✗ cycle.*src/a.ts, src/lib/b.ts" && has "✗ cycle.*src/x.js, src/y.js" && has "✗ cycle.*src/q1.ts, src/q2.ts" ||
+  fail "S22 cycles through tsconfig paths aliases, require() and an import after a block comment must fail (got $st: $out)"
+has "import aliases: @/ → src/" || fail "S22b the aliases followed are named (got: $out)"
+
+start 18b; mkdir -p src/components/ui
+printf '%s\n' '{' '  "compilerOptions": {' '    "paths": {' '      "@/*": [' '        "./src/*"' '      ],' \
+  '      "@/ui/*": ["./src/components/ui/*"]' '    }' '  }' '}' > tsconfig.json
+printf '%s\n' "import { b } from '@/ui/button';" > src/form.ts
+printf '%s\n' "import { f } from '@/form';" > src/components/ui/button.ts
+mkdir -p src/ui; printf '%s\n' 'export const decoy = 1;' > src/ui/button.ts
+sc; [ "$st" = 1 ] && has "✗ cycle.*src/components/ui/button.ts, src/form.ts" ||
+  fail "S22c a multi-line paths entry is read and the longest alias prefix wins (got $st: $out)"
 
 start 19
 printf '%s\n' 'def parse():' '    pass' > src/p1.py
 printf '%s\n' 'def parse():' '    def inner():' '        pass' > src/p2.py
 printf '%s\n' 'export function parse() {}' > src/parse.ts
-printf '%s\n' 'usage() { :; }' 'build() { :; }' > src/a.sh
-printf '%s\n' 'usage() { :; }' 'function build { :; }' 'build() { :; }' > src/b.sh
+printf '%s\n' 'usage() { :; }' 'function build {' '  :' '}' > src/a.sh
+printf '%s\n' 'usage() { :; }' 'build() { :; }' > src/b.sh
 sc; has "⚠ duplicate.*parse: src/p1.py, src/p2.py" && has "⚠ duplicate.*build: src/a.sh, src/b.sh" && ! has "parse.ts\|usage" ||
   fail "S23 duplicates are counted per language, with seeded names left out (got $st: $out)"
+
+start 19b
+printf '%s\n' 'export const make: (n: number) => number = (n) => n;' 'export function functionToString() {}' > src/m1.ts
+printf '%s\n' 'export const make = (' '  n: number,' ') => n;' 'export function ToString() {}' 'export const total = (1 + 2) * 3;' > src/m2.ts
+printf '%s\n' 'export const total = (4 + 5) * 6;' > src/m3.ts
+sc; has "⚠ duplicate.*make: src/m1.ts, src/m2.ts" && ! has "ToString\|total" ||
+  fail "S23b typed and multi-line arrows count, a name containing 'function' is read whole, expressions are not functions (got $st: $out)"
+printf '%s\n' '* { color: #333; }' '/* #444 */' > src/reset.css
+sc; has "⚠ colour.*src/reset.css: 1 colour" || fail "S23c a universal-selector line is not a comment (got: $out)"
 
 cd "$r" || exit 1; start 20
 sc --project .jacquard/project.md; [ "$st" = 0 ] && has "settings: .*project.md" || fail "S24 a relative --project path is read (got $st: $out)"

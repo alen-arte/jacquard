@@ -6,7 +6,7 @@ BEGIN {
     n = 0; nl = 0; at = ""; ln = 0
     while ((getline line < f) > 0) {
       ln++
-      if (line ~ /^[ \t]*(\/\/|\/\*|\*|<!--)/) continue
+      if (line ~ /^[ \t]*(\/\/|\/\*|<!--|\*(\/|$|[ \t]+[^{,>+~ \t]))/) continue
       k = 0; s = line
       while (match(s, /#[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]*/)) {
         pre = RSTART > 1 ? substr(s, RSTART - 1, 1) : ""; len = RLENGTH - 1; post = substr(s, RSTART + RLENGTH, 1)

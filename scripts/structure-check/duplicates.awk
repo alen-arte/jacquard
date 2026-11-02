@@ -22,7 +22,7 @@ BEGIN {
     if (fam == "") continue
     while ((getline line < f) > 0) {
       if (fam == "js" && match(line, /^(export[ \t]+)?(default[ \t]+)?(async[ \t]+)?function([ \t]*\*[ \t]*|[ \t]+)[A-Za-z_$][A-Za-z0-9_$]*/)) {
-        s = substr(line, RSTART, RLENGTH); sub(/.*function[ \t*]*/, "", s); add(fam, s, f)
+        s = substr(line, RSTART, RLENGTH); sub(/.*[ \t*]/, "", s); add(fam, s, f)
       } else if (fam == "js" && match(line, /^(export[ \t]+)?(const|let|var)[ \t]+[A-Za-z_$][A-Za-z0-9_$]*/)) {
         s = substr(line, RSTART, RLENGTH); rest = substr(line, RSTART + RLENGTH); sub(/.*[ \t]/, "", s)
         if (arrow(rest)) add(fam, s, f)
@@ -30,6 +30,8 @@ BEGIN {
         s = substr(line, RSTART, RLENGTH); sub(/.*[ \t]/, "", s); add(fam, s, f)
       } else if (fam == "sh" && match(line, /^(function[ \t]+)?[A-Za-z_][A-Za-z0-9_]*[ \t]*\(\)/)) {
         s = substr(line, RSTART, RLENGTH); sub(/[ \t]*\(\)$/, "", s); sub(/.*[ \t]/, "", s); add(fam, s, f)
+      } else if (fam == "sh" && match(line, /^function[ \t]+[A-Za-z_][A-Za-z0-9_]*/)) {
+        s = substr(line, RSTART, RLENGTH); sub(/.*[ \t]/, "", s); add(fam, s, f)
       }
     }
     close(f)

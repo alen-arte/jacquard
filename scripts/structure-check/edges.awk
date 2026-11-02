@@ -21,24 +21,33 @@ function lookup(p,   i, stem) {
   if (sub(/\.(js|jsx|mjs|cjs)$/, "", stem)) for (i = 1; i <= ne; i++) if ((stem "." ext[i]) in exists) return stem "." ext[i]
   return ""
 }
-function resolve(from, spec,   dir, i) {
+function resolve(from, spec,   dir, i, t) {
   sub(/[?#].*/, "", spec)
   if (spec ~ /^\.\.?(\/|$)/) {
     dir = from
     if (sub(/\/[^\/]*$/, "", dir) == 0) dir = "."
     return lookup(norm(dir "/" spec))
   }
-  for (i = 1; i <= na; i++) if (index(spec, prefix[i]) == 1) return lookup(norm(target[i] "/" substr(spec, length(prefix[i]) + 1)))
+  # Longest prefix first, falling through when it resolves to nothing, as TypeScript does
+  for (i = 1; i <= na; i++) if (index(spec, prefix[i]) == 1) {
+    t = lookup(norm(target[i] "/" substr(spec, length(prefix[i]) + 1)))
+    if (t != "") return t
+  }
   return ""
 }
 BEGIN {
   ne = split(exts, ext, " ")
-  while ((getline l < aliases) > 0) { split(l, kv, "\t"); prefix[++na] = kv[1]; target[na] = kv[2] }
+  while ((getline l < aliases) > 0) {
+    split(l, kv, "\t"); p = kv[1]; q = kv[2]
+    for (i = ++na; i > 1 && length(prefix[i - 1]) < length(p); i--) { prefix[i] = prefix[i - 1]; target[i] = target[i - 1] }
+    prefix[i] = p; target[i] = q
+  }
   while ((getline f < list) > 0) { exists[f] = 1; files[++nf] = f }
   for (j = 1; j <= nf; j++) {
     f = files[j]; typ = 0
     while ((getline line < f) > 0) {
-      if (line ~ /^[ \t]*(\/\/|\/\*|\*)/) continue
+      if (line ~ /^[ \t]*\/\*/ && index(line, "*/")) line = substr(line, index(line, "*/") + 2)
+      else if (line ~ /^[ \t]*(\/\/|\/\*|\*([ \t\/]|$))/) continue
       if (line ~ /^[ \t]*(import|export)[ \t]+type[ \t{]/) typ = 1
       else if (line ~ /^[ \t]*(import|export)[ \t]/) typ = 0
       while (match(line, /(from|import|require\()[ \t]*["\047][^"\047]+["\047]/)) {
