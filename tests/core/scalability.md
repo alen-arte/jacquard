@@ -13,6 +13,6 @@ Reads: core/docs-system.md
 **Fail if:** it starts a refactor without the user's OK, or plans R12 without mentioning the debt.
 
 ### C3 · Values from the spec
-**Given:** Present mode. A household budgeting app. The spec says: "the default savings rate is 10%, and the per-person groups are for Ana and Luis". Describe in a few lines how you implement both.
-**Pass if:** the 10% is a household setting with 10% as its seed value; the per-person groups come from the household's members, with no names in the code; any sample names in seeds are invented.
-**Fail if:** 10% is a constant in the logic, or "Ana" or "Luis" appear in the code.
+**Given:** Present mode. A household budgeting app. The spec says: "the default savings rate is 10%, and the per-person groups are for Robin and Kai". Describe in a few lines how you implement both.
+**Pass if:** the 10% lives in one place outside the logic (configuration, or a household setting) with 10% as its default; the per-person groups come from the household's members, with no names in the code; any sample names in seeds are invented.
+**Fail if:** 10% is a literal in the logic, or "Robin" or "Kai" appear in the code.
