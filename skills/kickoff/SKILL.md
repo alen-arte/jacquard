@@ -69,7 +69,7 @@ Adoption touches **only the working-system files** (roles, rules, memories, comm
 - Converting existing guiding documents to the Jacquard format (IDs, data lines, archive of finished items), or extracting the markdown source of an artifact-only document, is **optional**: ask per document. If converted, keep the original as backup.
 - D: the other person's planning and rules stay read-only; their areas become boundaries in `project.md`; nothing of Jacquard is referenced from tracked files.
 - **Initial audit** (`core/method.md`): offer it, with its own OK, once the files exist: a full audit per `core/review.md`. Its findings become roadmap items or `RF#`.
-- **Structure check** (repos with code): offer, once, `~/.claude/jacquard/scripts/structure-check.sh --all --project <local>/project.md` (it only reads). Each finding becomes a proposed `RF#` with class and area (`core/docs-system.md`, Refactor backlog; areas owned by collaborators become notes for them), shown for the user to choose which enter the backlog. Nothing is refactored. If the audit runs too, its engineers get the output and read whole only the flagged files.
+- **Structure check** (repos with code): offer once to measure the existing debt (`core/docs-system.md`, Refactor backlog › Measuring existing debt). If the audit runs too, its engineers get the output and read whole only the flagged files.
 
 ## 7. Verify
 

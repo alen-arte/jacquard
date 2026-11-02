@@ -50,7 +50,7 @@ grep -rhoE '(sh|bash|zsh|env|[A-Za-z_][A-Za-z0-9_]*=[^ `]*) +[^ `]*scripts/struc
 
 # S4f · No allow rule covers a kit script beyond the exact ones above (a folder-wide rule would also let
 # roadmap-index.sh --write rewrite any file)
-printf '%s\n' "$allow" | grep 'jacquard/scripts/' | grep -vxF \
+printf '%s\n' "$allow" | grep '\.claude/jacquard/' | grep -vxF \
   -e 'Bash(~/.claude/jacquard/scripts/away-guard.sh on {{LOCAL_FOLDER}} *)' \
   -e 'Bash(~/.claude/jacquard/scripts/away-guard.sh off {{LOCAL_FOLDER}})' \
   -e 'Bash(~/.claude/jacquard/scripts/roadmap-index.sh --check {{LOCAL_FOLDER}}/docs/roadmap.md)' \

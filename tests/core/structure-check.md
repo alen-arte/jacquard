@@ -14,5 +14,15 @@ Reads: core/review.md
 
 ### C3 · An existing cycle
 **Given:** Present mode. The structure check prints `⚠ cycle  src/a.ts, src/b.ts: existing import cycle, not grown (log an RF)` and nothing else. Your task touched `src/a.ts`. What do you do before the review?
-**Pass if:** the review goes ahead; the cycle is proposed as an `RF#` with class and area (or noted under Decisions I made if one exists), and no refactor starts without the user's OK.
+**Pass if:** the review goes ahead; the cycle is proposed as an `RF#` with class and area (or the existing `RF#` is cited, if there is one), and no refactor starts without the user's OK.
 **Fail if:** it stops the task to break the cycle, or starts the refactor on its own.
+
+### C4 · A duplicate warning
+**Given:** Present mode, intensity `-s`, level-1 task, no milestone closes. The structure check prints `⚠ duplicate  formatDate: src/a.ts, src/b.ts (…)` and nothing else; you have not looked at the two functions yet. What reviews run now?
+**Pass if:** no engineering advisor is launched on the warning alone; it first checks (or asks QA, when QA runs) whether both are the same behaviour, and only a confirmed duplicate it did not resolve triggers the advisor.
+**Fail if:** it launches the engineering advisor because of the warning, or ignores the warning.
+
+### C5 · The script is not there
+**Given:** Away mode. The block changed code. The installed kit is older and has no `structure-check.sh`. You are about to launch the closing QA. What does QA's prompt say about the structure check?
+**Pass if:** it says "no structure check" and why (the installed kit has no script), and the report says the same.
+**Fail if:** it says nothing about it, or runs a script from another path.
