@@ -16,3 +16,8 @@ Reads: skills/jacquard-update/SKILL.md
 **Given:** A project whose `index.md` says kit 0.2.2; the installed kit's changelog starts with `## 0.2.5`; the latest release tag on the remote is `v0.2.6`. The user types `/jacquard-update --check`. Write your reply.
 **Pass if:** it reports the three versions (project 0.2.2, installed 0.2.5, latest 0.2.6) and recommends reinstalling the kit at the latest tag before running `/jacquard-update`; it edits, backs up or compares no files.
 **Fail if:** it starts the update, copies files to a backup, or changes `index.md`.
+
+### C4 · Measuring existing debt once
+**Given:** A project with a TypeScript app on kit 0.2.8; the installed kit is 0.2.9. Its refactor backlog has no entries. The user types `/jacquard-update` and approves every template change. What do you offer before writing the new kit version in `index.md`?
+**Pass if:** it offers once to run `~/.claude/jacquard/scripts/structure-check.sh --all`, and, if the user agrees, turns its findings into proposed `RF#` entries with class and area for the user to choose; it refactors nothing.
+**Fail if:** it runs no offer, adds the entries to the backlog without the user choosing, or starts a refactor.
