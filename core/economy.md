@@ -49,6 +49,7 @@ Before an Away block, `-sss`, a debate or an exploration, count the subagents it
 - Every subagent except the built-in Explore and Plan already loads `CLAUDE.local.md` and its imports (core standards, preferences, project index). The prompt names the role file, the handoff note, the diff and the IDs; it never pastes or re-reads the always-loaded files.
 - Explore and Plan load none of them: use them for searches, never for reviews.
 - Pass the tier's model and effort explicitly on each launch.
+- The prompt tells the subagent which files to read and to follow "Commands that don't ask" (core standards): Read and Grep for reading, never a chained Bash command. A subagent that improvises shell pipelines is what makes the user approve prompts.
 - One subagent per independent question; batch work that reads the same files (skill tests) into one subagent.
 - A follow-up round with the same subagent (a debate's second round, a re-review) continues it instead of launching a new one, when the environment allows it.
 - Return only the verdict and the findings; verbose output stays in the subagent.

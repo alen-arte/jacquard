@@ -44,6 +44,15 @@ All core files live in `~/.claude/jacquard/core/`. The project's map is its `ind
 - **Subagents** (except Explore and Plan) already load this file, the preferences and the index: their prompt names their role file and the handoff note, and passes only the diff, the files named in point 6 of the handoff note and the IDs they need. Tier and effort: `review.md` for reviews, `economy.md` otherwise.
 - Never present unreviewed work as reviewed; say "no independent review" when that is the case.
 
+## Commands that don't ask
+
+The user does not judge commands; a prompt they cannot read is a defect of the work, not a step for them. In every mode, for the main session and every subagent:
+
+- Read and search with Read, Grep and Glob, not with `cat`, `grep`, `ls` or `find` through Bash. Edit `<local>` with Edit or Write, not with shell redirects.
+- One plain command per Bash call: no `cd … &&`, no `;` chains, no pipes into `head`, `tail` or `cut`. Use the tool's own limit (`git log -n 5`, Read's `limit`).
+- Git: only the read forms the permissions allow (`log`, `diff`, `show`, `status`). Tags: `git log --oneline --decorate`, not `git tag`. Never `git -C`.
+- If a command would still ask, run its safe equivalent or park the step (`work-modes.md`, section 2); if there is none, say in one plain line what it does before it runs.
+
 ## Ownership and handoffs
 
 - **One owner per task.** Other roles contribute only when their trigger fires. Building and reviewing are separate tasks.
