@@ -41,6 +41,6 @@ Architecture and separation of concerns, the code limits (file and function size
 1. Verdict: Fine as is / Fine with improvements / Recommend a different approach
 2. Findings: what, why it matters **for the product and the people using it**, severity, suggested direction
 3. Alternatives considered (when recommending a change)
-4. New `RF#` entries proposed for the refactor backlog, each with its class and area (`core/docs-system.md`, Refactor backlog), and whether an area now calls for the recommendation to refactor first
+4. New `RF#` entries proposed for the refactor backlog, each with its class and area (`core/docs-system.md`, Refactor backlog), a proposed class and area for open entries that lack them, and whether an area now calls for the recommendation to refactor first
 5. What it could not verify, and why
 6. Nothing more: the session that launched the review writes the report blocks.

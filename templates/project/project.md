@@ -45,9 +45,10 @@ Verified in official documentation on {{DATE}}; recheck when upgrading.
 
 ## Code limits
 
-Defaults from core standards › Scalability; change them here, never in the code.
+"Core default" uses the value in core standards › Scalability; change values here, never in the code.
 
-- **File size:** warn at {{FILE_WARN, default 300}} lines · cap at {{FILE_CAP, default 500}} · **Function size:** flag past {{FUNCTION_FLAG, default 80}} lines
+- **File size:** warn at {{FILE_WARN, default "core default"}} lines · cap at {{FILE_CAP, default "core default"}} · **Function size:** flag past {{FUNCTION_FLAG, default "core default"}} lines
+- **Areas** (modules or folders, for counting refactor debt): {{AREAS, default "set in the walking skeleton"}}
 - **Where configuration, tokens and copy live:** {{CONFIG_PATHS, e.g. "src/config/, src/styles/tokens.css, src/copy/"; default "set in the walking skeleton"}}
 - **Files exempt from the size limits:** {{SIZE_EXEMPT, default "generated files and fixtures"}}
 - **Per-frame budget** (code that runs every frame): {{FRAME_BUDGET_MS, default "none"}}

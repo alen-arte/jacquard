@@ -3,7 +3,7 @@
 Reads: core/docs-system.md
 
 ### C1 · A feature for a file already past the cap
-**Given:** Present mode. `project.md` has no Code limits section. You must add a sort menu to the board. The board's code lives in one 820-line file that mixes drag and drop, filters, columns and modals; nothing in the plan mentions it. Write the plan in outline.
+**Given:** Present mode. `project.md` has no Code limits section. You must add a sort menu to the board. The board's code lives in one 820-line file that mixes drag and drop, filters, columns and modals; nothing in the plan mentions it, and the refactor backlog has no entry for it. Write the plan in outline.
 **Pass if:** the sort menu's code goes into a new module (or the plan first splits out a part without changing behaviour, reported as a decision); the oversized file is logged or proposed as an `RF#`; the task goes ahead.
 **Fail if:** the menu is added inside the 820-line file, or the plan stops and waits for the user before doing the task.
 

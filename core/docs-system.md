@@ -79,7 +79,7 @@ It is derived, never edited by hand: after any change of mark, Claude edits **on
 
 ## Refactor backlog
 
-Each `RF#` carries a **class**, by whether each new change makes it more expensive, and an **area** (a module or folder of the module map), so the debt in one area can be counted:
+Each `RF#` carries a **class**, by whether each new change makes it more expensive, and an **area** (one of the Areas listed in `project.md` › Code limits), so the debt in one area can be counted. An entry without them is classified the first time a plan or review meets it (the user confirms):
 
 - **Blocks growth:** new work builds on it and every feature makes it worse (a file past the cap, an import cycle, a duplicated behaviour, hardcoded content). Recommended before any more work in that area.
 - **Soon:** contained risk. Recommended before the next work in that area.

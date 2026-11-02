@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}} · Refactor backlog
 
-> Refactors too large to fold into a task. They are worth doing; they are planned work, never mixed into a feature. The user chooses which and when, one at a time; Claude recommends by class, and before more work in an area with 3 or more open, or one that blocks growth (`core/docs-system.md`, Refactor backlog).
+> Refactors too large to fold into a task. They are worth doing; they are planned work, never mixed into a feature. The user chooses which and when, one at a time; Claude recommends by class and area (`core/docs-system.md`, Refactor backlog).
 
 ## How an entry is executed
 
