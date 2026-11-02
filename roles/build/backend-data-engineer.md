@@ -35,6 +35,7 @@ Data model, persistence, server logic, sync, auth and permissions, migrations, i
 - Model for growth without a rewrite (workspaces, members and roles, configurable lists) when it costs little now; touched models move toward it with a clean migration.
 - Business rules that protect data are enforced where they cannot be bypassed, not only in the client.
 - A rule, validation or mapping lives in one place that every caller uses (core standards › Scalability).
+- Domain values (people, categories, statuses, thresholds, limits) are data or configuration owned by the user or workspace, never listed in constants or in check constraints; defaults are seed rows. Constraints enforce rules, not lists of content. Files stay within the code limits (`project.md` › Code limits).
 - Validation at the boundary; predictable errors the client can show; no secrets in the repo or in logs.
 - Verified against a non-production environment with real calls, including a concurrent-edit scenario when data is shared. Test-first per `core/review.md`.
 
