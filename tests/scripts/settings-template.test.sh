@@ -33,6 +33,16 @@ printf '%s\n' "$allow" | grep -q 'roadmap-index\.sh.*\*' && fail "S4 roadmap-ind
 grep -qF '~/.claude/jacquard/scripts/roadmap-index.sh --write <local>/docs/roadmap.md' "$kit/core/docs-system.md" || fail "S4b core/docs-system.md spells roadmap-index.sh differently from the allow rule"
 grep -qF '~/.claude/jacquard/scripts/roadmap-index.sh --write {{LOCAL_FOLDER}}/docs/roadmap.md' "$kit/templates/docs/roadmap.md" || fail "S4c the roadmap template spells roadmap-index.sh differently from the allow rule"
 
+# S4d · structure-check.sh reads only, so it runs without asking, bare or with arguments; no looser spelling
+# (a rule without the space, structure-check.sh*, would also match any other file whose name starts the same)
+for r in "Bash(~/.claude/jacquard/scripts/structure-check.sh)" "Bash(~/.claude/jacquard/scripts/structure-check.sh *)"; do
+  printf '%s\n' "$allow" | grep -qxF "$r" || fail "S4d no allow rule $r"
+done
+[ "$(printf '%s\n' "$allow" | grep -c 'structure-check')" = 2 ] || fail "S4d structure-check.sh must have exactly the two allow rules"
+# Every path the kit spells for it is the one the rules allow
+grep -rhoE '[^ `(]*scripts/structure-check\.sh' "$kit/core" "$kit/roles" "$kit/skills" "$kit/templates" "$kit/agents" 2>/dev/null |
+  grep -vxF '~/.claude/jacquard/scripts/structure-check.sh' | grep -q . && fail "S4e a kit file spells structure-check.sh with a path the allow rules do not match"
+
 # S5 · The local folder can be written from the terminal through its link
 grep -qF '"additionalDirectories": ["{{PERSONAL_PROJECT_FOLDER}}"]' "$template" || fail "S5 no additionalDirectories entry for the personal project folder"
 

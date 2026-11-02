@@ -33,7 +33,7 @@ die() { echo "✗ $1" >&2; exit 2; }
 base=""; all=0; project=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --base) [ $# -ge 2 ] || usage; base="$2"; shift 2 ;;
+    --base) [ $# -ge 2 ] || usage; case "$2" in -*) die "a base cannot start with '-': $2" ;; esac; base="$2"; shift 2 ;;
     --all) all=1; shift ;;
     --project) [ $# -ge 2 ] || usage; case "$2" in /*) project="$2" ;; *) project="$PWD/$2" ;; esac
       [ -f "$project" ] || die "no project file at $2"; shift 2 ;;

@@ -173,6 +173,8 @@ sc --project .jacquard/project.md; [ "$st" = 0 ] && has "settings: .*project.md"
 sc --project nope.md; [ "$st" = 2 ] || fail "S25 a missing --project file must exit 2 (got $st)"
 sc --base nope; [ "$st" = 2 ] || fail "S26 an unknown base must exit 2 (got $st)"
 sc --bogus; [ "$st" = 2 ] || fail "S27 an unknown option must exit 2 (got $st)"
+# It runs without asking (permissions template), so no argument may reach git as an option
+sc --base "--output=$tmp/written"; [ "$st" = 2 ] && [ ! -e "$tmp/written" ] || fail "S27b a --base that starts with '-' must exit 2 and write nothing (got $st)"
 
 # A clone where main exists only as origin/main
 git clone -q -b main "$r" "$tmp/cl"; cd "$tmp/cl" || exit 1
