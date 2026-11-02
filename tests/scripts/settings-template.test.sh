@@ -39,9 +39,24 @@ for r in "Bash(~/.claude/jacquard/scripts/structure-check.sh)" "Bash(~/.claude/j
   printf '%s\n' "$allow" | grep -qxF "$r" || fail "S4d no allow rule $r"
 done
 [ "$(printf '%s\n' "$allow" | grep -c 'structure-check')" = 2 ] || fail "S4d structure-check.sh must have exactly the two allow rules"
-# Every path the kit spells for it is the one the rules allow
-grep -rhoE '[^ `(]*scripts/structure-check\.sh' "$kit/core" "$kit/roles" "$kit/skills" "$kit/templates" "$kit/agents" 2>/dev/null |
+# Every path the kit spells for it is the one the rules allow, never behind an interpreter or a VAR= prefix
+spelled="$kit/core $kit/roles $kit/skills $kit/templates $kit/agents $kit/tests/core $kit/tests/commands $kit/tests/roles"
+# shellcheck disable=SC2086
+grep -rhoE '[^ `(]*scripts/structure-check\.sh' $spelled 2>/dev/null |
   grep -vxF '~/.claude/jacquard/scripts/structure-check.sh' | grep -q . && fail "S4e a kit file spells structure-check.sh with a path the allow rules do not match"
+# shellcheck disable=SC2086
+grep -rhoE '(sh|bash|zsh|env|[A-Za-z_][A-Za-z0-9_]*=[^ `]*) +[^ `]*scripts/structure-check\.sh' $spelled 2>/dev/null | grep -q . &&
+  fail "S4e a kit file runs structure-check.sh behind an interpreter or a variable, which the allow rules do not match"
+
+# S4f · No allow rule covers a kit script beyond the exact ones above (a folder-wide rule would also let
+# roadmap-index.sh --write rewrite any file)
+printf '%s\n' "$allow" | grep 'jacquard/scripts/' | grep -vxF \
+  -e 'Bash(~/.claude/jacquard/scripts/away-guard.sh on {{LOCAL_FOLDER}} *)' \
+  -e 'Bash(~/.claude/jacquard/scripts/away-guard.sh off {{LOCAL_FOLDER}})' \
+  -e 'Bash(~/.claude/jacquard/scripts/roadmap-index.sh --check {{LOCAL_FOLDER}}/docs/roadmap.md)' \
+  -e 'Bash(~/.claude/jacquard/scripts/roadmap-index.sh --write {{LOCAL_FOLDER}}/docs/roadmap.md)' \
+  -e 'Bash(~/.claude/jacquard/scripts/structure-check.sh)' \
+  -e 'Bash(~/.claude/jacquard/scripts/structure-check.sh *)' | grep -q . && fail "S4f an allow rule for a kit script outside the exact list"
 
 # S5 · The local folder can be written from the terminal through its link
 grep -qF '"additionalDirectories": ["{{PERSONAL_PROJECT_FOLDER}}"]' "$template" || fail "S5 no additionalDirectories entry for the personal project folder"

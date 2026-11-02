@@ -1,5 +1,7 @@
 #!/bin/sh
-# Jacquard: mechanical structure check for code (core standards › Scalability). Reads only; needs git and POSIX tools.
+# Jacquard: mechanical structure check for code (core standards › Scalability). Needs git and POSIX tools.
+# It only reads, and only inside the repo: symlinks and paths that leave it (git can store ".." entries) are skipped;
+# its own copies of base files live in a temporary folder removed on exit.
 # Usage: structure-check.sh [--base <ref>] [--all] [--project <project.md>]
 #   default  the files changed against the merge base with <ref> (default: main, master, origin/main, origin/master),
 #            committed, uncommitted and untracked; a renamed file is compared with its old path when the rename is
@@ -28,7 +30,7 @@ repeat_names='main usage die GET POST PUT PATCH DELETE HEAD OPTIONS generateMeta
 colour_lines_shown=5
 here="$(cd "$(dirname "$0")" && pwd)/structure-check"
 
-usage() { echo "usage: $0 [--base <ref>] [--all] [--project <project.md>]" >&2; exit 2; }
+usage() { echo "usage: ${0##*/} [--base <ref>] [--all] [--project <project.md>]" >&2; exit 2; }
 die() { echo "✗ $1" >&2; exit 2; }
 base=""; all=0; project=""
 while [ $# -gt 0 ]; do
@@ -40,21 +42,23 @@ while [ $# -gt 0 ]; do
     *) usage ;;
   esac
 done
-for p in edges cycles duplicates colours; do [ -f "$here/$p.awk" ] || die "nothing was checked: $here/$p.awk is missing"; done
+for p in edges cycles duplicates colours; do [ -f "$here/$p.awk" ] || die "nothing was checked: structure-check/$p.awk is missing"; done
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not inside a git repository"
 cd "$root" || die "cannot enter $root"
 [ -n "$project" ] || project="$root/.jacquard/project.md"
 tmp="$(mktemp -d)" || die "cannot create a temporary folder"
 trap 'rm -rf "$tmp"' EXIT
+trap 'exit 2' HUP INT TERM
 
-# Settings: only the Code limits section counts
+# Settings: only the Code limits section counts; the path is shown without the home folder
+case "$project" in "$root"/*) shown="${project#"$root"/}" ;; "$HOME"/*) shown="~/${project#"$HOME"/}" ;; *) shown="$project" ;; esac
 settings="core defaults (no project.md)"
 if [ -f "$project" ]; then
   awk '/^## / { on = ($0 ~ /^## Code limits/); next } on' "$project" > "$tmp/limits"
-  settings="core defaults ($project has no Code limits section)"
+  settings="core defaults ($shown has no Code limits section)"
 fi
 if [ -s "$tmp/limits" ]; then
-  settings="$project"
+  settings="$shown"
   ticks() { awk -v key="$1" 'index($0, key) { s = $0; while (match(s, /`[^`]+`/)) { printf "%s ", substr(s, RSTART + 1, RLENGTH - 2); s = substr(s, RSTART + RLENGTH) } }' "$tmp/limits"; }
   n="$(awk 'match($0, /warn at [0-9]+/) { print substr($0, RSTART + 8, RLENGTH - 8); exit }' "$tmp/limits")"; [ -n "$n" ] && warn="$n"
   n="$(awk 'match($0, /cap at [0-9]+/) { print substr($0, RSTART + 7, RLENGTH - 7); exit }' "$tmp/limits")"; [ -n "$n" ] && cap="$n"
@@ -75,7 +79,10 @@ filter() {
     printf '%s\n' "$_f"
   done < "$1"
 }
-existing() { while IFS= read -r _f; do [ -f "$_f" ] && printf '%s\n' "$_f"; done; }
+# inside <path>: a relative path that stays in the repo (paths come from git, which can store ".." entries)
+inside() { case "$1" in "" | /* | .. | ../* | */../* | */..) return 1 ;; esac; return 0; }
+# existing: the listed paths that are regular files in the repo, never through a symlink
+existing() { while IFS= read -r _f; do inside "$_f" && [ -f "$_f" ] && [ ! -L "$_f" ] && printf '%s\n' "$_f"; done; }
 # Wildcard aliases from tsconfig/jsconfig "paths" in the current folder, as "prefix<TAB>target" (first target only)
 aliases() {
   for _c in tsconfig.json jsconfig.json; do
@@ -148,7 +155,7 @@ else
   if [ -s "$tmp/touched" ]; then
     mkdir "$tmp/base" || die "cannot create a temporary folder"
     git ls-tree -r -z --name-only "$mb" | tr '\0' '\n' > "$tmp/base.all"
-    filter "$tmp/base.all" "$import_ext" > "$tmp/base.js"
+    filter "$tmp/base.all" "$import_ext" | while IFS= read -r f; do inside "$f" && printf '%s\n' "$f"; done > "$tmp/base.js"
     for c in tsconfig.json jsconfig.json; do git cat-file -e "$mb:$c" 2>/dev/null && git show "$mb:$c" > "$tmp/base/$c"; done
     while IFS= read -r f; do
       case "$f" in */*) mkdir -p "$tmp/base/${f%/*}" ;; esac

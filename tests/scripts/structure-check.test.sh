@@ -174,7 +174,27 @@ sc --project nope.md; [ "$st" = 2 ] || fail "S25 a missing --project file must e
 sc --base nope; [ "$st" = 2 ] || fail "S26 an unknown base must exit 2 (got $st)"
 sc --bogus; [ "$st" = 2 ] || fail "S27 an unknown option must exit 2 (got $st)"
 # It runs without asking (permissions template), so no argument may reach git as an option
-sc --base "--output=$tmp/written"; [ "$st" = 2 ] && [ ! -e "$tmp/written" ] || fail "S27b a --base that starts with '-' must exit 2 and write nothing (got $st)"
+sc --base "--output=$tmp/written"; [ "$st" = 2 ] && [ ! -e "$tmp/written" ] && has "cannot start with '-'" ||
+  fail "S27b a --base that starts with '-' is refused by the script itself and writes nothing (got $st: $out)"
+
+# A base commit whose tree holds ".." entries (git stores them; only fsck refuses them) must not reach outside
+start 21
+victim="$tmp/victim.ts"; echo keep > "$victim"
+t="$(printf '100644 blob %s\tvictim.ts\n' "$(printf '%s\n' "import { a } from './c1';" | git hash-object -w --stdin)" | git mktree)"
+for comp in $(printf '%s\n' "${tmp#/}" | tr '/' '\n' | sed -n '1!G;h;$p'); do t="$(printf '040000 tree %s\t%s\n' "$t" "$comp" | git mktree)"; done
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do t="$(printf '040000 tree %s\t..\n' "$t" | git mktree)"; done
+top="$({ git ls-tree main; printf '040000 tree %s\t..\n' "$t"; } | git mktree)"
+evil="$(git commit-tree "$top" -p main -m crafted)"
+git update-ref refs/heads/w21 "$(git commit-tree "$(git rev-parse 'main^{tree}')" -p "$evil" -m back)"
+git symbolic-ref HEAD refs/heads/w21; git reset -q --hard
+echo "export const c = 3;" >> src/c1.ts
+sc --base "$evil"; [ "$(cat "$victim")" = keep ] || fail "S32 a base tree with '..' entries must not create or empty a file outside the repo (got $st: $out)"
+
+# A tracked or untracked symlink is never followed out of the repo
+start 22
+printf '%s\n' 'export function formatDate() {}' "const c = '#123456';" > "$tmp/outside.tsx"
+ln -s "$tmp/outside.tsx" src/link.tsx
+sc; [ "$st" = 0 ] && ! has "link.tsx" || fail "S33 a symlink is not read (got $st: $out)"
 
 # A clone where main exists only as origin/main
 git clone -q -b main "$r" "$tmp/cl"; cd "$tmp/cl" || exit 1
