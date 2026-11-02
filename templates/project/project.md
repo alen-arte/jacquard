@@ -43,6 +43,14 @@ Verified in official documentation on {{DATE}}; recheck when upgrading.
 | Build | {{BUILD}} |
 | Visual check (`render_check`) | {{RENDER_CHECK, default "none"; e.g. "<preview command> + <headless capture command>", see `~/.claude/jacquard/core/visual-qa.md`}} |
 
+## Code limits
+
+Defaults from core standards › Scalability; change them here, never in the code.
+
+- **File size:** warn at {{FILE_WARN, default 300}} lines · cap at {{FILE_CAP, default 500}} · **Function size:** flag past {{FUNCTION_FLAG, default 80}} lines
+- **Where configuration, tokens and copy live:** {{CONFIG_PATHS, e.g. "src/config/, src/styles/tokens.css, src/copy/"; default "set in the walking skeleton"}}
+- **Files exempt from the size limits:** {{SIZE_EXEMPT, default "generated files and fixtures"}}
+
 ## Environments
 
 {{ENVIRONMENTS, default "none yet"}} (production changes always need the user's explicit OK)

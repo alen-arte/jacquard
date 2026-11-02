@@ -64,10 +64,16 @@ No rule wins for being older or newer. When two rules conflict: note it, show bo
 
 ## Scalability
 
+Prevention comes first: code is born clean, so debt rarely needs correcting.
+
 - New code is scalable by default: configurable instead of hardcoded, values in design tokens, clear separation of concerns.
+- **Nothing hardcoded.** Code holds rules (logic, formulas, types). Every piece of content or parameter (names, accounts, categories, labels, colours, timings, thresholds, limits) is data or configuration, scoped to its owner (user, household, workspace) and editable without touching code. Defaults are seed values of that configuration, never literals in logic. Real content never enters a repo: it carries a neutral template and invented data.
+- **Structure before code.** The plan for anything expected past the warning size carries a short module map: model and pure logic, layout, drawing, input, sound, copy and configuration, each in its own file (those that apply).
+- **Size and shape.** A code file warns at 300 lines and stops at 500: past the cap nothing new goes in before it is split, unless the plan writes down why. Functions over ~80 lines are flagged. Module state lives in one object with one reset; a new global needs a written reason. Comments state the intent, not the history, and carry no private IDs (`D#`, `RF#`): those go in the commit. These are defaults; the project's own values are in `project.md` › Code limits.
+- **Say it when it happens.** When a touched file crosses the warning, or the same pattern appears a third time, say so in that same reply (Decisions I made, or What comes next), unasked.
 - **One definition, many uses.** Whatever applies in more than one place (an effect and its timing, a validation, a label, a state's look) is defined once (a token, a component, a hook, a function) and consumed everywhere. Before building, search the repo by the triggering event or state and by the property involved, not only by name; reuse what exists, or extract it on the second use, keeping the confirmed values (if the existing ones differ: ask in Present, park in Away). A second implementation of the same behaviour is a defect, not a style variant.
 - Code a task already touches is improved toward this when the change is contained and verifiable.
-- Larger refactors are worth doing as planned work: log them in the refactor backlog (`RF#`), the user picks when, one at a time, in small verifiable steps.
+- **Refactor debt.** Larger refactors go to the refactor backlog (`RF#`) with a class, by whether each new change makes them more expensive: **structural · now** (new work builds on it and every feature makes it worse: a file past the cap, an import cycle, a duplicated behaviour, hardcoded content), **soon** (contained risk; before the next work in that area), **when convenient** (optimisation or tidiness that does not get worse with time). Claude never starts one without the user's OK. When an area has 3 or more open, or one structural, the plan for the next work there opens by recommending them before continuing, and waits for the user's decision. Done one at a time, in small verifiable steps.
 - When refactoring, state the pattern applied in one line so it can be reused.
 
 ## Boundaries with other people's areas
