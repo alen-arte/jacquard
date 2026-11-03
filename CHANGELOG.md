@@ -2,9 +2,9 @@
 
 ## 0.2.11
 - **Cloud sync, closed further** (security review of 0.2.10; `scripts/cloud.sh`, `core/git.md` › Cloud sync):
-  - A document whose name, or a folder's name, has a control character, a quote or a backslash never travels: `prepare` names it as not sent. On the way back it is refused, so it can no longer block `land` for good.
-  - A branch name read from a sync commit (the cloud can write one) counts only if it is a plain name. A crafted one is never followed and never printed as a command. When the last sync names no branch this computer can read, `land` and `prepare` refuse until the user says `--take-over`, and the refusal lists the cloud commits that `--take-over` would bring. The refusal for a gone branch lists them too.
-  - Cloud commit subjects and `git am`'s messages about them are printed without terminal control characters.
+  - A document whose name, or a folder's name, has a control character, a quote or a backslash never travels: `prepare` names it as not sent, so `land` no longer finds it coming back and stops. One created in the cloud is refused by `land`, which says how to remove it there. Both sides use the same rule.
+  - A branch name read from a sync commit (the cloud can write one) counts only if it is a plain name that git cannot read as an option. A crafted one is never followed and never printed as a command. When the last sync names no branch this computer can read, `land` and `prepare` refuse until the user says `--take-over`, and the refusal lists the cloud commits that `--take-over` would bring. The refusal for a gone branch lists them too.
+  - Cloud commit subjects, cloud file names and `git am`'s messages about them are printed without terminal control characters or bidi overrides. Subjects go on their own lines, apart from the script's instructions.
   - A `land` stopped halfway names the files that run again when it is run later, in a new session too.
   - A closed Away block filed into `away/archive/`, not yet committed in the personal layer, no longer stops `prepare`.
   - New script cases in `tests/scripts/cloud.test.sh`; new prompt case cloud-sync C4d.

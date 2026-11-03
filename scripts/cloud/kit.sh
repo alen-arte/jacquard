@@ -74,11 +74,14 @@ EOF
 }
 
 # Paths under the current folder whose name has a control character, a quote or a backslash; $@ is find's action.
+# Same characters as doc_problem's first line: a change to one goes to both.
 odd_names() { find . \( -path '*[[:cntrl:]]*' -o -path '*"*' -o -path '*\\*' \) -prune "$@"; }
 
 # The rule for a project document that travels, both ways: a plain name in the travelling set. Prints why not, or nothing.
+# Unusual: what odd_names drops, a dot file, or a name plain would change (C1 controls, bidi overrides, in any locale).
 doc_problem() {
   case "$1" in *[[:cntrl:]]*|*\"*|*\\*|.*|*/.*) echo "unusual file name"; return ;; esac
+  [ "$(printf '%s' "$1" | plain)" = "$1" ] || { echo "unusual file name"; return; }
   case "$1" in away/*/*) echo "not a project document"; return ;; esac
   case "$1" in index.md|project.md|away-profile.md|docs/*|roles/*|away/*.md) ;; *) echo "not a project document" ;; esac
 }
@@ -90,8 +93,8 @@ cloud_docs() {
   git -c core.quotePath=false ls-tree -r "$1" -- .cloud-kit/local | while IFS= read -r line; do
     mode="${line%% *}"; f="${line#*"$tab"}"; f="${f#.cloud-kit/local/}"
     [ "$f" != away/.away-active ] || { echo "  ⚠ the cloud tracks its Away marker ($f): not landed; the next prepare removes it there" >&2; continue; }
-    case "$mode" in 100644|100755) ;; *) die "the cloud's documents hold a link or something that is not a file ($f): nothing landed; $out_of_it" ;; esac
-    p="$(doc_problem "$f")"; [ -z "$p" ] || die "$p among the cloud's documents ($f): nothing landed; $out_of_it"
+    case "$mode" in 100644|100755) ;; *) die "the cloud's documents hold a link or something that is not a file ($(printf '%s' "$f" | plain)): nothing landed; $out_of_it" ;; esac
+    p="$(doc_problem "$f")"; [ -z "$p" ] || die "$p among the cloud's documents ($(printf '%s' "$f" | plain)): nothing landed; $out_of_it"
     echo "$f"
   done
 }
