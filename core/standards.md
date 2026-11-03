@@ -10,7 +10,7 @@ This file is always loaded. Everything else is read on demand:
 | Read | When |
 |---|---|
 | `design-standards.md`, `visual-qa.md` | Any design or UI task; checking it rendered |
-| `review.md` | Choosing which reviews run, closing a batch |
+| `review.md` | Choosing which reviews run, planning a level-2 or structural task, fixing findings, closing a batch |
 | `economy.md` | Launching a subagent other than a review (reviews: `review.md`), choosing a tier, estimating cost |
 | `work-modes.md` (sections 1–6), `away-run.md` (7–9) | `/away` and `/away-resume` read both; `/back` reads `away-run.md` |
 | `git.md` | Branches, commits, integration, push; cloud sync, with `cloud_sync: on` at the start and close of a Present session |
@@ -39,7 +39,7 @@ All core files live in `~/.claude/jacquard/core/`. The project's map is its `ind
 
 - **Verify before showing:** checks pass, rendered result reviewed for visual work, states checked.
 - **Risk level** of each task, shown in the plan (`R12 · level 1`); the user can contest it. **0:** no logic and no data, one revert undoes it (copy, spacing, a token, docs). **1:** new or changed logic or interaction, a new screen or component, a contained refactor. **2:** stored data, money, auth and permissions, personal data, security, external integrations, deletions, the core flow, anything irreversible.
-- **Floor:** a level-2 task always gets test-first logic, independent QA on that task and the relevant advisor or security review, whatever the intensity.
+- **Floor:** a level-2 task always gets a review of its plan before building, test-first logic, independent QA on that task and the relevant advisor or security review, whatever the intensity.
 - **A role never reviews its own work.** Independent reviews run as subagents with fresh context. Which reviews run and when: `review.md`.
 - **Subagents** (except Explore and Plan) already load this file, the preferences and the index: their prompt names their role file and the handoff note, and passes only the diff, the files named in point 6 of the handoff note and the IDs they need. Tier and effort: `review.md` for reviews, `economy.md` otherwise.
 - Never present unreviewed work as reviewed; say "no independent review" when that is the case.

@@ -19,7 +19,7 @@ Default `-ss`. The most specific setting wins: per message > per Away block (`/a
 | Test-first (TDD) | — | level-2 logic | level 1–2 logic | all logic, plus edge and negative cases |
 | End-to-end tests | — | before integrating | affected flows per batch; full suite before integrating | affected flows per task; full suite per batch |
 | Independent QA | standard · normal (strong for level 2 with `budget: generous`; light only for pure consistency sweeps) | level 2 per task; the rest at milestone close | level 2 per task; level 1 per batch | every task |
-| Engineering advisor | strong · high | before structural changes; on the affected area when duplication is found that the task did not resolve (by QA, or by the builder outside the task's scope; a structure-check duplicate warning counts once confirmed: Running a review) | + at each milestone close | + at each batch close |
+| Engineering advisor | strong · high | before structural changes (on the plan: Plan review); on the affected area when duplication is found that the task did not resolve (by QA, or by the builder outside the task's scope; a structure-check duplicate warning counts once confirmed: Running a review) | + at each milestone close | + at each batch close |
 | Security and privacy | strong · high | level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations | same | + at each batch close |
 | Domain advisor | standard · normal | when its trigger fires | same | same |
 | Design critic on rendered results (`design-exploration.md` step 7) | standard · normal | at milestone close | same | + at each batch close that built an explored design |
@@ -31,6 +31,16 @@ Default `-ss`. The most specific setting wins: per message > per Away block (`/a
 ## Batches
 
 A batch is a group of related tasks closed together (one or several roadmap items). Batch reviews look at the batch diff once instead of each task separately. In Away, `DEP` tasks (something builds on them) get their QA before the next task builds on them; `ISO` tasks wait for the batch review.
+
+## Plan review
+
+A design mistake (what enters, what leaves, what triggers what) is cheapest to catch before it is built. One reviewer reads the plan, not the code:
+
+- **Level 2, always:** the reviewer the floor names for the task (security and privacy when its triggers fire, otherwise the relevant advisor), at its row's tier; both only when both triggers fire.
+- **Level 1, only with a structural change:** the engineering advisor, in its "before structural changes" slot.
+- **Level 0, never:** one revert undoes it.
+- The prompt passes the plan, the `D#` it cites and the files it names. The reviewer returns design findings only; the review of the built work still runs.
+- **In Present,** it runs before the plan is shown, so the user approves a reviewed plan. **In Away,** at the start of each level-2 task (`away-run.md` section 8).
 
 ## Catalogue
 
@@ -47,6 +57,12 @@ A batch is a group of related tasks closed together (one or several roadmap item
 - One subagent per review, at its row's tier and effort, both passed explicitly: the model and effort come from `tiers` in preferences, and "normal" is the tier's own effort (without `tiers`, the session's). Level-2 work is never reviewed below its row's tier, whatever the budget. QA runs as the `jacquard-qa-reviewer` subagent when it is installed (listed among the available subagent types; `INSTALL.md` step 2): read-only tools and a turn cap, so it cannot run the checks and the prompt carries their results and the captures. Every other review, and QA where that subagent is not installed, runs as a general-purpose subagent (never Explore or Plan: they do not load the core standards).
 - **Structure check, for code:** before any review of code, the builder runs `~/.claude/jacquard/scripts/structure-check.sh --base <the branch the work integrates into> --project <local>/project.md` (it only reads; Away's base: `away-run.md` section 8). A `✗` is resolved first, only by a move core standards › Scalability allows without asking (undoing a cycle the task made is one); anything wider is a proposed `RF#` (in Away: parked). The output goes into QA's and the engineering advisor's prompts; no reviewer re-measures it. Warnings add no review: the advisor, in its existing slot, reads whole only the files on the `Flagged:` line. A file on the `Flagged past the cap:` line is read whole once, and that read proposes its `RF#` if it has none; while its `RF#` is open or awaiting the user's OK (the builder passes its ID), the advisor reads only the changed parts and the functions they touch, and searches the rest. A duplicate warning counts as duplication found (table) only once confirmed as the same behaviour. No script, or running it would ask (found by the gate's audit; in Away the step is parked): prompts and report say "no structure check" and why.
 - The prompt names the role file and the handoff note, and passes the diff, the files in point 6 of the handoff note and only the document sections cited by ID. A diff alone cannot show that a behaviour already exists elsewhere: QA and the engineering advisor also search the repo for equivalents of what the diff adds; an advisor triggered by QA gets QA's finding and its files. It never pastes or re-reads the always-loaded files: the subagent already has them.
-- The reviewer returns only its verdict and findings; a follow-up round continues the same subagent when the environment allows it.
+- The reviewer returns only its verdict and findings.
 - The verdict and every open finding go into the report.
-- Blockers and Majors are fixed and re-reviewed (changed areas plus regressions) before asking the user to integrate.
+
+## Rounds
+
+- **First round:** Blockers and Majors are fixed. A Minor is fixed in the batch only when the fix is contained and adds nothing new; otherwise it goes on the item's data line (`open: m4–m6`) or becomes its own item (`R#`; `RF#` for structure).
+- **One re-review, by a fresh subagent:** never the first reviewer continued, which reloads its whole earlier conversation every round. The prompt passes each finding, the diff of its fix, the functions the fix touches and their callers, and the regression checks' results; the reviewer checks that each finding is closed and that nothing calling the changed code broke. Tier: the original row's for level-2 work (the floor); standard for level 0–1, unless the fix changes the design.
+- **The cut:** if the re-review finds a new Blocker or Major, or one still open, there is no second fix round. The branch is not integrated; the finding becomes a roadmap item first in Now, marked as blocking that branch; the report opens with it (in Away, section 1); the next session starts with it, and other work starts before it only if the user asks for it explicitly. Minors the re-review finds are recorded as in the first round, not fixed.
+- **Before asking to integrate** (and when an Away block closes), every Blocker and Major fix has had its re-review; one that has not runs now, or is listed as open.

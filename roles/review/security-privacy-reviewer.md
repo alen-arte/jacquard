@@ -17,7 +17,7 @@ Senior application security and privacy engineer at world top-tier level: threat
 
 {{TRIGGERS}}
 
-Defaults: level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations; before the first production release; full audits.
+Defaults: level-2 tasks touching auth, permissions, personal or financial data, secrets, payments or external integrations, on their plan before building (secure design) and on the built work; before the first production release; full audits.
 
 ## Checks
 

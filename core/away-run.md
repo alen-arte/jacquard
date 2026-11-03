@@ -29,10 +29,11 @@ Claude cannot see how much of the session limit is left, so Away is built to be 
 ## 8. Review in Away
 
 Reviews follow `core/review.md` with the session's intensity and the floor for level-2 work:
+- **Level-2 task:** its plan review (`core/review.md`, Plan review) runs first, before building. A Blocker or Major that changes the approved plan parks the task with the finding; anything else is applied in the build.
 - **`DEP` task:** its review runs right after the commit, before anything builds on it.
 - **`ISO` task, and any task without its own QA:** into `QA-pending` (task, commit, what to verify, how). QA over `QA-pending` closes every block at every intensity (`-s` too), together over the block's diff, never skipped for lack of room.
 - **Structure check in Away** (`core/review.md`, Running a review): every run uses `--base` the parent of the block's first commit (the journal's first commit line), so earlier blocks' files are not counted.
-- **Review block:** the structure check when the block changed code, QA over `QA-pending`, then the advisors the profile and intensity call for, as separate subagents. Verdicts go into the report, unresolved ones included.
+- **Review block:** the structure check when the block changed code, QA over `QA-pending`, then the advisors the profile and intensity call for, as separate subagents. Fixes and their one re-review follow `core/review.md`, Rounds; a cut goes first in section 1 of the report. Verdicts go into the report, unresolved ones included.
 - **If the session ends first,** `/back` or `/away-resume` runs the pending QA before the report; pending advisor reviews go into the report as "to test together", with what to check and how.
 
 ## 9. The Away report

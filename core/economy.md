@@ -42,7 +42,9 @@ What the kit controls: the model and effort of each **subagent** it launches (se
 
 ## Estimating cost
 
-Before an Away block, `-sss`, a debate or an exploration, count the subagents it will launch (reviews, passes, critics) from the task list and the intensity table (in Away, plus the QA that closes the block), and write it as one line: "≈ 6 subagent runs (4 standard, 2 strong)". Claude cannot see how much of the user's usage limit is left: never guess it, never present an estimate as a measurement. `/usage` shows real attribution afterwards.
+Before an Away block, `-sss`, a debate or an exploration, and in every plan that launches reviews, count the subagents it will launch (plan reviews, reviews, one re-review per review likely to find a Major, passes, critics) from the task list and the intensity table (in Away, plus the QA that closes the block), and write it as one line: "≈ 6 subagent runs (4 standard, 2 strong)". When the floor allows a cheaper option (an advisor at milestone close instead of now), the line names it. Approving the plan approves that cost. Claude cannot see how much of the user's usage limit is left: never guess it, never present an estimate as a measurement. `/usage` shows real attribution afterwards.
+
+**Too big for one session:** a block or batch with more than one level-2 item, or estimated at more than 8 subagent runs. The gate (or the plan) says so and proposes the split: which tasks go in each block, each one closable on its own with its own reviews; the user picks. In Present, when a batch of that size closes, or after the context was compacted, recommend continuing in a new session: every reply resends the whole conversation.
 
 ## Launching subagents
 
@@ -51,5 +53,5 @@ Before an Away block, `-sss`, a debate or an exploration, count the subagents it
 - Pass the tier's model and effort explicitly on each launch.
 - The prompt tells the subagent which files to read and to follow "Commands that don't ask" (core standards): Read and Grep for reading, never a chained Bash command. A subagent that improvises shell pipelines is what makes the user approve prompts.
 - One subagent per independent question; batch work that reads the same files (skill tests) into one subagent.
-- A follow-up round with the same subagent (a debate's second round, a re-review) continues it instead of launching a new one, when the environment allows it.
+- A debate's second round continues the same subagents when the environment allows it. A re-review never does: it launches a fresh one with only what it needs (`review.md`, Rounds).
 - Return only the verdict and the findings; verbose output stays in the subagent.
