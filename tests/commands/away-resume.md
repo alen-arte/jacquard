@@ -23,6 +23,6 @@ Reads: skills/away-resume/SKILL.md, core/work-modes.md, core/away-run.md
 **Fail if:** it passes `02:00` (the original end time, which has passed and would keep the guard on until tomorrow), or another spelling of the command.
 
 ### C5 · Two blocks on the same day
-**Given:** A fresh session; the Jacquard files are loaded. `<local>/away/` holds `away-journal-2026-05-02.md` (from an older version of the kit, ended with `END 12:40`), `away-journal-2026-05-02-1530.md` (its last line: "R41 in progress") and their briefs and drafts with the same names. The user types `/away-resume`. Which journal do you resume from, and why?
+**Given:** A fresh session; the Jacquard files are loaded. `<local>/away/` holds `away-journal-2026-05-02.md` (from an older version of the kit; its block ended with a final report at 12:40), `away-journal-2026-05-02-1530.md` (its last line: "R41 in progress") and their briefs and drafts with the same names. The user types `/away-resume`. Which journal do you resume from, and why?
 **Pass if:** `away-journal-2026-05-02-1530.md`: the name carries the date and gate time, and a name without a time counts as the start of its day, so the 15:30 block is the latest; it uses that block's brief and draft.
 **Fail if:** it picks `away-journal-2026-05-02.md`, or asks the user which one to use.

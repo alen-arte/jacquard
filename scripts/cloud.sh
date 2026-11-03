@@ -135,7 +135,7 @@ prepare)
     parents="-p $branch"; what="first sync of $branch"
   fi
   wt="$(mktemp -d)"; trap 'git worktree remove --force "$wt" 2>/dev/null || rm -rf "$wt"' EXIT; trap 'exit 1' HUP INT TERM
-  git worktree add -q --detach "$wt" "$branch"
+  git -c core.hooksPath=/dev/null worktree add -q --detach "$wt" "$branch"   # no post-checkout hook from landed files
   for p in .claude .cloud-kit CLAUDE.local.md; do [ ! -L "$wt/$p" ] || die "$branch tracks $p as a link: nothing pushed"; done
   build_kit "$wt"
   (cd "$wt" && git add -A -f -- $kit_paths)   # -f: the repo's own exclude list names CLAUDE.local.md
@@ -163,7 +163,7 @@ land)
   [ "$rc" = 1 ] || die "the cloud sent documents the personal layer ignores, or the check failed: ${ign:-rc=$rc}; nothing landed"
   # files that run or instruct, changed by the cloud since the sync point (said on every run, a stopped one too):
   # the user sees them before any check runs here
-  runs="$(git diff --name-only "$sp" "$tip" -- . $(excludes) | grep -E '(^|/)(package\.json|Makefile|CLAUDE\.md|\.mcp\.json|\.envrc|\.pre-commit-config\.yaml|lefthook\.yml)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)\.?(git)?hooks/' | tr '\n' ' ' || true)"
+  runs="$(git diff --name-only "$sp" "$tip" -- . $(excludes) | grep -E '(^|/)(package\.json|Makefile|CLAUDE\.md|\.mcp\.json|\.envrc|\.pre-commit-config\.yaml|\.?lefthook(-local)?\.ya?ml)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)\.?(git-?)?hooks/' | tr '\n' ' ' || true)"
   [ -z "$runs" ] || echo "  ⚠ the cloud changed files that run or give instructions: $runs— show them to the user before running any check"
   # 1) code: the cloud's commits since the sync point, kit paths left out, subjects kept exactly (-k). One already
   #    here (same author, date and subject: a land that stopped halfway, finished by hand) is not applied twice.
@@ -182,7 +182,7 @@ land)
     next="$(git rev-parse --git-path rebase-apply)/next"
     [ -f "$next" ] || die "git am could not start: nothing landed; run cloud.sh land again once git works here"
     h="$(sed -n "$(cat "$next")p" "$tmp/applying")"
-    die "cloud commit $(git rev-parse --short "$h") did not apply. Show the user the files that run (above) first: git am --continue runs the project's hooks. Resolve the conflict, then git am --continue. To keep this computer's version instead: resolve to it, git commit --allow-empty -C $h, then git am --skip. Either way, cloud.sh land again (what already landed is skipped). No documents copied yet"
+    die "cloud commit $(git rev-parse --short "$h") did not apply. Show the user the files that run (above) first: git am --continue, git am --skip and git commit run the project's hooks. Resolve the conflict, then git am --continue. To keep this computer's version instead: resolve to it, git commit --allow-empty -C $h, then git am --skip. Either way, cloud.sh land again (what already landed is skipped). No documents copied yet"
   fi
   echo "  code: $(git rev-list --count "$before..HEAD") new commit(s) on $branch"
   git log --no-merges --date=raw --format='%h %ae %ad %s' "$tip..HEAD" > "$tmp/here"
