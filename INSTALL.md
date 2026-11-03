@@ -11,6 +11,7 @@ Claude Code evolves fast. Check the official documentation and adapt these steps
 - The permission rule syntax used in `templates/project/claude-settings.local.template.json`, including `permissions.additionalDirectories`, and that Claude Code still runs its built-in read-only commands without a rule.
 - User subagents in `~/.claude/agents/` load through symbolic links, with `tools` and `maxTurns` in their frontmatter (the QA reviewer, step 2).
 - The hook events the Away guard uses (`PermissionRequest`, `Elicitation`, `SessionStart`), their decision output, and that `CLAUDE_CODE_SESSION_ID` matches the hooks' `session_id` in Bash and hook subprocesses.
+- Only with cloud sync (step 6): a cloud session sets `CLAUDE_CODE_REMOTE=true`, loads a `CLAUDE.local.md` committed on its branch next to the project's `CLAUDE.md`, and runs the `SessionStart` hook of the branch's `.claude/settings.json`.
 
 Last verified with Claude Code 2.1.296 (2026-10-11; the permissions page re-checked 2026-10-12). Worth knowing:
 - Model and effort can be set per subagent launch and per skill turn (`effort` in a skill's frontmatter); the main session's model is yours (`/model`, `/effort`). `core/economy.md` uses these.
@@ -101,6 +102,12 @@ The rule refuses Claude's file tools and the writing commands Claude Code recogn
 ## 5. First use
 
 In a project folder, run `/kickoff`. Then start a new session there (the new `CLAUDE.local.md` loads at session start) and approve the external imports dialog. Check with `/context` that `CLAUDE.local.md`, the core standards, your preferences and the project index are loaded, and nothing else from Jacquard.
+
+## 6. Optional: working from cloud sessions
+
+To keep working from a Claude Code cloud session (phone, web) with the same kit, set `cloud_sync: on` in your `preferences.md`. Turning it on is your standing OK for the pushes this needs, to the project's private repo only (`core/git.md` › Cloud sync). Needs `gh`, signed in, and `python3`.
+
+The cloud clones only the repo it is attached to, so `scripts/cloud.sh prepare` puts the kit on a branch of that repo, `cloud/<branch>`: your branch's files, plus the framework, your preferences and the project documents your personal layer versions. What the personal layer git-ignores never travels. That branch becomes the repo's default branch, so new cloud sessions start on it, and it is never merged into `main`. It refuses to push unless the repo is private and only yours. When `origin` is shared with other people, add a private repo of your own as a second remote and name it in the project's local git config: `git config jacquard.cloudRemote <name>`. `cloud.sh land` brings the cloud's commits and documents back to your computer.
 
 ## Updating the installed kit
 

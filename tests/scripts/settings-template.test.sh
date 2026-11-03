@@ -56,7 +56,13 @@ printf '%s\n' "$allow" | grep '\.claude/jacquard/' | grep -vxF \
   -e 'Bash(~/.claude/jacquard/scripts/roadmap-index.sh --check {{LOCAL_FOLDER}}/docs/roadmap.md)' \
   -e 'Bash(~/.claude/jacquard/scripts/roadmap-index.sh --write {{LOCAL_FOLDER}}/docs/roadmap.md)' \
   -e 'Bash(~/.claude/jacquard/scripts/structure-check.sh)' \
-  -e 'Bash(~/.claude/jacquard/scripts/structure-check.sh *)' | grep -q . && fail "S4f an allow rule for a kit script outside the exact list"
+  -e 'Bash(~/.claude/jacquard/scripts/structure-check.sh *)' \
+  -e 'Bash(~/.claude/jacquard/scripts/cloud.sh status)' | grep -q . && fail "S4f an allow rule for a kit script outside the exact list"
+
+# S4g · cloud.sh: only `status` runs without asking (it fetches and counts); `prepare` pushes and `land` commits,
+# so they keep the confirmation; core spells the allowed form exactly
+[ "$(printf '%s\n' "$allow" | grep -c 'cloud\.sh')" = 1 ] || fail "S4g cloud.sh must have exactly one allow rule, for status"
+grep -qF '`~/.claude/jacquard/scripts/cloud.sh status`' "$kit/core/git.md" || fail "S4g core/git.md spells cloud.sh status differently from the allow rule"
 
 # S5 · The local folder can be written from the terminal through its link
 grep -qF '"additionalDirectories": ["{{PERSONAL_PROJECT_FOLDER}}"]' "$template" || fail "S5 no additionalDirectories entry for the personal project folder"

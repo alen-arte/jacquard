@@ -21,3 +21,4 @@ description: "Default values for everything configurable in Jacquard. The user's
 | `away_report_format` | markdown + self-contained HTML (with `budget: lean`: markdown only, see `economy.md`) | One card per decision: decision, why, alternatives, impact, how to reverse |
 | `questions_style` | few questions with tappable options and a marked default | Use the interactive question tool when available; otherwise numbered options with the default marked |
 | `push_main` | allowed on explicit request | A project may forbid it |
+| `cloud_sync` | `off` | `on`: the user also works from Claude Code cloud sessions; the kit travels on a private `cloud/<branch>` (`git.md` › Cloud sync). Turning it on is the standing written OK for those pushes, to the cloud remote only |

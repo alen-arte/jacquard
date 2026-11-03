@@ -1,6 +1,6 @@
 ---
 name: jacquard-git
-description: "Branches, commits, integration, push and syncing with collaborators. Read when touching git."
+description: "Branches, commits, integration, push, syncing with collaborators and with cloud sessions. Read when touching git."
 ---
 
 # Git
@@ -37,10 +37,22 @@ Integrating into `main` is also what closes roadmap items: as the last commit on
 - Before pushing, say in one line which branch goes to which remote branch and how many commits.
 - Never force-push. Never push in Away.
 - Pushing an integrated `main` is allowed unless the project forbids it in `project.md`.
+- **The one standing OK:** with `cloud_sync: on` (preferences), the pushes of Cloud sync below need no new OK each time. They go to the cloud remote only, never to `main` and never to a remote shared with other people.
 
 ## Syncing with collaborators (Present only)
 
 At the start of a Present session in which code will change, fetch and say in one line how far the current branch is from the shared main branch and which files both sides touched. Update only with the user's OK and show what conflicted and how it was resolved. Away never fetches, pulls, rebases or merges.
+
+## Cloud sync (only with `cloud_sync: on`)
+
+So the user can also work from a Claude Code cloud session (phone, web) with the same kit. `~/.claude/jacquard/scripts/cloud.sh` keeps one kit branch per work branch, `cloud/<branch>` (without `away/`): the work branch's files plus the kit (framework, preferences, and the project documents the personal layer versions; what it git-ignores never travels). It runs on the computer, on the work branch; its header has the details.
+
+- **The cloud remote** is the project's own repo, `origin`, unless `origin` is shared with other people: then a separate private remote, named in `project.md` › Git and set by the user in the repo's local git config (`git config jacquard.cloudRemote <name>`; Claude's permissions deny `git config`). `prepare` checks every time that it is private and only the user's, and pushes nothing otherwise.
+- **Down, at the start of a Present session:** with the fetch above, run `~/.claude/jacquard/scripts/cloud.sh status`, spelled exactly so (the allow rule matches only that). If a cloud branch has commits not landed, say so in one line and run `cloud.sh land` on its work branch before touching code; then commit the documents it copied back into the personal layer.
+- **Up, when work closes** (a Present session that committed work, or an Away block once it is closed, so in Present): say in one line which branches go where and how many commits, run `cloud.sh prepare` (it checks the remote first), then push the work branch to the cloud remote. Nothing new: say so. The Away block itself never pushes.
+- **In a cloud session:** commit on that same `cloud/<branch>` and push it when the work is closed. An Away block closed there writes the same report as on the computer, every section included.
+- **The kit branch** never goes to a remote shared with others, is never merged into `main` and never opened as a PR. It becomes the repo's default branch, so new cloud sessions start on it; a repo with Dependabot sets `target-branch: main` (`prepare` warns).
+- **If `land` stops on a conflict:** resolve it, `git am --continue`, then `land` again; what already landed is skipped. `prepare` never merges, so it cannot conflict. Never edit the script's record by hand.
 
 ## Technical backstop
 

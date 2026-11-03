@@ -65,6 +65,7 @@ The kit's `structure-check.sh` reads this section: the file warning and cap numb
 
 - **Shared main branch:** {{MAIN}} · **Push to main:** {{ALLOWED_ON_REQUEST | FORBIDDEN}}
 - **Branch convention from collaborators, if any:** {{BRANCH_CONVENTION, default none}}
+- **Cloud remote** (only with `cloud_sync: on`, `core/git.md` › Cloud sync): {{CLOUD_REMOTE, default "`origin`"; a separate private remote only when origin is shared with other people, also set in the repo's local git config `jacquard.cloudRemote`}}
 
 ## Irreversible here
 

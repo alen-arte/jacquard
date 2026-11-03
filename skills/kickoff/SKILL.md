@@ -70,6 +70,7 @@ Adoption touches **only the working-system files** (roles, rules, memories, comm
 - D: the other person's planning and rules stay read-only; their areas become boundaries in `project.md`; nothing of Jacquard is referenced from tracked files.
 - **Initial audit** (`core/method.md`): offer it, with its own OK, once the files exist: a full audit per `core/review.md`. Its findings become roadmap items or `RF#`.
 - **Structure check** (repos with code): offer once to measure the existing debt (`core/docs-system.md`, Refactor backlog › Measuring existing debt). If the audit runs too, its engineers get the output and read whole only the flagged files.
+- **Cloud sync** (only with `cloud_sync: on` in the preferences): fill `project.md` › Git › Cloud remote (`origin`, or a separate private remote when origin is shared: the user runs `git config jacquard.cloudRemote <name>` themselves, since the permissions deny `git config`), and offer the first `cloud.sh prepare` (`core/git.md` › Cloud sync).
 
 ## 7. Verify
 
