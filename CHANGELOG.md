@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.11
+- **Cloud sync, closed further** (security review of 0.2.10; `scripts/cloud.sh`, `core/git.md` › Cloud sync):
+  - A document whose name, or a folder's name, has a control character, a quote or a backslash never travels: `prepare` names it as not sent. On the way back it is refused, so it can no longer block `land` for good.
+  - A branch name read from a sync commit (the cloud can write one) counts only if it is a plain name. A crafted one is never followed and never printed as a command. When the last sync names no branch this computer can read, `land` and `prepare` refuse until the user says `--take-over`, and the refusal lists the cloud commits that `--take-over` would bring. The refusal for a gone branch lists them too.
+  - Cloud commit subjects and `git am`'s messages about them are printed without terminal control characters.
+  - A `land` stopped halfway names the files that run again when it is run later, in a new session too.
+  - A closed Away block filed into `away/archive/`, not yet committed in the personal layer, no longer stops `prepare`.
+  - New script cases in `tests/scripts/cloud.test.sh`; new prompt case cloud-sync C4d.
+- **Only the latest Away reports stay in view** (`core/away-run.md` › Ending Away, `core/preferences.default.md`):
+  - When a block closes, final reports beyond the most recent `away_reports_kept` (default 5) move to `<local>/away/archive/` with the block's working files. A report counts once with its `.md` and `.html`, and nothing is deleted.
+  - An archived report keeps its text but not its `../qa/` captures, which belong to the review of their time.
+  - `/retro` reads the archive too. `/jacquard-update` offers the tidy once.
+  - New prompt cases: `/back` C7, `/jacquard-update` C5 updated.
+
 ## 0.2.10
 Released together with 0.2.9, which had no tag of its own: from 0.2.8, read both sections.
 
