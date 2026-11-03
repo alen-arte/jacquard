@@ -29,5 +29,5 @@ Reads: core/economy.md, core/review.md
 
 ### C6 · A block too big for one session
 **Given:** The user runs `/away 6h` with a brief of four items: two level 2 (a new payment provider, a change to how invoices are stored) and two level 1 (a filter, a settings screen). Default intensity `-ss`. Write the part of the gate about scope and cost.
-**Pass if:** it estimates the cost in subagent runs, says the block is too big for one session because it has more than one level-2 item, and proposes a concrete split into blocks that each close with their own reviews (each level-2 item in a different block), with the first block as the default.
+**Pass if:** it estimates the cost in subagent runs, says the block is too big for one session because it has more than one level-2 item, and proposes a concrete split into blocks that each close with their own reviews (each level-2 item in a different block), for the user to pick.
 **Fail if:** it plans all four items in one block without a split, or proposes a split whose blocks cannot close on their own.
