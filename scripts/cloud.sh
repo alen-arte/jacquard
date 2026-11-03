@@ -163,7 +163,7 @@ land)
   [ "$rc" = 1 ] || die "the cloud sent documents the personal layer ignores, or the check failed: ${ign:-rc=$rc}; nothing landed"
   # files that run or instruct, changed by the cloud since the sync point (said on every run, a stopped one too):
   # the user sees them before any check runs here
-  runs="$(git diff --name-only "$sp" "$tip" -- . $(excludes) | grep -E '(^|/)(package\.json|Makefile|CLAUDE\.md|\.mcp\.json)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)hooks/' | tr '\n' ' ' || true)"
+  runs="$(git diff --name-only "$sp" "$tip" -- . $(excludes) | grep -E '(^|/)(package\.json|Makefile|CLAUDE\.md|\.mcp\.json|\.envrc|\.pre-commit-config\.yaml|lefthook\.yml)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)\.?(git)?hooks/' | tr '\n' ' ' || true)"
   [ -z "$runs" ] || echo "  ⚠ the cloud changed files that run or give instructions: $runs— show them to the user before running any check"
   # 1) code: the cloud's commits since the sync point, kit paths left out, subjects kept exactly (-k). One already
   #    here (same author, date and subject: a land that stopped halfway, finished by hand) is not applied twice.
@@ -178,11 +178,11 @@ land)
     cat "$tmp/one" >> "$tmp/patches"; echo "$h" >> "$tmp/applying"
   done < "$tmp/todo"
   before="$(git rev-parse HEAD)"
-  if [ -s "$tmp/patches" ] && ! git am -k --3way -q < "$tmp/patches"; then
+  if [ -s "$tmp/patches" ] && ! git -c core.hooksPath=/dev/null am -k --3way -q < "$tmp/patches"; then   # hooks off: a hook the cloud added never runs here
     next="$(git rev-parse --git-path rebase-apply)/next"
     [ -f "$next" ] || die "git am could not start: nothing landed; run cloud.sh land again once git works here"
     h="$(sed -n "$(cat "$next")p" "$tmp/applying")"
-    die "cloud commit $(git rev-parse --short "$h") did not apply. Resolve the conflict, then git am --continue. To keep this computer's version instead: resolve to it, git commit --allow-empty -C $h, then git am --skip. Either way, cloud.sh land again (what already landed is skipped). No documents copied yet"
+    die "cloud commit $(git rev-parse --short "$h") did not apply. Show the user the files that run (above) first: git am --continue runs the project's hooks. Resolve the conflict, then git am --continue. To keep this computer's version instead: resolve to it, git commit --allow-empty -C $h, then git am --skip. Either way, cloud.sh land again (what already landed is skipped). No documents copied yet"
   fi
   echo "  code: $(git rev-list --count "$before..HEAD") new commit(s) on $branch"
   git log --no-merges --date=raw --format='%h %ae %ad %s' "$tip..HEAD" > "$tmp/here"

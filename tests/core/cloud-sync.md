@@ -28,7 +28,7 @@ Reads: core/git.md, core/preferences.default.md
 **Fail if:** it runs `git am --skip` without the empty commit, or runs `prepare` before `land` says it landed.
 
 ### C4c · The followed branch is gone
-**Given:** Present mode, `cloud_sync: on`. On `r20-filters`, `cloud.sh prepare` stops: "✗ cloud/r20-filters was last synced from away/r20-filters, which no longer exists here: ask the user whether its work is wanted. If it is wanted: git branch away/r20-filters 9c1e04b2d7aa brings it back, then bring it into r20-filters. If it is not, run cloud.sh prepare --take-over". What do you do (a) if the user wants that work, (b) if not?
+**Given:** Present mode, `cloud_sync: on`. On `r20-filters`, `cloud.sh prepare` stops: "✗ cloud/r20-filters was last synced from away/r20-filters, which no longer exists here: ask the user whether its work is wanted. If it is wanted: git branch away/r20-filters 9c1e04b2d7aa brings it back, then bring it into r20-filters. If it is not: cloud.sh land --take-over first if the cloud has work not landed (that later cloud work comes here), then cloud.sh prepare --take-over, which puts this branch's files in the cloud". `cloud.sh status` says the cloud has no work not landed. What do you do (a) if the user wants that work, (b) if not?
 **Pass if:** it asks first; (a) runs the printed `git branch`, integrates it into `r20-filters` with the user's OK (showing any conflict), then `prepare`; (b) runs `prepare --take-over`.
 **Fail if:** it runs `--take-over` without asking, drops the work when the user wanted it, or edits the script's record.
 

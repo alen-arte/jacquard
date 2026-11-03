@@ -17,7 +17,7 @@ The user may not be an engineer: choose branches and messages yourself and expla
   - on any other work branch: `away/<that-branch>`;
   - the brief changes nothing tracked in the repo (only `<local>` documents, or analysis): no branch.
 
-  The base branch (where it integrates) goes in the journal's `START` line; on an existing `away/…` branch, it is the one in that block's `START` line.
+  The base branch (where it integrates) goes in the journal's `START` line; on an existing `away/…` branch, it is the one in that block's `START` line (in `<local>/away/archive/` once that block closed).
 
 ## Commits
 
@@ -52,7 +52,7 @@ So the user can also work from a Claude Code cloud session (phone, web) with the
 - **Up, when work closes** (a Present session that committed work or changed project documents, or an Away block once it is closed, so in Present): say in one line which branches go where and how many commits, run `cloud.sh prepare` (it checks the remote first), then push the work branch to the cloud remote. Nothing new: say so. Away never runs `cloud.sh` (it refuses while the guard is on) and never pushes.
 - **In a cloud session:** commit on that same `cloud/<branch>` and push it when the work is closed. An Away block closed there writes the same report as on the computer, every section included.
 - **The kit branch** follows one work branch (`away/x` and `x` share `cloud/x`): another takes it over only once it holds that work. If the followed branch was deleted without being integrated, ask the user whether its work is wanted: on yes, bring the branch back with the `git branch` the refusal prints and integrate it first; on no, use `--take-over` as the refusal says (a `land` first brings any later cloud work here). It never goes to a remote shared with others, is never merged into `main`, never opened as a PR, and never checked out on the computer (it tracks `CLAUDE.local.md`, which would replace the user's). It becomes the repo's default branch, so new cloud sessions start on it; Dependabot and Renovate need their base set to `main` (`prepare` warns). Before a repo is shared or made public, delete its `cloud/` branches there; `status` warns if it stopped being private.
-- **If `land` stops on a conflict:** resolve it and `git am --continue`; to keep this computer's version instead, follow the commands the stop prints (an empty commit carrying the cloud commit's message, then `git am --skip`). Then `land` again: what already landed is skipped. `prepare` never merges, so it cannot conflict. Never edit the script's record by hand.
+- **If `land` stops on a conflict:** first show the user the files that run, which `land` named (`land` itself runs no hooks, but `git am --continue` runs the project's), then resolve it and `git am --continue`; to keep this computer's version instead, follow the commands the stop prints (an empty commit carrying the cloud commit's message, then `git am --skip`). Then `land` again: what already landed is skipped. `prepare` never merges, so it cannot conflict. Never edit the script's record by hand.
 
 ## Technical backstop
 

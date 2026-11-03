@@ -189,6 +189,17 @@ touch "$p/docs/.gitkeep"; commit_layer keep
 run prepare || fail "C33e prepare with a dot file in the layer: $(cat "$tmp/out")"
 at .cloud-kit/local/docs/.gitkeep >/dev/null && fail "C33f a file land would refuse is never sent"
 grep -q 'not sent to the cloud.*docs/.gitkeep' "$tmp/out" || fail "C33g prepare names what it did not send"
+# a project whose hooks live in a tracked folder: a hook the cloud adds never runs while landing, and land names it
+git config core.hooksPath .githooks
+cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
+mkdir -p .githooks; printf '#!/bin/sh\ntouch "%s/hook-ran"\n' "$tmp" > .githooks/post-applypatch; chmod +x .githooks/post-applypatch
+printf '#!/bin/sh\ntouch "%s/hook-ran"\n' "$tmp" > .githooks/applypatch-msg; chmod +x .githooks/applypatch-msg
+echo h > c18.txt; git add -A; git commit -q -m "R18: hooks"; echo h2 > c19.txt; git add -A; git commit -q -m "R19: after the hook"; cloud_push
+cd "$w" || exit 1
+run land || fail "C33h land with a tracked hooks folder: $(cat "$tmp/out")"
+[ ! -e "$tmp/hook-ran" ] || fail "C33i a hook the cloud added never runs while landing"
+grep -q 'files that run or give instructions:.*\.githooks/post-applypatch' "$tmp/out" || fail "C33j land names a landed hook in a tracked folder: $(cat "$tmp/out")"
+git config --unset core.hooksPath
 
 # the remote must be one plain GitHub address of a private repo only the user can see
 git switch -q -c away/other
