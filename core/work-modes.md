@@ -19,7 +19,7 @@ Sections 1–6 are here. Running the block, reviews in Away, the report and endi
 
 **Project layer.** Before anything else, read the project's Away profile (`<local>/away-profile.md`). It may only **add** limits and specifics (commands, collaborators, what counts as structural there, which roles review). It can never loosen this file. If a profile line seems to loosen a rule here, treat it as a rule conflict.
 
-All Away files live in `<local>/away/` (`<local>`: see core standards): the brief, the journal, the report draft and the reports. Parked items live in the journal and the report draft. A block's brief, journal and draft carry its id, `<block>` = the date and time of the journal's `GATE` line (`2026-03-14-0905`; the brief and draft reuse it), so a second block on the same day sorts after the first; a name from an older kit with the date alone counts as the start of its day. When a block closes, they move to `<local>/away/archive/` (`away-run.md`, Ending Away).
+All Away files live in `<local>/away/` (`<local>`: see core standards): the brief, the journal, the report draft and the reports. Parked items live in the journal and the report draft. A block's brief, journal and draft carry its id, `<block>` = the date and time of the journal's `GATE` line (`2026-03-14-0905`; the brief and draft reuse it), so a second block on the same day sorts after the first; a name from an older kit with the date alone counts as the start of its day. When a block closes, they move to `<local>/away/archive/`, and so do the final reports beyond the most recent `away_reports_kept` (`away-run.md`, Ending Away).
 
 ## 1. Pre-flight: a fast gate, then an explicit start
 

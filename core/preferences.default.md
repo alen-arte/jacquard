@@ -19,6 +19,7 @@ description: "Default values for everything configurable in Jacquard. The user's
 | `local_folder` | `.jacquard` | Per-project folder, excluded from git; a link into the personal repo |
 | `publish_artifacts` | `false` | `true`: guiding docs and the Away report also get a private artifact view, when the environment can publish one |
 | `away_report_format` | markdown + self-contained HTML (with `budget: lean`: markdown only, see `economy.md`) | One card per decision: decision, why, alternatives, impact, how to reverse |
+| `away_reports_kept` | `5` | Final Away reports left in `<local>/away/` when a block closes; older ones move to `away/archive/` (`away-run.md`, Ending Away) |
 | `questions_style` | few questions with tappable options and a marked default | Use the interactive question tool when available; otherwise numbered options with the default marked |
 | `push_main` | allowed on explicit request | A project may forbid it |
 | `cloud_sync` | `off` | `on`: the user also works from Claude Code cloud sessions; the kit travels on a private `cloud/<branch>` (`git.md` › Cloud sync). Turning it on is the standing written OK for those pushes and for making the kit branch the repo's default branch, on the cloud remote only |
