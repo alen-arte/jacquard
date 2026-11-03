@@ -29,7 +29,7 @@ Claude cannot see how much of the session limit is left, so Away is built to be 
 ## 8. Review in Away
 
 Reviews follow `core/review.md` with the session's intensity and the floor for level-2 work:
-- **Level-2 or structural task:** first write its approach in the journal; its plan review (`core/review.md`, Plan review) runs on it before building. A Blocker or Major that changes the approved plan parks the task with the finding; anything else is applied in the build, and the review of the built work checks it.
+- **Level-2 or structural task:** first write its approach in the journal; its plan review (`core/review.md`, Plan review) runs on it before building, and its findings go in the journal under the approach. A Blocker or Major that changes the approved plan parks the task with the finding; anything else is applied in the build, and the review of the built work checks it.
 - **`DEP` task:** its review runs right after the commit, before anything builds on it.
 - **`ISO` task, and any task without its own QA:** into `QA-pending` (task, commit, what to verify, how). QA over `QA-pending` closes every block at every intensity (`-s` too), together over the block's diff, never skipped for lack of room.
 - **Structure check in Away** (`core/review.md`, Running a review): every run uses `--base` the parent of the block's first commit (the journal's first commit line), so earlier blocks' files are not counted.
