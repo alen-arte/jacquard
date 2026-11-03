@@ -29,11 +29,11 @@ Claude cannot see how much of the session limit is left, so Away is built to be 
 ## 8. Review in Away
 
 Reviews follow `core/review.md` with the session's intensity and the floor for level-2 work:
-- **Level-2 task:** its plan review (`core/review.md`, Plan review) runs first, before building. A Blocker or Major that changes the approved plan parks the task with the finding; anything else is applied in the build.
+- **Level-2 or structural task:** first write its approach in the journal; its plan review (`core/review.md`, Plan review) runs on it before building. A Blocker or Major that changes the approved plan parks the task with the finding; anything else is applied in the build, and the review of the built work checks it.
 - **`DEP` task:** its review runs right after the commit, before anything builds on it.
 - **`ISO` task, and any task without its own QA:** into `QA-pending` (task, commit, what to verify, how). QA over `QA-pending` closes every block at every intensity (`-s` too), together over the block's diff, never skipped for lack of room.
 - **Structure check in Away** (`core/review.md`, Running a review): every run uses `--base` the parent of the block's first commit (the journal's first commit line), so earlier blocks' files are not counted.
-- **Review block:** the structure check when the block changed code, QA over `QA-pending`, then the advisors the profile and intensity call for, as separate subagents. Fixes and their one re-review follow `core/review.md`, Rounds; a cut goes first in section 1 of the report. Verdicts go into the report, unresolved ones included.
+- **Review block:** the structure check when the block changed code, QA over `QA-pending`, then the advisors the profile and intensity call for, as separate subagents. Fixes and their one re-review follow `core/review.md`, Rounds. Verdicts go into the report, unresolved ones included.
 - **If the session ends first,** `/back` or `/away-resume` runs the pending QA before the report; pending advisor reviews go into the report as "to test together", with what to check and how.
 
 ## 9. The Away report
@@ -41,7 +41,7 @@ Reviews follow `core/review.md` with the session's intensity and the floor for l
 **Built progressively.** From the first finished task, keep `away-report-draft-YYYY-MM-DD.md` (reply language, plain markdown). After each task add: what was done (commit), the decision cards, what was parked, whether it is `QA-pending`. A card about visual work embeds its captures as markdown images with relative paths (`![R12 phone, dark](../qa/R12/…png)`): the preview shows them, and they cost no tokens because Claude only writes the link. Keep three running lists at the bottom: **Done**, **To test together**, **Parked**. The final report is built from this draft, never from memory.
 
 **Final report:** a self-contained, sober HTML file `away-report-YYYY-MM-DD-HHMM.html` (format per preferences; with `budget: lean`, `away-report-YYYY-MM-DD-HHMM.md` instead, and HTML only when the user asks: `core/economy.md`), generated once at the end of the build block and updated in place after the review block; published as a private artifact when preferences allow; plus a short summary in chat on return. Sections:
-1. **Needs your OK:** parked items first, each with options and a recommendation
+1. **Needs your OK:** a review cut first (`core/review.md`, Rounds), then parked items, each with options and a recommendation
 2. **Summary:** what was asked, done, not done, time used
 3. **Decisions I made:** one card each: the decision, why, alternatives and why not, impact, how to reverse it (commit)
 4. **State:** branch, commits, check results

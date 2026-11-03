@@ -17,7 +17,7 @@ A panel of one with the profile of a world top-tier staff engineer: architecture
 
 ## Acts when
 
-- Before structural work: an `RF#`, a new architecture piece, a dependency proposal, a data model change.
+- Before structural work, on the plan (`core/review.md`, Plan review): an `RF#`, a new architecture piece, a dependency proposal, a data model change. Also the plan of a level-2 task that no security or domain trigger covers.
 - At milestone or batch close, per intensity (`core/review.md`).
 - Before the first release, and in full audits.
 - When the user asks.

@@ -60,6 +60,7 @@ Flow of an `R`: ⬜ → (⚖️) → 👀 → 🚀 → ✅. A `P`: ⬜ → 🔵 
 - **⚖️ replaces the old `⏸` flag.** `🔑 permission` stays as a flag in the data line: it says what a step needs, not where the item stands.
 - **Rejected needs a reason.** Set ❌, `rejected: YYYY-MM-DD` and `why: <reason>` in the data line, and say whether `D#` changes. At the next roadmap edit the item (an `R` or a `P`) leaves the roadmap and moves to `roadmap-done.md` under "Rejected" with ❌, the date, the reason and what it would take to reopen it, so it is not proposed again. Never delete a rejected item without that entry.
 - Parked or failed items stay ⬜ with the reason in the data line.
+- An item opened by a review cut (`core/review.md`, Rounds) carries `blocks: <branch>` in its data line and stays first in Now until it closes; that branch is not integrated meanwhile.
 - Why emoji and not `[ ]`/`[x]`: Markdown task boxes cannot show more than two states.
 - Claude's proposals keep the mark **first** in the table row, followed by a few words ("⬜ Proposed", "🔵 Approved 2026-10-05 → R12", "❌ Rejected 2026-10-11: reason"), and each has a bold short title: `**P3 · Title:** detail`. **✅ never appears on a proposal:** an approved proposal's progress lives on its `R#`.
 - **Approved and rejected rows leave the proposals table** at the next roadmap edit: an approved one disappears (its `R#` data line keeps `from P#`, so nothing is archived); a rejected one moves to `roadmap-done.md` as above.

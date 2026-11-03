@@ -10,7 +10,7 @@ This file is always loaded. Everything else is read on demand:
 | Read | When |
 |---|---|
 | `design-standards.md`, `visual-qa.md` | Any design or UI task; checking it rendered |
-| `review.md` | Choosing which reviews run, planning a level-2 or structural task, fixing findings, closing a batch |
+| `review.md` | Choosing which reviews run, planning a level-2 or structural task, closing a batch |
 | `economy.md` | Launching a subagent other than a review (reviews: `review.md`), choosing a tier, estimating cost |
 | `work-modes.md` (sections 1–6), `away-run.md` (7–9) | `/away` and `/away-resume` read both; `/back` reads `away-run.md` |
 | `git.md` | Branches, commits, integration, push; cloud sync, with `cloud_sync: on` at the start and close of a Present session |
