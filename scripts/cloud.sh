@@ -81,8 +81,8 @@ takeover_ok() {
   git rev-parse -q --verify "$m^2" >/dev/null && git merge-base --is-ancestor "$m^2" "$branch" && return 0
   git rev-parse -q --verify "refs/heads/$o" >/dev/null \
     || { [ "$take" = 1 ] && return 0
-         # its last tip is the second parent of the newest sync commit made from it
-         last="$(git log --format='%H %P%x09%s' "$ref" | awk -F '\t' -v s="$marker: sync point from $o " 'index($2, s) == 1 { split($1, a, " "); if (a[3] != "") { print substr(a[3], 1, 12); exit } }')"
+         # its last tip: the newest sync commit made from it (0.2.10 format) has it as second parent, or as only one on a first sync
+         last="$(git log --format='%H %P%x09%s' "$ref" | awk -F '\t' -v s="$marker: sync point from $o (its files" 'index($2, s) == 1 { split($1, a, " "); print substr(a[3] != "" ? a[3] : a[2], 1, 12); exit }')"
          back=""; [ -z "$last" ] || back=" If it is wanted: git branch $o $last brings it back, then bring it into $branch."
          die "$out was last synced from $o, which no longer exists here: ask the user whether its work is wanted.$back If it is not, run cloud.sh $cmd --take-over"; }
   die "$out was last synced from $o, not $branch: run cloud.sh there, or bring $o into $branch first"

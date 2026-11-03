@@ -252,4 +252,11 @@ grep -q -- '--take-over' "$tmp/out" && grep -q 'git branch feat [0-9a-f]' "$tmp/
 run prepare --take-over || fail "C54 with --take-over, the kit branch follows this branch: $(cat "$tmp/out")"
 run prepare || fail "C54b and afterwards without it: $(cat "$tmp/out")"
 
+# a gone branch synced only once can still be brought back
+git switch -q -c away/solo main; echo s > solo.txt; git add solo.txt; git commit -q -m "R16: solo"
+run prepare || fail "C55 first sync of away/solo: $(cat "$tmp/out")"
+git switch -q -c solo main; git branch -q -D away/solo
+run prepare && fail "C55b solo cannot take cloud/solo over on its own"
+grep -q 'git branch away/solo [0-9a-f]' "$tmp/out" || fail "C55c after a single sync, the refusal still says how to bring the branch back: $(cat "$tmp/out")"
+
 finish "cloud"
