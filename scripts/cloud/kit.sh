@@ -31,7 +31,7 @@ $new"
   [ -z "$odd" ] || { (cd "$k/local" && odd_names -exec rm -rf {} +); echo "  ⚠ not sent to the cloud (unusual file name): $odd"; }
   # only what land would take back travels (one rule both ways): the rest stays on this computer
   (cd "$k/local" && find . -type f) | sed 's|^\./||' | while IFS= read -r f; do
-    [ -z "$(doc_problem "$f")" ] || { rm -f "$k/local/$f"; echo "  ⚠ not sent to the cloud ($(doc_problem "$f")): $f"; }
+    [ -z "$(doc_problem "$f")" ] || { rm -f "$k/local/$f"; echo "  ⚠ not sent to the cloud ($(doc_problem "$f")): $(printf '%s' "$f" | plain)"; }
   done
   cp -R "$k/jacquard/skills/." "$wt/.claude/skills/"; cp "$k/jacquard/agents/"*.md "$wt/.claude/agents/"  # where Claude Code looks in a project
   printf '%s\n' "$local_dir" > "$k/local-folder"

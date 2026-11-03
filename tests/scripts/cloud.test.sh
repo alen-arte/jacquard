@@ -58,7 +58,8 @@ echo two >> app.txt; git commit -q -am "R1: on the computer"
 run() { sh "$cloud" "$@" > "$tmp/out" 2>&1; }
 esc="$(printf '\033')"; nl='
 '
-raw_controls() { grep -q "$esc" "$tmp/out" || grep -q "$(printf '\007')" "$tmp/out" || LC_ALL=C grep -q "$(printf '\302\233')" "$tmp/out"; }
+c1="$(printf '\302\233')"; bidi="$(printf '\342\200\256')"   # CSI as a C1 control, and a right-to-left override
+raw_controls() { grep -q "$esc" "$tmp/out" || grep -q "$(printf '\007')" "$tmp/out" || LC_ALL=C grep -q -e "$c1" -e "$bidi" "$tmp/out"; }
 remote_has() { git --git-dir="$r" rev-parse -q --verify "refs/heads/$1" >/dev/null; }
 at() { git --git-dir="$r" show "cloud/feat:$1" 2>/dev/null; }
 worktrees() { git worktree list --porcelain | grep -c '^worktree '; }
@@ -206,21 +207,24 @@ at .cloud-kit/local/docs/.gitkeep >/dev/null && fail "C33f a file land would ref
 grep -q 'not sent to the cloud.*docs/.gitkeep' "$tmp/out" || fail "C33g prepare names what it did not send"
 # names with a newline (in the file or in a folder), a quote or a backslash are never sent, so they never block the way back
 echo n > "$p/docs/new${nl}line.md"; mkdir -p "$p/docs/sub${nl}dir"; echo d > "$p/docs/sub${nl}dir/in.md"
-echo q > "$p/docs/q\"uote.md"; echo b > "$p/docs/back\\slash.md"; echo c > "$p/docs/c1$(printf '\302\233')x.md"; commit_layer odd
+echo q > "$p/docs/q\"uote.md"; echo b > "$p/docs/back\\slash.md"; echo c > "$p/docs/c1${c1}x.md"; echo r > "$p/docs/bidi${bidi}x.md"; commit_layer odd
 run prepare || fail "C33k prepare with odd names in the layer: $(cat "$tmp/out")"
 git --git-dir="$r" ls-tree -r --name-only cloud/feat -- .cloud-kit/local | grep -q '^"' && fail "C33l a document with an odd name never travels"
 grep -q 'not sent to the cloud (unusual file name)' "$tmp/out" || fail "C33m prepare says it did not send them: $(cat "$tmp/out")"
-(cd "$p/docs" && rm -r "new${nl}line.md" "sub${nl}dir" "q\"uote.md" "back\\slash.md" "c1$(printf '\302\233')x.md"); commit_layer tidy
-# the same rule on the way back: a cloud document whose name has a C1 control stops land, and is named without it
-c1doc=".cloud-kit/local/docs/c1$(printf '\302\233')x.md"
-cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
-echo c > "$c1doc"; git add -A; git commit -q -m "R22: odd name"; cloud_push
-cd "$w" || exit 1
-run land && fail "C33n a cloud document whose name has a C1 control stops land"
-raw_controls && fail "C33o and its name is printed without the control"
-cd "$c" || exit 1; git rm -q "$c1doc"; git commit -q -m "R23: tidy"; cloud_push
-cd "$w" || exit 1
-run land || fail "C33p once removed in the cloud, land works: $(cat "$tmp/out")"
+raw_controls && fail "C33q prepare names them without their controls"
+(cd "$p/docs" && rm -r "new${nl}line.md" "sub${nl}dir" "q\"uote.md" "back\\slash.md" "c1${c1}x.md" "bidi${bidi}x.md"); commit_layer tidy
+# the same rule on the way back: a cloud document whose name has a C1 control or a bidi override stops land, named without it
+for kind in c1 bidi; do
+  eval "ch=\$$kind"; doc=".cloud-kit/local/docs/$kind${ch}x.md"
+  cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
+  echo c > "$doc"; git add -A; git commit -q -m "R22: odd name ($kind)"; cloud_push
+  cd "$w" || exit 1
+  run land && fail "C33n a cloud document whose name has a $kind character stops land"
+  raw_controls && fail "C33o and its name is printed without it ($kind)"
+  cd "$c" || exit 1; git rm -q "$doc"; git commit -q -m "R23: tidy ($kind)"; cloud_push
+  cd "$w" || exit 1
+  run land || fail "C33p once removed in the cloud, land works ($kind): $(cat "$tmp/out")"
+done
 # a project whose hooks live in a tracked folder: a hook the cloud adds never runs while landing, and land names it
 git config core.hooksPath .githooks
 cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
