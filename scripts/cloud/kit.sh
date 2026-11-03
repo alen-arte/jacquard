@@ -12,7 +12,7 @@ build_kit() {
   git -C "$kit" archive HEAD core roles scripts skills agents CHANGELOG.md | tar -x -C "$k/jacquard"   # no tests, docs or templates
   cp "$layer/preferences.md" "$k/personal/"
   # documents that the personal layer does not know yet might be private, so they stop the sync
-  new="$(git -C "$proj" ls-files --others --exclude-standard -- index.md project.md away-profile.md docs roles 'away/*.md')"
+  new="$(git -C "$proj" ls-files --others --exclude-standard -- index.md project.md away-profile.md docs roles ':(glob)away/*.md')"
   waiting="$( { printf '%s\n' "$new"; git -C "$proj" ls-files -- '*.cloud'; } | grep '\.cloud$' || true)"
   [ -z "$waiting" ] || die "a document changed in both places is still waiting: merge each <file>.cloud into its <file> and delete it (git rm if the layer tracks it), then commit the layer. Nothing pushed:
 $waiting"
@@ -25,6 +25,10 @@ $new"
   (cd "$k/local" && find . -type f -print0) | git -C "$proj" check-ignore -z --no-index --stdin | (cd "$k/local" && xargs -0 -r rm -f --)
   rc=0; (cd "$k/local" && find . -type f -print0) | git -C "$proj" check-ignore -z --no-index --stdin >/dev/null || rc=$?
   [ "$rc" = 1 ] || die "the private-file check failed (rc=$rc): nothing pushed"
+  # a name with a control character, a quote or a backslash (in the file or a folder) would be split or quoted below,
+  # and land would refuse it: it never travels
+  odd="$(cd "$k/local" && odd_names -print | plain | tr '\n' ' ')"
+  [ -z "$odd" ] || { (cd "$k/local" && odd_names -exec rm -rf {} +); echo "  ⚠ not sent to the cloud (unusual file name): $odd"; }
   # only what land would take back travels (one rule both ways): the rest stays on this computer
   (cd "$k/local" && find . -type f) | sed 's|^\./||' | while IFS= read -r f; do
     [ -z "$(doc_problem "$f")" ] || { rm -f "$k/local/$f"; echo "  ⚠ not sent to the cloud ($(doc_problem "$f")): $f"; }
@@ -69,9 +73,12 @@ EOF
   python3 "$parts/settings.py" "$repo/.claude/settings.local.json" "$wt/.claude/settings.json" "$local_dir"
 }
 
+# Paths under the current folder whose name has a control character, a quote or a backslash; $@ is find's action.
+odd_names() { find . \( -path '*[[:cntrl:]]*' -o -path '*"*' -o -path '*\\*' \) -prune "$@"; }
+
 # The rule for a project document that travels, both ways: a plain name in the travelling set. Prints why not, or nothing.
 doc_problem() {
-  case "$1" in \"*|.*|*/.*) echo "unusual file name"; return ;; esac
+  case "$1" in *[[:cntrl:]]*|*\"*|*\\*|.*|*/.*) echo "unusual file name"; return ;; esac
   case "$1" in away/*/*) echo "not a project document"; return ;; esac
   case "$1" in index.md|project.md|away-profile.md|docs/*|roles/*|away/*.md) ;; *) echo "not a project document" ;; esac
 }

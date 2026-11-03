@@ -56,6 +56,9 @@ git remote add origin "$url"; git push -q origin main
 git switch -q -c away/feat
 echo two >> app.txt; git commit -q -am "R1: on the computer"
 run() { sh "$cloud" "$@" > "$tmp/out" 2>&1; }
+esc="$(printf '\033')"; nl='
+'
+raw_controls() { grep -q "$esc" "$tmp/out" || grep -q "$(printf '\007')" "$tmp/out"; }
 remote_has() { git --git-dir="$r" rev-parse -q --verify "refs/heads/$1" >/dev/null; }
 at() { git --git-dir="$r" show "cloud/feat:$1" 2>/dev/null; }
 worktrees() { git worktree list --porcelain | grep -c '^worktree '; }
@@ -110,6 +113,7 @@ run land && fail "C20 land stops on a conflicting cloud commit"
 [ -f c5.txt ] || fail "C20b the commits before the conflict are applied"
 grep -q 'git commit --allow-empty -C [0-9a-f]\{40\}' "$tmp/out" || fail "C20c the stop says how to keep this computer's version: $(cat "$tmp/out")"
 run land && fail "C21 land refuses while git am is halfway"
+grep -q 'last cloud land named.*package.json' "$tmp/out" || fail "C21c a later run (a new session) still names the files that run: $(cat "$tmp/out")"
 echo resolved > app.txt; git add app.txt; git am --continue >/dev/null 2>&1 || fail "C21b the conflict can be finished with git am --continue"
 before="$(git rev-parse HEAD)"
 run land || fail "C22 land runs again after a halfway stop: $(cat "$tmp/out")"
@@ -123,14 +127,17 @@ commit_layer docs; run prepare || fail "C24b prepare after the halfway land: $(c
 git --git-dir="$r" rev-parse cloud/feat^1 > .git/jacquard-cloud/cloud_feat
 run status; grep -q 'cloud/feat: in sync' "$tmp/out" || fail "C24c an old record older than the sync commit does not reopen the loop: $(cat "$tmp/out")"
 cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
-echo 'cloud again' > app.txt; git commit -q -am "R8: cloud edits app again"; cloud_push
+echo 'cloud again' > app.txt; git commit -q -am "$(printf 'R8: cloud \033]0;T\007edits app again')"; cloud_push
 cd "$w" || exit 1
 echo 'computer again' > app.txt; git commit -q -am "R9: computer edits app again"
 run land && fail "C25 land stops on the second conflict"
+raw_controls && fail "C25e a cloud subject with terminal controls is printed without them when land stops"
 h="$(sed -n 's/.*--allow-empty -C \([0-9a-f]\{40\}\).*/\1/p' "$tmp/out")"
 git checkout -q --ours app.txt 2>/dev/null || git show HEAD:app.txt > app.txt
 git add app.txt; git commit -q --allow-empty -C "$h"; git am --skip >/dev/null 2>&1
 run land || fail "C25b land runs again after keeping this computer's version: $(cat "$tmp/out")"
+raw_controls && fail "C25f land's commit-by-commit lines print cloud subjects without terminal controls"
+grep -q 'R8: cloud' "$tmp/out" || fail "C25g the stripped subject is still shown: $(cat "$tmp/out")"
 [ "$(cat app.txt)" = 'computer again' ] || fail "C25c this computer's version stays"
 run status; grep -q 'cloud/feat: in sync' "$tmp/out" || fail "C25d after keeping this computer's version, status is in sync (no loop): $(cat "$tmp/out")"
 
@@ -143,7 +150,10 @@ run land || fail "C26 land with a document changed in both places: $(cat "$tmp/o
 [ -f "$p/docs/roadmap.md.cloud" ] && grep -q 'Merge each into its file.*roadmap.md.cloud' "$tmp/out" || fail "C26b the cloud's side waits as roadmap.md.cloud and land says to merge it"
 run prepare && fail "C26c prepare refuses while a .cloud file waits"
 grep -q 'merge each <file>.cloud' "$tmp/out" || fail "C26d the refusal says to merge the .cloud file"
-rm "$p/docs/roadmap.md.cloud"
+commit_layer cloudfile
+run prepare && fail "C26e prepare refuses while the layer tracks a .cloud file"
+grep -q 'git rm' "$tmp/out" || fail "C26f the refusal says to git rm a tracked .cloud file: $(cat "$tmp/out")"
+rm "$p/docs/roadmap.md.cloud"; commit_layer merged
 
 # a prepare that fails partway leaves no working folder and pushes nothing
 echo new > "$p/docs/unversioned.md"
@@ -152,6 +162,11 @@ run prepare && fail "C27 prepare refuses documents the personal layer does not v
 [ "$(worktrees)" = 1 ] || fail "C27b a failed prepare leaves no working folder"
 [ "$(git --git-dir="$r" rev-parse cloud/feat)" = "$tip" ] || fail "C27c a failed prepare pushes nothing"
 rm "$p/docs/unversioned.md"
+# a closed Away block's files, archived and not committed yet, never stop prepare (archive/ never travels)
+mkdir -p "$p/away/archive"; echo old > "$p/away/archive/away-journal-old.md"
+run prepare || fail "C27d an uncommitted archived file does not stop prepare: $(cat "$tmp/out")"
+at .cloud-kit/local/away/archive/away-journal-old.md >/dev/null && fail "C27e the archive never travels"
+rm -r "$p/away/archive"
 
 # a folder left open by an older version is named with the command that closes it, and does not block
 git worktree add -q -b cloud/feat "$tmp/stale" HEAD
@@ -189,6 +204,13 @@ touch "$p/docs/.gitkeep"; commit_layer keep
 run prepare || fail "C33e prepare with a dot file in the layer: $(cat "$tmp/out")"
 at .cloud-kit/local/docs/.gitkeep >/dev/null && fail "C33f a file land would refuse is never sent"
 grep -q 'not sent to the cloud.*docs/.gitkeep' "$tmp/out" || fail "C33g prepare names what it did not send"
+# names with a newline (in the file or in a folder), a quote or a backslash are never sent, so they never block the way back
+echo n > "$p/docs/new${nl}line.md"; mkdir -p "$p/docs/sub${nl}dir"; echo d > "$p/docs/sub${nl}dir/in.md"
+echo q > "$p/docs/q\"uote.md"; echo b > "$p/docs/back\\slash.md"; commit_layer odd
+run prepare || fail "C33k prepare with odd names in the layer: $(cat "$tmp/out")"
+git --git-dir="$r" ls-tree -r --name-only cloud/feat -- .cloud-kit/local | grep -q '^"' && fail "C33l a document with an odd name never travels"
+grep -q 'not sent to the cloud (unusual file name)' "$tmp/out" || fail "C33m prepare says it did not send them: $(cat "$tmp/out")"
+(cd "$p/docs" && rm -r "new${nl}line.md" "sub${nl}dir" "q\"uote.md" "back\\slash.md"); commit_layer tidy
 # a project whose hooks live in a tracked folder: a hook the cloud adds never runs while landing, and land names it
 git config core.hooksPath .githooks
 cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
@@ -283,5 +305,23 @@ grep -q 'git branch away/solo [0-9a-f]' "$tmp/out" || fail "C55c after a single 
 git branch away/solo "$(sed -n 's/.*git branch away\/solo \([0-9a-f]*\).*/\1/p' "$tmp/out")"; git merge -q --no-edit away/solo
 git branch -q -D away/solo
 run prepare || fail "C55d once solo holds that work, it takes over even with the branch gone after a single sync: $(cat "$tmp/out")"
+
+# a sync commit made in the cloud names a crafted branch: it is never offered as a command, never followed, and the
+# cloud's pending commits are named (without terminal controls) before --take-over brings them
+git switch -q away/feat; run prepare || fail "C56 prepare before the crafted case: $(cat "$tmp/out")"
+cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
+git commit -q --allow-empty -m 'Jacquard cloud kit: sync point from x$(touch${IFS}pwn) (its files, plus the framework)'
+echo t > c20.txt; git add c20.txt; git commit -q -m "$(printf 'R20: cloud \033[31mwork')"; cloud_push
+cd "$w" || exit 1
+sed -n 1p .git/jacquard-cloud/cloud_feat > "$tmp/rec"; cp "$tmp/rec" .git/jacquard-cloud/cloud_feat   # a record from another computer
+run land && fail "C57 a kit branch whose last sync names a crafted branch is not followed"
+grep -q 'git branch x' "$tmp/out" && fail "C57b a crafted branch name is never printed as a command: $(cat "$tmp/out")"
+[ ! -e pwn ] && [ ! -e "$tmp/pwn" ] || fail "C57c nothing ran"
+grep -q 'R20: cloud' "$tmp/out" && grep -q -- '--take-over' "$tmp/out" || fail "C58 the refusal names the cloud commits that --take-over would bring: $(cat "$tmp/out")"
+raw_controls && fail "C58b and prints their subjects without terminal controls"
+run status; grep -q 'not landed: run cloud.sh land on an unknown branch' "$tmp/out" || fail "C59 status says the followed branch is unknown: $(cat "$tmp/out")"
+run land --take-over || fail "C60 --take-over still works when the name is unreadable: $(cat "$tmp/out")"
+[ -f c20.txt ] || fail "C60b the cloud's work lands"
+raw_controls && fail "C60c land's lines print the subject without terminal controls"
 
 finish "cloud"

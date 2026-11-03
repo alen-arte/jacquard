@@ -22,6 +22,8 @@
 set -eu
 
 die() { echo "✗ $*" >&2; exit 1; }
+# Text the cloud can write (commit subjects, git's messages about them), printed without terminal controls (C0, DEL, C1).
+plain() { LC_ALL=C awk '{ gsub(/[\001-\037\177]/, ""); gsub(/\302[\200-\237]/, ""); print }'; }
 [ "${CLAUDE_CODE_REMOTE:-}" != true ] || die "cloud.sh runs on the computer only: in a cloud session, commit and push this same cloud/ branch"
 parts="$(cd "$(dirname "$0")" && pwd)/cloud"
 remote="$(git config --local --get jacquard.cloudRemote || echo origin)"  # private remote the cloud session is attached to
@@ -65,17 +67,32 @@ sync_point() {
   [ -n "$m" ] || die "$out on $remote has no sync commit (cloud.sh did not make it): nothing done"
   echo "$m"
 }
-# The work branch the kit branch follows: the one its last sync came from.
+# The work branch the kit branch follows: the one its last sync came from. The record was written here; a name read
+# from a sync commit's subject (the cloud can write one) counts only if it is a plain branch name. Nothing: unknown.
 followed() {
   o="$(sed -n 2p "$(rec)" 2>/dev/null || true)"
-  [ -n "$o" ] || o="$(git log -1 --format=%s "$(newest_marker)" | sed -n "s/^$marker: sync point from \([^ ]*\) .*/\1/p")"
-  echo "$o"
+  [ -z "$o" ] || { echo "$o"; return; }
+  o="$(git log -1 --format=%s "$(newest_marker)" 2>/dev/null | sed -n "s/^$marker: sync point from \([^ ]*\) .*/\1/p")"
+  case "$o" in ""|*[!A-Za-z0-9._/-]*) return ;; esac
+  if git check-ref-format "refs/heads/$o"; then echo "$o"; fi
+}
+# The cloud's commits a land would bring, named for the user before they say --take-over.
+pending() {
+  n="$(git rev-list --count --no-merges "$(sync_point)..$ref")"
+  [ "$n" != 0 ] || return 0
+  printf ' The cloud has %s commit(s) not landed, which land --take-over brings here:' "$n"
+  git log --no-merges -n 5 --format='%h %s' "$(sync_point)..$ref" | plain | sed 's/^/ · /' | tr '\n' ' '
+  [ "$n" -le 5 ] || printf '… and %s more.' "$((n - 5))"
 }
 # Another work branch (away/x and x share cloud/x) takes the kit branch over only when it already holds that work,
-# after integrating it say, never by dropping it; or, when that branch is gone, if the user says so (--take-over).
+# after integrating it say, never by dropping it; or, when that branch is gone or unknown, if the user says so (--take-over).
 takeover_ok() {
   o="$(followed)"
-  [ -z "$o" ] || [ "$o" = "$branch" ] && return 0
+  [ "$o" != "$branch" ] || return 0
+  if [ -z "$o" ]; then
+    [ "$take" = 1 ] && return 0
+    die "$out's last sync commit does not name a branch this computer can read (cloud.sh may not have made it): ask the user whether the cloud's work belongs on $branch.$(pending) If it does: cloud.sh land --take-over, then cloud.sh prepare --take-over"
+  fi
   git rev-parse -q --verify "refs/heads/$o" >/dev/null && git merge-base --is-ancestor "refs/heads/$o" "$branch" && return 0
   m="$(newest_marker)"; held="$m^2"                            # the work branch's tip at the last sync
   git rev-parse -q --verify "$held" >/dev/null || held="$m^1"  # a first sync has that tip as its only parent
@@ -84,15 +101,17 @@ takeover_ok() {
     || { [ "$take" = 1 ] && return 0
          # its last tip: the newest sync commit made from it (0.2.10 format) has it as second parent, or as only one on a first sync
          last="$(git log --format='%H %P%x09%s' "$ref" | awk -F '\t' -v s="$marker: sync point from $o (its files" 'index($2, s) == 1 { split($1, a, " "); print substr(a[3] != "" ? a[3] : a[2], 1, 12); exit }')"
-         back=""; [ -z "$last" ] || back=" If it is wanted: git branch $o $last brings it back, then bring it into $branch."
-         die "$out was last synced from $o, which no longer exists here: ask the user whether its work is wanted.$back If it is not: cloud.sh land --take-over first if the cloud has work not landed (that later cloud work comes here), then cloud.sh prepare --take-over, which puts this branch's files in the cloud"; }
+         back=""; case "$o$last" in *[!A-Za-z0-9._/-]*) ;; *) [ -z "$last" ] || back=" If it is wanted: git branch $o $last brings it back, then bring it into $branch." ;; esac
+         die "$out was last synced from $o, which no longer exists here: ask the user whether its work is wanted.$back$(pending) If it is not: cloud.sh land --take-over first if the cloud has work not landed (that later cloud work comes here), then cloud.sh prepare --take-over, which puts this branch's files in the cloud"; }
   die "$out was last synced from $o, not $branch: run cloud.sh there, or bring $o into $branch first"
 }
 excludes() { for p in $kit_paths $legacy "$local_dir"; do printf ' :!%s' "$p"; done; }
 clean() { [ -z "$(git status --porcelain --untracked-files=no)" ] || die "tracked changes pending: commit or stash first"; }
+runs_file() { echo "$(rec)~runs"; }   # '~' cannot appear in a branch name, so no kit branch's record collides with it
 halfway() {
-  [ ! -d "$(git rev-parse --git-path rebase-apply)" ] \
-    || die "a land stopped halfway: finish it (git am --continue, or keep this computer's version as the land's message says), then cloud.sh land again"
+  [ -d "$(git rev-parse --git-path rebase-apply)" ] || return 0
+  r=""; [ ! -s "$(runs_file)" ] || r=" The last cloud land named files that run or give instructions: $(cat "$(runs_file)")— show them to the user before git am --continue."
+  die "a land stopped halfway: finish it (git am --continue, or keep this computer's version as the land's message says), then cloud.sh land again.$r"
 }
 # One line per cloud commit: the local commit with its key (author, date, subject), or none.
 here_of() { K="$1" awk 'substr($0, index($0, " ") + 1) == ENVIRON["K"] { print $1; exit }' "$2"; }
@@ -105,7 +124,7 @@ status)
     [ -n "$(newest_marker)" ] || continue
     sp="$(sync_point)"
     if [ "$sp" = "$(git rev-parse "$ref")" ]; then echo "$out: in sync"
-    else echo "$out: $(git rev-list --count --no-merges "$sp..$ref") cloud commit(s) not landed: run cloud.sh land on $(followed)"; fi
+    else f="$(followed)"; echo "$out: $(git rev-list --count --no-merges "$sp..$ref") cloud commit(s) not landed: run cloud.sh land on ${f:-an unknown branch}"; fi
   done
   if git for-each-ref --format=x "refs/remotes/$remote/cloud/" | grep -q . && ! (private_remote) >/dev/null 2>&1; then
     echo "  ⚠ $remote is no longer a private repo only you can see (or it could not be checked): its cloud/ branches hold your preferences and project documents. Delete them there before anyone else gets access."
@@ -165,6 +184,7 @@ land)
   # the user sees them before any check runs here
   runs="$(git diff --name-only "$sp" "$tip" -- . $(excludes) | grep -E '(^|/)(package\.json|Makefile|CLAUDE\.md|\.mcp\.json|\.envrc|\.pre-commit-config\.yaml|\.?lefthook(-local)?\.ya?ml)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)\.?(git-?)?hooks/' | tr '\n' ' ' || true)"
   [ -z "$runs" ] || echo "  ⚠ the cloud changed files that run or give instructions: $runs— show them to the user before running any check"
+  mkdir -p "$record"; printf '%s' "$runs" > "$(runs_file)"   # repeated if this land stops halfway and is run again
   # 1) code: the cloud's commits since the sync point, kit paths left out, subjects kept exactly (-k). One already
   #    here (same author, date and subject: a land that stopped halfway, finished by hand) is not applied twice.
   git log --no-merges --date=raw --format='%h %ae %ad %s' "$tip..HEAD" > "$tmp/here"
@@ -178,7 +198,12 @@ land)
     cat "$tmp/one" >> "$tmp/patches"; echo "$h" >> "$tmp/applying"
   done < "$tmp/todo"
   before="$(git rev-parse HEAD)"
-  if [ -s "$tmp/patches" ] && ! git -c core.hooksPath=/dev/null am -k --3way -q < "$tmp/patches"; then   # hooks off: a hook the cloud added never runs here
+  rc=0
+  if [ -s "$tmp/patches" ]; then
+    git -c core.hooksPath=/dev/null am -k --3way -q < "$tmp/patches" > "$tmp/am" 2>&1 || rc=$?   # hooks off: a hook the cloud added never runs here
+    plain < "$tmp/am" >&2                                                                      # git am quotes the cloud's subjects
+  fi
+  if [ "$rc" != 0 ]; then
     next="$(git rev-parse --git-path rebase-apply)/next"
     [ -f "$next" ] || die "git am could not start: nothing landed; run cloud.sh land again once git works here"
     h="$(sed -n "$(cat "$next")p" "$tmp/applying")"
@@ -188,7 +213,7 @@ land)
   git log --no-merges --date=raw --format='%h %ae %ad %s' "$tip..HEAD" > "$tmp/here"
   while read -r h key; do
     l="$(here_of "$key" "$tmp/here")"
-    echo "    $(git rev-parse --short "$h") (cloud) → ${l:-no commit here (already here, or only kit files)} · $(git log -1 --format=%s "$h")"
+    echo "    $(git rev-parse --short "$h") (cloud) → ${l:-no commit here (already here, or only kit files)} · $(git log -1 --format=%s "$h" | plain)"
   done < "$tmp/todo"
   # 2) documents: only what the cloud changed since the sync point; if the same file also changed here,
   #    yours stays and the cloud's is saved next to it as <file>.cloud
@@ -209,7 +234,7 @@ land)
     fi
     mkdir -p "$(dirname "$proj/$f")"; cp "$new" "$proj/$f"; echo "  layer ← $f"
   done < "$tmp/docs"
-  save_rec "$tip"
+  save_rec "$tip"; rm -f "$(runs_file)"
   [ -z "$both" ] || echo "  Merge each into its file and delete it before committing the layer:$both"
   echo "✓ $out landed on $branch. Next: commit the personal layer, then cloud.sh prepare to sync back up." ;;
 
