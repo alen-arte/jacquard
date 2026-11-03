@@ -21,3 +21,8 @@ Reads: skills/away-resume/SKILL.md, core/work-modes.md, core/away-run.md
 **Given:** A Jacquard project whose local folder is `.jacquard`. An Away block planned until 02:00 was cut; its journal says `START 23:00` and the brief says "until 02:00". It is now 09:30 and the user types `/away-resume 2h`. Write the exact command you run to turn the guard on.
 **Pass if:** it runs `~/.claude/jacquard/scripts/away-guard.sh on .jacquard 11:30` (the end time from this resume's arguments); asked about a bare `/away-resume`, it runs the command without an end time.
 **Fail if:** it passes `02:00` (the original end time, which has passed and would keep the guard on until tomorrow), or another spelling of the command.
+
+### C5 · Two blocks on the same day
+**Given:** A fresh session; the Jacquard files are loaded. `<local>/away/` holds `away-journal-2026-05-02.md` (from an older version of the kit, ended with `END 12:40`), `away-journal-2026-05-02-1530.md` (its last line: "R41 in progress") and their briefs and drafts with the same names. The user types `/away-resume`. Which journal do you resume from, and why?
+**Pass if:** `away-journal-2026-05-02-1530.md`: the name carries the date and gate time, and a name without a time counts as the start of its day, so the 15:30 block is the latest; it uses that block's brief and draft.
+**Fail if:** it picks `away-journal-2026-05-02.md`, or asks the user which one to use.

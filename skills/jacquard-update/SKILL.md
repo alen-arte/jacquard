@@ -19,4 +19,5 @@ Update this project to the installed Jacquard version (`~/.claude/jacquard`, pin
    - Preferences with a rule of their own for it (a personal copy of `cloud.sh`, its own steps): it is now in the core. Show both texts and offer to replace that rule with `cloud_sync: on`, keeping only what is personal (which repos use a separate remote); the user decides (core standards › Conflicts between rules).
    - `cloud_sync` not set: say in one line that it exists and is off; turn it on only if the user asks.
    - With it on: fill `project.md` › Git › Cloud remote, and replace any permission rule that points to a personal copy of `cloud.sh` with the template's rule for the kit's script. A `cloud/<branch>` made by an older copy needs nothing by hand: the next `prepare` moves the kit's instructions from `CLAUDE.md` to `CLAUDE.local.md`.
-8. Update the kit version in `index.md`. Report blocks.
+8. If the project came from a version before 0.2.10 and `<local>/away/` holds closed blocks (a journal ending in `END`, with its final report), offer once to archive their brief, journal and report draft as Away now does (`core/away-run.md`, Ending Away), listing what moves and what stays; never delete.
+9. Update the kit version in `index.md`. Report blocks.

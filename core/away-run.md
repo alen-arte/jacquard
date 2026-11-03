@@ -19,7 +19,7 @@ Claude cannot see how much of the session limit is left, so Away is built to be 
 
 **After every task, in order:** checks → commit → one journal line → one entry in the report draft.
 
-- The **journal** (`away-journal-YYYY-MM-DD.md`) records done, in progress, parked, next, and the `QA-pending` list. After a compaction or restart, read it and continue within the same time box (`/away-resume` does this in a fresh session).
+- The **journal** (`away-journal-<block>.md`, `work-modes.md`: created at the gate) records done, in progress, parked, next, and the `QA-pending` list. After a compaction or restart, read it and continue within the same time box (`/away-resume` does this in a fresh session).
 - One subagent per task when it helps (fresh context); the main session coordinates.
 - Re-read the brief and the limits at the start of each task.
 - A blocked permission or a failing step is logged and work continues elsewhere.
@@ -38,7 +38,7 @@ Reviews follow `core/review.md` with the session's intensity and the floor for l
 
 ## 9. The Away report
 
-**Built progressively.** From the first finished task, keep `away-report-draft-YYYY-MM-DD.md` (reply language, plain markdown). After each task add: what was done (commit), the decision cards, what was parked, whether it is `QA-pending`. A card about visual work embeds its captures as markdown images with relative paths (`![R12 phone, dark](../qa/R12/…png)`): the preview shows them, and they cost no tokens because Claude only writes the link. Keep three running lists at the bottom: **Done**, **To test together**, **Parked**. The final report is built from this draft, never from memory.
+**Built progressively.** From the first finished task, keep `away-report-draft-<block>.md` (reply language, plain markdown). After each task add: what was done (commit), the decision cards, what was parked, whether it is `QA-pending`. A card about visual work embeds its captures as markdown images with relative paths (`![R12 phone, dark](../qa/R12/…png)`): the preview shows them, and they cost no tokens because Claude only writes the link. Keep three running lists at the bottom: **Done**, **To test together**, **Parked**. The final report is built from this draft, never from memory.
 
 **Final report:** a self-contained, sober HTML file `away-report-YYYY-MM-DD-HHMM.html` (format per preferences; with `budget: lean`, `away-report-YYYY-MM-DD-HHMM.md` instead, and HTML only when the user asks: `core/economy.md`), generated once at the end of the build block and updated in place after the review block; published as a private artifact when preferences allow; plus a short summary in chat on return. Sections:
 1. **Needs your OK:** a review cut first (`core/review.md`, Rounds), then parked items, each with options and a recommendation
@@ -55,5 +55,7 @@ Be honest: failures, reverts and uncertainty are reported. Parked or failed item
 ## Ending Away and integrating
 
 Away ends with the guard off (`~/.claude/jacquard/scripts/away-guard.sh off <local>`, exactly as written), whoever ends it; if `off` fails, the summary says so first, with the command for the user (a new session also clears it). `/back` turns it off first, since the user is back, then ends the mode: stop new work, close safely, run QA if it is still pending (always) and the other pending reviews if there is room, finish the report, return to Present and present what needs the user first.
+
+**Archive the closed block,** whoever ends it (the end time, the brief done, `/back`, the end of `/away-resume`), last, once its final report is written and the guard is off: move its brief, journal and report draft to `<local>/away/archive/` (`mkdir -p`, then one `mv` per file; never delete). A move may ask: say in one plain line that it files the closed block's notes away; if it is declined, they stay and the summary says so. The final reports stay in `away/`, and so do working files with an item still open (a patch, SQL or production notes parked for the user), until that item closes. Earlier blocks are left as they are; `/jacquard-update` offers to tidy them once.
 
 Integration happens in Present, only with the user's explicit OK: rejected decisions are first undone with `git revert` on the away branch, then the away branch is integrated into the branch it came from per `core/git.md`. To discard everything: switch back and, with the user's OK, `git branch -D` on the away branch.

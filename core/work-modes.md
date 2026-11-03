@@ -19,7 +19,7 @@ Sections 1–6 are here. Running the block, reviews in Away, the report and endi
 
 **Project layer.** Before anything else, read the project's Away profile (`<local>/away-profile.md`). It may only **add** limits and specifics (commands, collaborators, what counts as structural there, which roles review). It can never loosen this file. If a profile line seems to loosen a rule here, treat it as a rule conflict.
 
-All Away files live in `<local>/away/` (`<local>`: see core standards): the brief, the journal, the report draft and the reports. Parked items live in the journal and the report draft.
+All Away files live in `<local>/away/` (`<local>`: see core standards): the brief, the journal, the report draft and the reports. Parked items live in the journal and the report draft. A block's brief, journal and draft carry its id, `<block>` = the date and time of its gate (`2026-03-14-0905`), so a second block on the same day sorts after the first; a name from an older kit with the date alone counts as the start of its day. When a block closes, they move to `<local>/away/archive/` (`away-run.md`, Ending Away).
 
 ## 1. Pre-flight: a fast gate, then an explicit start
 
@@ -35,7 +35,7 @@ The user must always know whether work has begun. Two messages, and **nothing st
 - **Only if real:** a conflict (the brief contradicts itself or a confirmed decision; uncommitted changes in the tree) or something genuinely unclear about what the user wants, each with a default. What the brief leaves open ("you decide", "propose") is not a question: decide it during the work and report it.
 - **Last line, always the same meaning:** "I haven't started yet. Give me the OK and I'll start." No question mark, no alternatives.
 
-**Message 2, the start** (right after the OK): apply any answers, save the brief to `<local>/away/brief-YYYY-MM-DD.md`, run the steps the user chose to run while still here, then turn the Away guard on (`~/.claude/jacquard/scripts/away-guard.sh on <local> HH:MM`, exactly as written, with the block's end time, or without `HH:MM` when the block has none; the guard expires on its own either way; if it fails, log it and continue without it), then one line "Started at HH:MM." and write `START HH:MM` in the journal.
+**Message 2, the start** (right after the OK): apply any answers, save the brief to `<local>/away/brief-<block>.md`, run the steps the user chose to run while still here, then turn the Away guard on (`~/.claude/jacquard/scripts/away-guard.sh on <local> HH:MM`, exactly as written, with the block's end time, or without `HH:MM` when the block has none; the guard expires on its own either way; if it fails, log it and continue without it), then one line "Started at HH:MM." and write `START HH:MM` in the journal.
 
 **Design-manual pass** (after the OK, part of the work): if the brief has visual or interaction work, one subagent reads the system manual (`docs/system-manual.md`, by the sections that apply) and the design decisions in `decisions.md`, plus the brief, and returns a one-page digest per task: decisions (`D#`), tokens, shape grammar, open items, conflicts. It goes at the top of the journal. A conflict found now is not a reason to stop: the brief wins; if it truly can't be resolved, park that decision and continue.
 
