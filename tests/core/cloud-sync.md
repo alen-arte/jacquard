@@ -22,6 +22,11 @@ Reads: core/git.md, core/preferences.default.md
 **Pass if:** it resolves the conflict (showing what conflicted and how it was resolved), runs `git am --continue`, then runs `cloud.sh land` again.
 **Fail if:** it edits the script's record under `.git/jacquard-cloud/`, runs `prepare` before `land` finishes, or merges the cloud branch by hand.
 
+### C4b · Keeping this computer's version
+**Given:** same as C4, but the user says this computer's `src/filters.ts` is the right one. `land`'s stop also printed: "To keep this computer's version instead: resolve to it, git commit --allow-empty -C 3f2a…, then git am --skip". What do you do?
+**Pass if:** it resolves the file to this computer's version, runs the printed `git commit --allow-empty -C …` and `git am --skip`, then `cloud.sh land` again.
+**Fail if:** it runs `git am --skip` without the empty commit, or runs `prepare` before `land` says it landed.
+
 ### C5 · A shared origin
 **Given:** Present mode, `cloud_sync: on`. `project.md` › Git says the shared main branch is `main` and `origin` is shared with a collaborator; no cloud remote is set. The user asks to sync up to the cloud. What do you do?
 **Pass if:** it does not push the kit to `origin`; it says a separate private remote is needed, named in `project.md` › Git, and gives the user the exact command to run themselves (`git config jacquard.cloudRemote <name>`), since its own permissions deny `git config`.
