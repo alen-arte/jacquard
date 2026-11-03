@@ -1,7 +1,9 @@
 # Duplicate names for structure-check.sh: top-level (unindented) function definitions whose name appears in more than
-# one file of the same language family (JS/TS, Python, shell). Declaration files (.d.ts) are skipped.
+# one file of the same language family (JS/TS, Python, shell) and the same part of the repo (one folder that runs
+# separately, or the rest). Declaration files (.d.ts) are skipped.
 # Prints "name<TAB>every file, comma-separated<TAB>the files to flag, space-separated", for names this change touches.
 # Variables: list (files to read), changed (this change's files), all (1: every name counts), ignore (" name name "),
+# groups (a file of "file<TAB>its folder that runs separately, or empty": names are not compared across them),
 # defs (1: print every definition as "name<TAB>file" instead, for comparing with the base).
 function add(fam, name, f,   k) {
   if (index(ignore, " " name " ")) return
@@ -17,23 +19,25 @@ function arrow(rest) {
     rest ~ /^[ \t]*:[^=]*=>[^=]*=[ \t]*(async[ \t]+)?(function|\(|[A-Za-z_$][A-Za-z0-9_$]*[ \t]*=>)/
 }
 BEGIN {
+  if (groups != "") while ((getline l < groups) > 0) { split(l, g, "\t"); apart[g[1]] = g[2] }
   while ((getline f < changed) > 0) mine[f] = 1
   while ((getline f < list) > 0) {
     if (f ~ /\.d\.ts$/) continue
     fam = f ~ /\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|vue|svelte|astro)$/ ? "js" : f ~ /\.py$/ ? "py" : f ~ /\.(sh|bash|zsh)$/ ? "sh" : ""
     if (fam == "") continue
+    group = fam ":" apart[f]
     while ((getline line < f) > 0) {
       if (fam == "js" && match(line, /^(export[ \t]+)?(default[ \t]+)?(async[ \t]+)?function([ \t]*\*[ \t]*|[ \t]+)[A-Za-z_$][A-Za-z0-9_$]*/)) {
-        s = substr(line, RSTART, RLENGTH); sub(/.*[ \t*]/, "", s); add(fam, s, f)
+        s = substr(line, RSTART, RLENGTH); sub(/.*[ \t*]/, "", s); add(group, s, f)
       } else if (fam == "js" && match(line, /^(export[ \t]+)?(const|let|var)[ \t]+[A-Za-z_$][A-Za-z0-9_$]*/)) {
         s = substr(line, RSTART, RLENGTH); rest = substr(line, RSTART + RLENGTH); sub(/.*[ \t]/, "", s)
-        if (arrow(rest)) add(fam, s, f)
+        if (arrow(rest)) add(group, s, f)
       } else if (fam == "py" && match(line, /^(async[ \t]+)?def[ \t]+[A-Za-z_][A-Za-z0-9_]*/)) {
-        s = substr(line, RSTART, RLENGTH); sub(/.*[ \t]/, "", s); add(fam, s, f)
+        s = substr(line, RSTART, RLENGTH); sub(/.*[ \t]/, "", s); add(group, s, f)
       } else if (fam == "sh" && match(line, /^(function[ \t]+)?[A-Za-z_][A-Za-z0-9_]*[ \t]*\(\)/)) {
-        s = substr(line, RSTART, RLENGTH); sub(/[ \t]*\(\)$/, "", s); sub(/.*[ \t]/, "", s); add(fam, s, f)
+        s = substr(line, RSTART, RLENGTH); sub(/[ \t]*\(\)$/, "", s); sub(/.*[ \t]/, "", s); add(group, s, f)
       } else if (fam == "sh" && match(line, /^function[ \t]+[A-Za-z_][A-Za-z0-9_]*/)) {
-        s = substr(line, RSTART, RLENGTH); sub(/.*[ \t]/, "", s); add(fam, s, f)
+        s = substr(line, RSTART, RLENGTH); sub(/.*[ \t]/, "", s); add(group, s, f)
       }
     }
     close(f)

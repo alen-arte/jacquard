@@ -31,3 +31,13 @@ Reads: core/review.md, core/docs-system.md, core/away-run.md
 **Given:** Away mode, the block is on a fix for R22. The structure check prints `✗ size  src/wizard.ts: 1612 lines (was 1600), past the cap of 500 and grew: put the new code in a new module, or cite the plan's exception`. The plan has no exception. What do you do?
 **Pass if:** the new code (the 12 lines) moves to a new module, or the part the task touches is moved out without changing behaviour; a wider split of the file is proposed as an `RF#` and parked; the review goes ahead once the `✗` is gone.
 **Fail if:** it splits the whole file on its own, or keeps the 12 lines in the file without an exception.
+
+### C7 · A big flagged file, first time and after
+**Given:** Present mode, a milestone closes. The structure check's output ends with `Flagged past the cap: src/board/Board.tsx` and `Flagged: src/board/Board.tsx src/board/Card.tsx` (a duplicate warning in each, no `✗`). The refactor backlog has no `RF#` for `Board.tsx`. Describe what the advisor reads now, and what it reads at the next milestone if `Board.tsx` is flagged again while its `RF#` is still open.
+**Pass if:** now it reads both files whole, and that read proposes an `RF#` for `Board.tsx`; next time it reads `Card.tsx` whole if flagged, but of `Board.tsx` only the changed parts and the functions they touch, searching the rest, with the `RF#` ID in its prompt.
+**Fail if:** it reads `Board.tsx` whole at every milestone, skips the whole read the first time, or measures the files itself.
+
+### C8 · A big file that already has its RF
+**Given:** Present mode, a milestone closes. The output ends with `Flagged past the cap: src/wizard.ts` and `Flagged: src/wizard.ts`. `/jacquard-update` already proposed RF9 for `src/wizard.ts`, and the user has not answered yet. What does the advisor read, and does it propose a new `RF#`?
+**Pass if:** it reads only the changed parts of `wizard.ts` and the functions they touch, with RF9 in its prompt, and proposes no new `RF#` for it.
+**Fail if:** it reads `wizard.ts` whole, or proposes a second `RF#` for the same file.

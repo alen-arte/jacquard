@@ -8,16 +8,18 @@
 #            staged or committed (git mv, or git add after mv)
 #   --all    every file in the repo, once, to measure existing debt
 # Settings come from project.md › Code limits (default <repo>/.jacquard/project.md): the numbers after "warn at" and
-# "cap at", and the values in backticks on the lines for tokens, exempt files and names that repeat by convention;
+# "cap at", and the values in backticks on the lines for tokens, exempt files, names that repeat by convention and folders that run separately;
 # without it, the core defaults. The first line says which.
 # Only what the change made worse is reported (--all: everything):
 # ✗ (blocking): a code file past the cap that grew or is new; an import cycle between JS/TS files (relative or tsconfig
 #   "paths" imports) that is new or grew, or with --all any cycle.
 # ⚠ (warning): a file that crossed the warning, grew past it, or is new past it; an existing cycle through a touched
-#   file; a top-level function name this change added in a second file of one language; colour literals it added
+#   file; a top-level function name this change added in a second file of one language (never across folders
+#   that run separately, such as edge functions); colour literals it added
 #   outside the token files. Touched debt it did not make worse is one "Touched, not made worse" line, not flagged.
 # Exit 0: no ✗ · 1: at least one ✗ · 2: usage or git error. The last line is "✓ no findings" or "Flagged: <files>",
 # the files a reviewer reads whole (only this change's files, except a new cycle); paths with spaces are not supported there.
+# Before it, "Flagged past the cap: <files>" names the flagged files past the cap, whatever flagged them.
 set -f
 export LC_ALL=C
 
@@ -34,7 +36,7 @@ here="$(cd "$(dirname "$0")" && pwd)/structure-check"
 
 usage() { echo "usage: ${0##*/} [--base <ref>] [--all] [--project <project.md>]" >&2; exit 2; }
 die() { echo "✗ $1" >&2; exit 2; }
-base=""; all=0; project=""
+base=""; all=0; project=""; separate=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --base) [ $# -ge 2 ] || usage; case "$2" in -*) die "a base cannot start with '-': $2" ;; esac; base="$2"; shift 2 ;;
@@ -64,13 +66,19 @@ if [ -s "$tmp/limits" ]; then
   ticks() { awk -v key="$1" 'index($0, key) { s = $0; while (match(s, /`[^`]+`/)) { printf "%s ", substr(s, RSTART + 1, RLENGTH - 2); s = substr(s, RSTART + RLENGTH) } }' "$tmp/limits"; }
   n="$(awk 'match($0, /warn at [0-9]+/) { print substr($0, RSTART + 8, RLENGTH - 8); exit }' "$tmp/limits")"; [ -n "$n" ] && warn="$n"
   n="$(awk 'match($0, /cap at [0-9]+/) { print substr($0, RSTART + 7, RLENGTH - 7); exit }' "$tmp/limits")"; [ -n "$n" ] && cap="$n"
-  exempt="$exempt $(ticks 'Files exempt')"
-  tokens="$tokens $(ticks 'Where configuration, tokens and copy live')"
+  # paths <line>: its values in backticks, a leading ./ dropped (git paths have none)
+  paths() { for _v in $(ticks "$1"); do printf '%s ' "${_v#./}"; done; }
+  exempt="$exempt $(paths 'Files exempt')"
+  tokens="$tokens $(paths 'Where configuration, tokens and copy live')"
   repeat_names="$repeat_names $(ticks 'Names that repeat by convention')"
+  # a folder may be written without its closing /
+  for g in $(paths 'Folders that run separately'); do case "$g" in */ | *\*) ;; *) g="$g/" ;; esac; separate="$separate $g"; done
 fi
 
 # in_list <path> <globs…>: a glob ending in / means everything under that folder
 in_list() { _p="$1"; shift; for _g; do case "$_g" in */) _g="$_g*" ;; esac; case "$_p" in $_g) return 0 ;; esac; done; return 1; }
+# apart <path>: the closest listed folder that runs separately holding it (the longest match), or "" for the rest
+apart() { _best=""; for _g in $separate; do in_list "$1" "$_g" && [ ${#_g} -gt ${#_best} ] && _best="$_g"; done; printf '%s' "$_best"; }
 has_ext() { _e="${1##*.}"; [ "$_e" != "$1" ] || return 1; case " $2 " in *" $_e "*) return 0 ;; esac; return 1; }
 # filter <list> <extensions> [notests]: the listed files with one of the extensions that are not exempt
 filter() {
@@ -119,7 +127,7 @@ else
 fi
 filter "$tmp/targets" "$code_ext" > "$tmp/code"
 aliases > "$tmp/aliases" || failed aliases
-followed="$(awk -F '\t' '{ printf "%s%s → %s", (NR > 1 ? ", " : ""), $1, $2 } END { if (NR == 0) printf "none" }' "$tmp/aliases")"
+followed="$(awk -F '\t' '{ printf "%s%s → %s", (NR > 1 ? ", " : ""), $1, ($2 == "" ? "(repo root)" : $2) } END { if (NR == 0) printf "none" }' "$tmp/aliases")"
 echo "structure-check: $(awk 'END { print NR }' "$tmp/code") code files $scope (warn $warn · cap $cap; settings: $settings; import aliases: $followed)"
 
 block=0; warns=0; flagged=""; pre_warn=0; pre_cap=0; pre_colour=0; pre_dup=0
@@ -210,7 +218,8 @@ done < "$tmp/cycles.marked"
 
 # The same top-level function name in several files (tests left out); a duplicate counts when this change added it
 filter "$tmp/all" "$code_ext" notests > "$tmp/dup.files"
-awk -v list="$tmp/dup.files" -v changed="$tmp/code" -v all="$all" -v ignore=" $repeat_names " -f "$here/duplicates.awk" > "$tmp/dups.raw" || failed duplicates
+while IFS= read -r f; do printf '%s\t%s\n' "$f" "$(apart "$f")"; done < "$tmp/dup.files" > "$tmp/dup.groups"
+awk -v list="$tmp/dup.files" -v changed="$tmp/code" -v all="$all" -v ignore=" $repeat_names " -v groups="$tmp/dup.groups" -f "$here/duplicates.awk" > "$tmp/dups.raw" || failed duplicates
 sort "$tmp/dups.raw" > "$tmp/dups"
 (cd "$tmp/cbase" && awk -v list="$tmp/cbase.list" -v changed=/dev/null -v all=0 -v defs=1 -v ignore=" $repeat_names " -f "$here/duplicates.awk") > "$tmp/defs.base" || failed "base duplicates"
 awk -F "$tab" -v base="$tmp/defs.base" 'BEGIN { while ((getline l < base) > 0) { split(l, d, "\t"); had[d[1], d[2]] = 1 } }
@@ -243,5 +252,9 @@ pre=""
 
 if [ $((block + warns)) = 0 ]; then echo "✓ no findings"; exit 0; fi
 echo "$block blocking · $warns warnings"
+# A reviewer reads a file past the cap whole only once (core/review.md), so those are named whatever flagged them
+printf '%s\n' $flagged > "$tmp/flagged"
+big="$(count_lines "$tmp/flagged" | awk -F "$tab" -v cap="$cap" '$1 > cap { printf "%s%s", (n++ ? " " : ""), $2 }')"
+[ -z "$big" ] || echo "Flagged past the cap: $big"
 echo "Flagged: $flagged"
 [ "$block" = 0 ]

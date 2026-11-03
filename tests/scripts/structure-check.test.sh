@@ -27,6 +27,7 @@ cat > .jacquard/project.md <<'EOF'
 - **Where configuration, tokens and copy live:** `src/styles/tokens.css`, `src/config/`
 - **Files exempt from the code limits:** `src/generated/*`, `*.min.js`
 - **Names that repeat by convention:** `render`
+- **Folders that run separately:** `src/edge/`, `./src/workers`, `src/edge/deep/*`
 
 ## Environments
 EOF
@@ -170,6 +171,13 @@ mkdir -p src/ui; printf '%s\n' 'export const decoy = 1;' > src/ui/button.ts
 sc; [ "$st" = 1 ] && has "✗ cycle.*src/components/ui/button.ts, src/form.ts" ||
   fail "S22c a multi-line paths entry is read and the longest alias prefix wins (got $st: $out)"
 
+start 18c
+printf '%s\n' '{' '  "compilerOptions": {' '    "paths": { "@/*": ["./*"] }' '  }' '}' > tsconfig.json
+printf '%s\n' "import { b } from '@/src/r2';" > src/r1.ts
+printf '%s\n' "import { a } from '@/src/r1';" > src/r2.ts
+sc; [ "$st" = 1 ] && has "✗ cycle.*src/r1.ts, src/r2.ts" && has "import aliases: @/ → (repo root)" ||
+  fail "S22d an alias to the repo root is followed and named as such (got $st: $out)"
+
 start 19
 printf '%s\n' 'def parse():' '    pass' > src/p1.py
 printf '%s\n' 'def parse():' '    def inner():' '        pass' > src/p2.py
@@ -188,6 +196,34 @@ sc; has "⚠ duplicate.*make: src/m1.ts, src/m2.ts" && ! has "ToString\|total" |
 printf '%s\n' '* { color: #333; }' '/* #444 */' '/*' '  .old { color: #555; }' '*/' > src/reset.css
 sc; has "⚠ colour.*src/reset.css: 1 colour" || fail "S23c a universal-selector line is not a comment; colours inside block comments, also across lines, do not count (got: $out)"
 sc --all; has "⚠ colour.*src/reset.css: 1 colour literals outside the tokens (lines 1)" || fail "S23d --all names no base count (got: $out)"
+
+start 19c; mkdir -p src/edge/a src/edge/b
+printf '%s\n' 'export function formatDate() {}' 'export function pick() {}' > src/edge/a/index.ts
+printf '%s\n' 'export function pick() {}' > src/edge/b/index.ts
+sc; has "⚠ duplicate.*pick: src/edge/a/index.ts, src/edge/b/index.ts" && ! has "duplicate.*formatDate" ||
+  fail "S23e names are not compared across a folder that runs separately, and still are inside it (got $st: $out)"
+mkdir -p src/workers src/edge/deep
+printf '%s\n' 'export function shared() {}' 'export function twin() {}' > src/workers/w.ts
+printf '%s\n' 'export function twin() {}' > src/workers/v.ts
+printf '%s\n' 'export function shared() {}' 'export function solo() {}' > src/edge/a/x.ts
+printf '%s\n' 'export function solo() {}' > src/edge/deep/d.ts
+sc; has "⚠ duplicate.*twin: src/workers/v.ts, src/workers/w.ts" && ! has "duplicate.*shared\|duplicate.*solo" ||
+  fail "S23f two separate folders are apart, a value with ./ and no slash or with a glob counts, and the closest folder wins (got $st: $out)"
+
+start 19d; sed -i.bak '1s/.*/export function formatDate() {}/' src/big.ts; rm -f src/big.ts.bak
+sc; flagged src/big.ts && has "^Flagged past the cap: src/big.ts$" && ! has "size.*src/big.ts" ||
+  fail "S23g a flagged file past the cap that did not grow is named as past the cap (got $st: $out)"
+start 19e; sed -i.bak "1s|.*|import { formatDate } from './util';|" src/big.ts; rm -f src/big.ts.bak
+git commit -q -am big-imports-util; git switch -q -c w19e-cycle
+printf '%s\n' "import { v } from './big';" 'export function formatDate() {}' > src/util.ts
+sc --base w19e; flagged src/big.ts && has "^Flagged past the cap: src/big.ts$" ||
+  fail "S23h a file past the cap pulled in by a new cycle, untouched by the change, is named as past the cap (got $st: $out)"
+start 19f; mkdir -p src/out
+printf '%s\n' '## Code limits' '- **File size:** warn at 5 lines · cap at 10' \
+  '- **Where configuration, tokens and copy live:** `./src/palette.css`' '- **Files exempt from the code limits:** `./src/out/*`' > "$tmp/dotpaths.md"
+printf '%s\n' ':root { --a: #123456; }' > src/palette.css; lines src/out/x.ts 50
+sc --project "$tmp/dotpaths.md"; [ "$st" = 0 ] && has "no findings" ||
+  fail "S23i token and exempt paths written with ./ still match (got $st: $out)"
 
 cd "$r" || exit 1; start 20
 sc --project .jacquard/project.md; [ "$st" = 0 ] && has "settings: .*project.md" || fail "S24 a relative --project path is read (got $st: $out)"

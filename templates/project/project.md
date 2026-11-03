@@ -52,9 +52,10 @@ Verified in official documentation on {{DATE}}; recheck when upgrading.
 - **Where configuration, tokens and copy live:** {{CONFIG_PATHS, each in backticks, e.g. "`src/config/`, `src/styles/tokens.css`, `src/copy/`"; default "set in the walking skeleton"}}
 - **Files exempt from the code limits:** {{SIZE_EXEMPT, globs in backticks, e.g. "`src/generated/*`"; default "generated files and fixtures"}}
 - **Names that repeat by convention** (not reported as duplicates): {{REPEATED_NAMES, each in backticks, e.g. the framework's required exports; default "none"}}
+- **Folders that run separately** (cannot share code with the rest, so names are not compared across them): {{SEPARATE_FOLDERS, folders or globs, each in backticks, e.g. "`supabase/functions/`"; default "none"}}
 - **Per-frame budget** (code that runs every frame): {{FRAME_BUDGET_MS, default "none"}}
 
-The kit's `structure-check.sh` reads this section: the file warning and cap numbers, and the values in backticks on the configuration, exempt and repeated-names lines. Function size is not measured by it.
+The kit's `structure-check.sh` reads this section: the file warning and cap numbers, and the values in backticks on the configuration, exempt, repeated-names and separate-folders lines. Function size is not measured by it.
 
 ## Environments
 
