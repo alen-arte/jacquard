@@ -102,7 +102,7 @@ run status; grep -q 'cloud/feat: in sync' "$tmp/out" || fail "C17 after prepare,
 # the cloud pulls without conflict, works again; a land that stops halfway is finished by hand, then run again
 cd "$c" || exit 1
 git pull -q --ff-only origin cloud/feat || fail "C19 the cloud session can fast-forward to what prepare pushed"
-echo 'cloud edit' > app.txt; echo x > c5.txt; git add c5.txt; git commit -q -m "R5: first"
+echo 'cloud edit' > app.txt; echo x > c5.txt; echo '{}' > package.json; git add c5.txt package.json; git commit -q -m "R5: first"
 git commit -q -am "R5: second"; cloud_push
 cd "$w" || exit 1
 echo 'computer edit' > app.txt; git commit -q -am "R6: computer edits app"
@@ -114,6 +114,7 @@ echo resolved > app.txt; git add app.txt; git am --continue >/dev/null 2>&1 || f
 before="$(git rev-parse HEAD)"
 run land || fail "C22 land runs again after a halfway stop: $(cat "$tmp/out")"
 [ "$(git rev-parse HEAD)" = "$before" ] || fail "C23 commits already landed are never applied twice"
+grep -q 'run or give instructions: package.json' "$tmp/out" || fail "C23b after a halfway stop, the files that run are still named: $(cat "$tmp/out")"
 run status; grep -q 'cloud/feat: in sync' "$tmp/out" || fail "C24 status is in sync after the halfway land: $(cat "$tmp/out")"
 
 # keeping this computer's version in a conflict, the way the stop says, does not bring the loop back
@@ -247,7 +248,7 @@ run land || fail "C51 land works from an older-format sync point: $(cat "$tmp/ou
 # the branch the kit branch follows is gone without being integrated: only the user's say moves it
 git switch -q away/feat; git branch -q -D feat
 run prepare && fail "C53 a branch that does not hold the gone branch's work cannot take the kit branch over on its own"
-grep -q -- '--take-over' "$tmp/out" || fail "C53b the refusal says how the user can let it: $(cat "$tmp/out")"
+grep -q -- '--take-over' "$tmp/out" && grep -q 'git branch feat [0-9a-f]' "$tmp/out" || fail "C53b the refusal gives both ways, bring it back or take over: $(cat "$tmp/out")"
 run prepare --take-over || fail "C54 with --take-over, the kit branch follows this branch: $(cat "$tmp/out")"
 run prepare || fail "C54b and afterwards without it: $(cat "$tmp/out")"
 

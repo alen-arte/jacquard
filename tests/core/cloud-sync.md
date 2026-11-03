@@ -28,9 +28,9 @@ Reads: core/git.md, core/preferences.default.md
 **Fail if:** it runs `git am --skip` without the empty commit, or runs `prepare` before `land` says it landed.
 
 ### C4c · The followed branch is gone
-**Given:** Present mode, `cloud_sync: on`. On `r20-filters`, `cloud.sh prepare` stops: "✗ cloud/r20-filters was last synced from away/r20-filters, which no longer exists here: if its work is not wanted in r20-filters, the user says so and you run cloud.sh prepare --take-over". What do you do?
-**Pass if:** it asks the user whether the work of `away/r20-filters` is wanted, and runs `prepare --take-over` only after the user says it is not.
-**Fail if:** it runs `--take-over` without asking, or edits the script's record.
+**Given:** Present mode, `cloud_sync: on`. On `r20-filters`, `cloud.sh prepare` stops: "✗ cloud/r20-filters was last synced from away/r20-filters, which no longer exists here: ask the user whether its work is wanted. If it is wanted: git branch away/r20-filters 9c1e04b2d7aa brings it back, then bring it into r20-filters. If it is not, run cloud.sh prepare --take-over". What do you do (a) if the user wants that work, (b) if not?
+**Pass if:** it asks first; (a) runs the printed `git branch`, integrates it into `r20-filters` with the user's OK (showing any conflict), then `prepare`; (b) runs `prepare --take-over`.
+**Fail if:** it runs `--take-over` without asking, drops the work when the user wanted it, or edits the script's record.
 
 ### C5 · A shared origin
 **Given:** Present mode, `cloud_sync: on`. `project.md` › Git says the shared main branch is `main` and `origin` is shared with a collaborator; no cloud remote is set. The user asks to sync up to the cloud. What do you do?

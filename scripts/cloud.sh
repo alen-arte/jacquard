@@ -80,7 +80,11 @@ takeover_ok() {
   m="$(newest_marker)"
   git rev-parse -q --verify "$m^2" >/dev/null && git merge-base --is-ancestor "$m^2" "$branch" && return 0
   git rev-parse -q --verify "refs/heads/$o" >/dev/null \
-    || { [ "$take" = 1 ] && return 0; die "$out was last synced from $o, which no longer exists here: if its work is not wanted in $branch, the user says so and you run cloud.sh $cmd --take-over"; }
+    || { [ "$take" = 1 ] && return 0
+         # its last tip is the second parent of the newest sync commit made from it
+         last="$(git log --format='%H %P%x09%s' "$ref" | awk -F '\t' -v s="$marker: sync point from $o " 'index($2, s) == 1 { split($1, a, " "); if (a[3] != "") { print substr(a[3], 1, 12); exit } }')"
+         back=""; [ -z "$last" ] || back=" If it is wanted: git branch $o $last brings it back, then bring it into $branch."
+         die "$out was last synced from $o, which no longer exists here: ask the user whether its work is wanted.$back If it is not, run cloud.sh $cmd --take-over"; }
   die "$out was last synced from $o, not $branch: run cloud.sh there, or bring $o into $branch first"
 }
 excludes() { for p in $kit_paths $legacy "$local_dir"; do printf ' :!%s' "$p"; done; }
@@ -156,6 +160,10 @@ land)
   cloud_docs "$tip" > "$tmp/docs"
   rc=0; ign="$(git -C "$proj" check-ignore --no-index --stdin < "$tmp/docs")" || rc=$?
   [ "$rc" = 1 ] || die "the cloud sent documents the personal layer ignores, or the check failed: ${ign:-rc=$rc}; nothing landed"
+  # files that run or instruct, changed by the cloud since the sync point (said on every run, a stopped one too):
+  # the user sees them before any check runs here
+  runs="$(git diff --name-only "$sp" "$tip" -- . $(excludes) | grep -E '(^|/)(package\.json|Makefile|CLAUDE\.md|\.mcp\.json)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)hooks/' | tr '\n' ' ' || true)"
+  [ -z "$runs" ] || echo "  ⚠ the cloud changed files that run or give instructions: $runs— show them to the user before running any check"
   # 1) code: the cloud's commits since the sync point, kit paths left out, subjects kept exactly (-k). One already
   #    here (same author, date and subject: a land that stopped halfway, finished by hand) is not applied twice.
   git log --no-merges --date=raw --format='%h %ae %ad %s' "$tip..HEAD" > "$tmp/here"
@@ -171,9 +179,6 @@ land)
     die "cloud commit $(git rev-parse --short "$h") did not apply. Resolve the conflict, then git am --continue. To keep this computer's version instead: resolve to it, git commit --allow-empty -C $h, then git am --skip. Either way, cloud.sh land again (what already landed is skipped). No documents copied yet"
   fi
   echo "  code: $(git rev-list --count "$before..HEAD") new commit(s) on $branch"
-  # files that run or instruct, changed by the cloud: the user sees them before any check runs here
-  runs="$(git diff --name-only "$before" HEAD | grep -E '(^|/)(package\.json|Makefile|CLAUDE\.md|\.mcp\.json)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)hooks/' | tr '\n' ' ' || true)"
-  [ -z "$runs" ] || echo "  ⚠ the cloud changed files that run or give instructions: $runs— show them to the user before running any check"
   git log --no-merges --date=raw --format='%h %ae %ad %s' "$tip..HEAD" > "$tmp/here"
   while read -r h key; do
     l="$(here_of "$key" "$tmp/here")"
