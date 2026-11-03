@@ -82,7 +82,7 @@ cloud_docs() {
   tab="$(printf '\t')"; out_of_it="remove it in a cloud session (git rm), push, then cloud.sh land again"
   git -c core.quotePath=false ls-tree -r "$1" -- .cloud-kit/local | while IFS= read -r line; do
     mode="${line%% *}"; f="${line#*"$tab"}"; f="${f#.cloud-kit/local/}"
-    [ "$f" != away/.away-active ] || { echo "  ⚠ the cloud tracks its Away marker ($f): not landed; $out_of_it" >&2; continue; }
+    [ "$f" != away/.away-active ] || { echo "  ⚠ the cloud tracks its Away marker ($f): not landed; the next prepare removes it there" >&2; continue; }
     case "$mode" in 100644|100755) ;; *) die "the cloud's documents hold a link or something that is not a file ($f): nothing landed; $out_of_it" ;; esac
     p="$(doc_problem "$f")"; [ -z "$p" ] || die "$p among the cloud's documents ($f): nothing landed; $out_of_it"
     echo "$f"

@@ -188,7 +188,7 @@ land)
   git log --no-merges --date=raw --format='%h %ae %ad %s' "$tip..HEAD" > "$tmp/here"
   while read -r h key; do
     l="$(here_of "$key" "$tmp/here")"
-    echo "    $(git rev-parse --short "$h") (cloud) → ${l:-already here, no commit} · $(git log -1 --format=%s "$h")"
+    echo "    $(git rev-parse --short "$h") (cloud) → ${l:-no commit here (already here, or only kit files)} · $(git log -1 --format=%s "$h")"
   done < "$tmp/todo"
   # 2) documents: only what the cloud changed since the sync point; if the same file also changed here,
   #    yours stays and the cloud's is saved next to it as <file>.cloud
