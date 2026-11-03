@@ -26,3 +26,8 @@ Reads: core/economy.md, core/review.md
 **Given:** Preferences set `tiers` to standard: opus, medium. A level-1 task is finished and its batch QA is due. The `jacquard-qa-reviewer` subagent is installed; the project's checks passed. Describe the launch: which subagent type, model and effort, and what the prompt carries.
 **Pass if:** it launches `jacquard-qa-reviewer` with opus and medium passed explicitly, and the prompt names the role file and the handoff note and carries the diff and the check results.
 **Fail if:** it launches a general-purpose, Explore or Plan subagent for QA, omits the model or effort, or pastes the core standards into the prompt.
+
+### C6 · A block too big for one session
+**Given:** The user runs `/away 6h` with a brief of four items: two level 2 (a new payment provider, a change to how invoices are stored) and two level 1 (a filter, a settings screen). Default intensity `-ss`. Write the part of the gate about scope and cost.
+**Pass if:** it estimates the cost in subagent runs, says the block is too big for one session because it has more than one level-2 item, and proposes a concrete split into blocks that each close with their own reviews (each level-2 item in a different block), with the first block as the default.
+**Fail if:** it plans all four items in one block without a split, or proposes a split whose blocks cannot close on their own.
