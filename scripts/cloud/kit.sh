@@ -13,8 +13,9 @@ build_kit() {
   cp "$layer/preferences.md" "$k/personal/"
   # documents that the personal layer does not know yet might be private, so they stop the sync
   new="$(git -C "$proj" ls-files --others --exclude-standard -- index.md project.md away-profile.md docs roles 'away/*.md')"
-  case "$new" in *.cloud*) die "a document changed in both places is still waiting: merge each <file>.cloud into its <file> and delete it, then commit the layer. Nothing pushed:
-$new" ;; esac
+  waiting="$( { printf '%s\n' "$new"; git -C "$proj" ls-files -- '*.cloud'; } | grep '\.cloud$' || true)"
+  [ -z "$waiting" ] || die "a document changed in both places is still waiting: merge each <file>.cloud into its <file> and delete it (git rm if the layer tracks it), then commit the layer. Nothing pushed:
+$waiting"
   [ -z "$new" ] || die "the personal layer does not version these yet (commit or ignore them first), nothing pushed:
 $new"
   for f in index.md project.md away-profile.md; do cp "$proj/$f" "$k/local/"; done        # documents only: no QA captures, backups or diffs
@@ -24,6 +25,10 @@ $new"
   (cd "$k/local" && find . -type f -print0) | git -C "$proj" check-ignore -z --no-index --stdin | (cd "$k/local" && xargs -0 -r rm -f --)
   rc=0; (cd "$k/local" && find . -type f -print0) | git -C "$proj" check-ignore -z --no-index --stdin >/dev/null || rc=$?
   [ "$rc" = 1 ] || die "the private-file check failed (rc=$rc): nothing pushed"
+  # only what land would take back travels (one rule both ways): the rest stays on this computer
+  (cd "$k/local" && find . -type f) | sed 's|^\./||' | while IFS= read -r f; do
+    [ -z "$(doc_problem "$f")" ] || { rm -f "$k/local/$f"; echo "  ⚠ not sent to the cloud ($(doc_problem "$f")): $f"; }
+  done
   cp -R "$k/jacquard/skills/." "$wt/.claude/skills/"; cp "$k/jacquard/agents/"*.md "$wt/.claude/agents/"  # where Claude Code looks in a project
   printf '%s\n' "$local_dir" > "$k/local-folder"
   cat > "$k/bootstrap.sh" <<'EOF'
@@ -37,7 +42,9 @@ mkdir -p "$HOME/.claude" "$HOME/repos/jacquard-personal"
 [ -e "$HOME/.claude/jacquard" ] || ln -s "$root/.cloud-kit/jacquard" "$HOME/.claude/jacquard"
 [ -e "$HOME/repos/jacquard-personal/preferences.md" ] || ln -s "$root/.cloud-kit/personal/preferences.md" "$HOME/repos/jacquard-personal/preferences.md"
 [ -e "$root/$l" ] || ln -s "$root/.cloud-kit/local" "$root/$l"
-grep -qx "/$l" "$root/.git/info/exclude" 2>/dev/null || echo "/$l" >> "$root/.git/info/exclude"
+for x in "/$l" /.cloud-kit/local/away/.away-active; do   # the link, and the Away guard's marker of a block run here
+  grep -qx "$x" "$root/.git/info/exclude" 2>/dev/null || echo "$x" >> "$root/.git/info/exclude"
+done
 # then the Away guard's own session start (a resumed Away session starts in Present), as on the computer
 exec sh "$HOME/.claude/jacquard/scripts/away-guard.sh" session-start "$l"
 EOF
@@ -62,15 +69,22 @@ EOF
   python3 "$parts/settings.py" "$repo/.claude/settings.local.json" "$wt/.claude/settings.json" "$local_dir"
 }
 
-# The documents a cloud tip ($1) may carry back: regular files of the travelling set, with plain names. Anything else
-# stops the land before a file is written. Prints one path per line, relative to the local folder.
+# The rule for a project document that travels, both ways: a plain name in the travelling set. Prints why not, or nothing.
+doc_problem() {
+  case "$1" in \"*|.*|*/.*) echo "unusual file name"; return ;; esac
+  case "$1" in away/*/*) echo "not a project document"; return ;; esac
+  case "$1" in index.md|project.md|away-profile.md|docs/*|roles/*|away/*.md) ;; *) echo "not a project document" ;; esac
+}
+
+# The documents a cloud tip ($1) may carry back: regular files that pass doc_problem. Anything else stops the land
+# before a file is written. Prints one path per line, relative to the local folder.
 cloud_docs() {
-  tab="$(printf '\t')"
+  tab="$(printf '\t')"; out_of_it="remove it in a cloud session (git rm), push, then cloud.sh land again"
   git -c core.quotePath=false ls-tree -r "$1" -- .cloud-kit/local | while IFS= read -r line; do
     mode="${line%% *}"; f="${line#*"$tab"}"; f="${f#.cloud-kit/local/}"
-    case "$mode" in 100644|100755) ;; *) die "the cloud's documents hold a link or something that is not a file ($f): nothing landed" ;; esac
-    case "$f" in \"*|.*|*/.*) die "unusual file name among the cloud's documents ($f): nothing landed" ;; esac
-    case "$f" in away/*/*) die "not a project document ($f): nothing landed" ;; esac
-    case "$f" in index.md|project.md|away-profile.md|docs/*|roles/*|away/*.md) echo "$f" ;; *) die "not a project document ($f): nothing landed" ;; esac
+    [ "$f" != away/.away-active ] || { echo "  ⚠ the cloud tracks its Away marker ($f): not landed; $out_of_it" >&2; continue; }
+    case "$mode" in 100644|100755) ;; *) die "the cloud's documents hold a link or something that is not a file ($f): nothing landed; $out_of_it" ;; esac
+    p="$(doc_problem "$f")"; [ -z "$p" ] || die "$p among the cloud's documents ($f): nothing landed; $out_of_it"
+    echo "$f"
   done
 }

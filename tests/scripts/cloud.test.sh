@@ -178,6 +178,17 @@ cd "$w" || exit 1
 run land || fail "C33 once the cloud's documents are plain, land works: $(cat "$tmp/out")"
 [ -f c11.txt ] && grep -q 'plain again' "$p/docs/roadmap.md" || fail "C33b the held-back work lands"
 commit_layer docs
+# an Away block run in the cloud tracked its marker: land skips it with a warning instead of blocking for good
+cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
+mkdir -p .cloud-kit/local/away; touch .cloud-kit/local/away/.away-active; echo z > c17.txt; git add -A; git commit -q -m "R17: away in the cloud"; cloud_push
+cd "$w" || exit 1
+run land || fail "C33c a tracked Away marker from the cloud does not block land: $(cat "$tmp/out")"
+[ ! -e "$p/away/.away-active" ] && grep -q 'Away marker' "$tmp/out" || fail "C33d the marker never lands here, and land says so"
+# a layer file land would refuse (a dot file) is not sent, so it can never block the way back
+touch "$p/docs/.gitkeep"; commit_layer keep
+run prepare || fail "C33e prepare with a dot file in the layer: $(cat "$tmp/out")"
+at .cloud-kit/local/docs/.gitkeep >/dev/null && fail "C33f a file land would refuse is never sent"
+grep -q 'not sent to the cloud.*docs/.gitkeep' "$tmp/out" || fail "C33g prepare names what it did not send"
 
 # the remote must be one plain GitHub address of a private repo only the user can see
 git switch -q -c away/other
@@ -258,5 +269,8 @@ run prepare || fail "C55 first sync of away/solo: $(cat "$tmp/out")"
 git switch -q -c solo main; git branch -q -D away/solo
 run prepare && fail "C55b solo cannot take cloud/solo over on its own"
 grep -q 'git branch away/solo [0-9a-f]' "$tmp/out" || fail "C55c after a single sync, the refusal still says how to bring the branch back: $(cat "$tmp/out")"
+git branch away/solo "$(sed -n 's/.*git branch away\/solo \([0-9a-f]*\).*/\1/p' "$tmp/out")"; git merge -q --no-edit away/solo
+git branch -q -D away/solo
+run prepare || fail "C55d once solo holds that work, it takes over even with the branch gone after a single sync: $(cat "$tmp/out")"
 
 finish "cloud"

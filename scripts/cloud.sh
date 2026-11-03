@@ -77,14 +77,15 @@ takeover_ok() {
   o="$(followed)"
   [ -z "$o" ] || [ "$o" = "$branch" ] && return 0
   git rev-parse -q --verify "refs/heads/$o" >/dev/null && git merge-base --is-ancestor "refs/heads/$o" "$branch" && return 0
-  m="$(newest_marker)"
-  git rev-parse -q --verify "$m^2" >/dev/null && git merge-base --is-ancestor "$m^2" "$branch" && return 0
+  m="$(newest_marker)"; held="$m^2"                            # the work branch's tip at the last sync
+  git rev-parse -q --verify "$held" >/dev/null || held="$m^1"  # a first sync has that tip as its only parent
+  git merge-base --is-ancestor "$held" "$branch" 2>/dev/null && return 0
   git rev-parse -q --verify "refs/heads/$o" >/dev/null \
     || { [ "$take" = 1 ] && return 0
          # its last tip: the newest sync commit made from it (0.2.10 format) has it as second parent, or as only one on a first sync
          last="$(git log --format='%H %P%x09%s' "$ref" | awk -F '\t' -v s="$marker: sync point from $o (its files" 'index($2, s) == 1 { split($1, a, " "); print substr(a[3] != "" ? a[3] : a[2], 1, 12); exit }')"
          back=""; [ -z "$last" ] || back=" If it is wanted: git branch $o $last brings it back, then bring it into $branch."
-         die "$out was last synced from $o, which no longer exists here: ask the user whether its work is wanted.$back If it is not, run cloud.sh $cmd --take-over"; }
+         die "$out was last synced from $o, which no longer exists here: ask the user whether its work is wanted.$back If it is not: cloud.sh land --take-over first if the cloud has work not landed (that later cloud work comes here), then cloud.sh prepare --take-over, which puts this branch's files in the cloud"; }
   die "$out was last synced from $o, not $branch: run cloud.sh there, or bring $o into $branch first"
 }
 excludes() { for p in $kit_paths $legacy "$local_dir"; do printf ' :!%s' "$p"; done; }
@@ -167,15 +168,20 @@ land)
   # 1) code: the cloud's commits since the sync point, kit paths left out, subjects kept exactly (-k). One already
   #    here (same author, date and subject: a land that stopped halfway, finished by hand) is not applied twice.
   git log --no-merges --date=raw --format='%h %ae %ad %s' "$tip..HEAD" > "$tmp/here"
-  git log --reverse --no-merges --date=raw --format='%H %ae %ad %s' "$sp..$tip" -- . $(excludes) > "$tmp/todo"
+  git log --reverse --no-merges --date=raw --format='%H %ae %ad %s' "$sp..$tip" ^HEAD -- . $(excludes) > "$tmp/todo"
   : > "$tmp/patches"; : > "$tmp/applying"
   while read -r h key; do
     [ -z "$(here_of "$key" "$tmp/here")" ] || continue
-    git format-patch -k --stdout -1 "$h" -- . $(excludes) >> "$tmp/patches"; echo "$h" >> "$tmp/applying"
+    ex="$(excludes)"; git cat-file -e "$h:CLAUDE.local.md" 2>/dev/null || ex="$ex :!CLAUDE.md"   # a commit from the older format
+    git format-patch -k --stdout -1 "$h" -- . $ex > "$tmp/one"
+    [ -s "$tmp/one" ] || continue
+    cat "$tmp/one" >> "$tmp/patches"; echo "$h" >> "$tmp/applying"
   done < "$tmp/todo"
   before="$(git rev-parse HEAD)"
   if [ -s "$tmp/patches" ] && ! git am -k --3way -q < "$tmp/patches"; then
-    h="$(sed -n "$(cat "$(git rev-parse --git-path rebase-apply)/next")p" "$tmp/applying")"
+    next="$(git rev-parse --git-path rebase-apply)/next"
+    [ -f "$next" ] || die "git am could not start: nothing landed; run cloud.sh land again once git works here"
+    h="$(sed -n "$(cat "$next")p" "$tmp/applying")"
     die "cloud commit $(git rev-parse --short "$h") did not apply. Resolve the conflict, then git am --continue. To keep this computer's version instead: resolve to it, git commit --allow-empty -C $h, then git am --skip. Either way, cloud.sh land again (what already landed is skipped). No documents copied yet"
   fi
   echo "  code: $(git rev-list --count "$before..HEAD") new commit(s) on $branch"
