@@ -9,6 +9,8 @@
 #   cloud.sh prepare   sync up: write cloud/<branch> from this branch plus the kit, push it, make it the default branch
 #   cloud.sh land      sync down: copy the cloud's new commits here (kit paths left out), copy its documents back
 #   cloud.sh status    is there cloud work not landed yet? (and is the cloud remote still private?)
+# A kit branch follows one work branch; `prepare|land --take-over` moves it to this one when that branch is gone and the
+# user says its work is not wanted here.
 #
 # The cloud remote is the project's own repo, `origin`, by default. Only when origin is shared with other people, a
 # separate private remote is set in this repo's own git config (never global, never tracked):
@@ -25,7 +27,7 @@ parts="$(cd "$(dirname "$0")" && pwd)/cloud"
 remote="$(git config --local --get jacquard.cloudRemote || echo origin)"  # private remote the cloud session is attached to
 kit="${JACQUARD_KIT:-$(cd "$(dirname "$0")/.." && pwd)}"                  # installed framework
 layer="${JACQUARD_PERSONAL:-$HOME/repos/jacquard-personal}"
-cmd="${1:-}"
+cmd="${1:-}"; take=0; [ "${2:-}" != --take-over ] || take=1
 repo="$(git rev-parse --show-toplevel)"; cd "$repo"
 # the project's local folder: the one whose index.md CLAUDE.local.md imports (a link into the personal layer)
 local_dir=""; [ ! -f CLAUDE.local.md ] || local_dir="$(tr -d '\r' < CLAUDE.local.md | sed -n 's#^@\([^~/][^ ]*\)/index\.md$#\1#p' | head -n 1)"
@@ -53,11 +55,13 @@ newest_marker() {
   git log --format='%H %s' "$ref" | awk -v m="$marker:" '{ s = substr($0, index($0, " ") + 1) } index(s, m) == 1 { print substr($0, 1, index($0, " ") - 1); exit }'
 }
 # The last point both sides share: the newest one this computer wrote (its last sync commit, or the last cloud tip it
-# landed); without one, the newest sync commit (a kit branch synced before 0.2.10, or from another computer).
+# landed); without one, the newest sync commit (a kit branch synced before 0.2.10, or from another computer). A
+# one-line record comes from before 0.2.10, when prepare did not write it: it counts only if it is not older than that.
 sync_point() {
-  r="$(sed -n 1p "$(rec)" 2>/dev/null || true)"
-  if [ -n "$r" ] && git merge-base --is-ancestor "$r" "$ref" 2>/dev/null; then echo "$r"; return; fi
-  m="$(newest_marker)"
+  r="$(sed -n 1p "$(rec)" 2>/dev/null || true)"; m="$(newest_marker)"
+  if [ -n "$r" ] && git merge-base --is-ancestor "$r" "$ref" 2>/dev/null; then
+    if [ -n "$(sed -n 2p "$(rec)")" ] || git merge-base --is-ancestor "$m" "$r" 2>/dev/null; then echo "$r"; return; fi
+  fi
   [ -n "$m" ] || die "$out on $remote has no sync commit (cloud.sh did not make it): nothing done"
   echo "$m"
 }
@@ -68,13 +72,15 @@ followed() {
   echo "$o"
 }
 # Another work branch (away/x and x share cloud/x) takes the kit branch over only when it already holds that work,
-# after integrating it say, never by dropping it.
+# after integrating it say, never by dropping it; or, when that branch is gone, if the user says so (--take-over).
 takeover_ok() {
   o="$(followed)"
   [ -z "$o" ] || [ "$o" = "$branch" ] && return 0
   git rev-parse -q --verify "refs/heads/$o" >/dev/null && git merge-base --is-ancestor "refs/heads/$o" "$branch" && return 0
   m="$(newest_marker)"
   git rev-parse -q --verify "$m^2" >/dev/null && git merge-base --is-ancestor "$m^2" "$branch" && return 0
+  git rev-parse -q --verify "refs/heads/$o" >/dev/null \
+    || { [ "$take" = 1 ] && return 0; die "$out was last synced from $o, which no longer exists here: if its work is not wanted in $branch, the user says so and you run cloud.sh $cmd --take-over"; }
   die "$out was last synced from $o, not $branch: run cloud.sh there, or bring $o into $branch first"
 }
 excludes() { for p in $kit_paths $legacy "$local_dir"; do printf ' :!%s' "$p"; done; }
@@ -165,6 +171,9 @@ land)
     die "cloud commit $(git rev-parse --short "$h") did not apply. Resolve the conflict, then git am --continue. To keep this computer's version instead: resolve to it, git commit --allow-empty -C $h, then git am --skip. Either way, cloud.sh land again (what already landed is skipped). No documents copied yet"
   fi
   echo "  code: $(git rev-list --count "$before..HEAD") new commit(s) on $branch"
+  # files that run or instruct, changed by the cloud: the user sees them before any check runs here
+  runs="$(git diff --name-only "$before" HEAD | grep -E '(^|/)(package\.json|Makefile|CLAUDE\.md|\.mcp\.json)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)hooks/' | tr '\n' ' ' || true)"
+  [ -z "$runs" ] || echo "  ⚠ the cloud changed files that run or give instructions: $runs— show them to the user before running any check"
   git log --no-merges --date=raw --format='%h %ae %ad %s' "$tip..HEAD" > "$tmp/here"
   while read -r h key; do
     l="$(here_of "$key" "$tmp/here")"

@@ -86,6 +86,7 @@ run prepare && fail "C9 prepare refuses while the cloud has work not landed"
 run land || fail "C10 land works: $(cat "$tmp/out")"
 [ -f new.txt ] && grep -q 'from the cloud' CLAUDE.md || fail "C11 land brings the code and the project's CLAUDE.md edit"
 [ "$(git log -1 --format=%s)" = "[wip] R2: docs" ] || fail "C11b land keeps the cloud's subjects exactly"
+grep -q 'files that run or give instructions: CLAUDE.md' "$tmp/out" || fail "C11c land names the landed files that run or instruct"
 grep -q 'roadmap from the cloud' "$p/docs/roadmap.md" || fail "C12 land copies the documents back to the layer"
 [ "$(grep -c '(cloud) → [0-9a-f]' "$tmp/out")" = 2 ] || fail "C13 land says which local commit each cloud commit became: $(cat "$tmp/out")"
 run status; grep -q 'cloud/feat: in sync' "$tmp/out" || fail "C14 after land, status is in sync: $(cat "$tmp/out")"
@@ -117,6 +118,9 @@ run status; grep -q 'cloud/feat: in sync' "$tmp/out" || fail "C24 status is in s
 
 # keeping this computer's version in a conflict, the way the stop says, does not bring the loop back
 commit_layer docs; run prepare || fail "C24b prepare after the halfway land: $(cat "$tmp/out")"
+# a one-line record from before 0.2.10 (written by land only) that is older than the newest sync commit is not used
+git --git-dir="$r" rev-parse cloud/feat^1 > .git/jacquard-cloud/cloud_feat
+run status; grep -q 'cloud/feat: in sync' "$tmp/out" || fail "C24c an old record older than the sync commit does not reopen the loop: $(cat "$tmp/out")"
 cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
 echo 'cloud again' > app.txt; git commit -q -am "R8: cloud edits app again"; cloud_push
 cd "$w" || exit 1
@@ -180,14 +184,18 @@ env GH_VISIBILITY=PUBLIC sh "$cloud" prepare >/dev/null 2>&1 && fail "C34 a publ
 env GH_COLLABORATORS=2 sh "$cloud" prepare >/dev/null 2>&1 && fail "C35 a remote with other collaborators gets nothing"
 git remote set-url --push origin "ssh://host.example/github.com/me/demo.git"
 run prepare && fail "C36 a push URL that is not a plain GitHub address gets nothing"
+git remote set-url --push origin "https://x-token:s3cr3tvalue${at}host.example/me/demo.git"
+run prepare; grep -q s3cr3tvalue "$tmp/out" && fail "C36b a token inside the URL is never printed"
+git remote set-url --push origin "ssh://host.example/github.com/me/demo.git"
 git remote set-url --push origin "$url"; git remote set-url --add --push origin "git${at}github.com:me/mirror.git"
 run prepare && fail "C37 a remote that pushes to several URLs gets nothing"
 git config --unset-all remote.origin.pushurl
 remote_has cloud/other && fail "C38 nothing reached the refused remotes"
 env GH_ENVIRONMENTS=2 sh "$cloud" prepare > "$tmp/out" 2>&1 && fail "C39 a repo with deployment environments needs the user's yes first"
-grep -q 'git config jacquard.cloudDeployOk true' "$tmp/out" || fail "C39b the refusal gives the user the command to say yes"
-git config jacquard.cloudDeployOk true
+grep -q 'git config jacquard.cloudDeployOk "deployment environments"' "$tmp/out" || fail "C39b the refusal gives the user the command to say yes"
+git config jacquard.cloudDeployOk "deployment environments"
 env GH_ENVIRONMENTS=2 sh "$cloud" prepare >/dev/null 2>&1 || fail "C40 with the user's yes, a repo that deploys is synced"
+env GH_ENVIRONMENTS=2 GH_HOOKS=1 sh "$cloud" prepare >/dev/null 2>&1 && fail "C40b something new that runs on its own asks again"
 git config --unset jacquard.cloudDeployOk
 run status
 env GH_VISIBILITY=PUBLIC sh "$cloud" status > "$tmp/out" 2>&1; grep -q 'no longer a private repo' "$tmp/out" || fail "C41 status warns when the cloud remote stops being private"
@@ -235,5 +243,12 @@ cd "$w" || exit 1
 rm -f .git/jacquard-cloud/cloud_feat
 run land || fail "C51 land works from an older-format sync point: $(cat "$tmp/out")"
 [ -f c7.txt ] && ! grep -q 'cloud note' CLAUDE.md || fail "C52 from the older format, the kit's CLAUDE.md never lands"
+
+# the branch the kit branch follows is gone without being integrated: only the user's say moves it
+git switch -q away/feat; git branch -q -D feat
+run prepare && fail "C53 a branch that does not hold the gone branch's work cannot take the kit branch over on its own"
+grep -q -- '--take-over' "$tmp/out" || fail "C53b the refusal says how the user can let it: $(cat "$tmp/out")"
+run prepare --take-over || fail "C54 with --take-over, the kit branch follows this branch: $(cat "$tmp/out")"
+run prepare || fail "C54b and afterwards without it: $(cat "$tmp/out")"
 
 finish "cloud"

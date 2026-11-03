@@ -15,7 +15,8 @@ mapped = lambda rules: [v for r in rules if not any(x in r for x in local)
 # the kit changes on the computer only (only Edit rules are consulted for writes); the kit branch never reaches main
 kit_files = ("~/.claude/jacquard/**", "**/.cloud-kit/jacquard/**", "**/.cloud-kit/personal/**", "**/.cloud-kit/bootstrap.sh",
              "**/.cloud-kit/local-folder", "**/.claude/settings.json", "**/CLAUDE.local.md")
-no_main = [f"Bash(git push {p})" for b in ("main", "master") for p in (f"* {b}", f"* {b}:*", f"*:{b}", f"*:refs/heads/{b}")]
+no_main = [f"Bash(git push {p})" for b in ("main", "master") for p in (f"* {b}", f"* {b}:*", f"*:{b}", f"*refs/heads/{b}")] \
+          + ["Bash(git push *--all*)"]          # a bare `git push` from a local main stays instruction-only (CLAUDE.local.md)
 deny = mapped(perms.get("deny", [])) + [f"Edit({p})" for p in kit_files] + no_main
 guard = lambda event: [{"hooks": [{"type": "command", "timeout": 10,
     "command": '[ "$CLAUDE_CODE_REMOTE" = true ] || exit 0; sh "$HOME/.claude/jacquard/scripts/away-guard.sh" %s %s' % (event, shlex.quote(local_folder))}]}]
