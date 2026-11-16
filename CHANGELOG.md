@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **One task per file; smaller default limits** (`core/standards.md` › Scalability, `scripts/structure-check.sh`): the rule is now stated as "a file does one thing, and its name says which"; line counts only flag a file that may be doing more. Defaults go from warn 300 / cap 500 to warn 200 / cap 300. A file past the cap that still does one clear task is examined once: split along real seams, or listed as exempt in `project.md` › Code limits with the reason. Projects that set their own numbers keep them. Script tests S1c, S20 and S28 updated.
+
 ## 0.2.11
 - **Cloud sync, closed further** (security review of 0.2.10; `scripts/cloud.sh`, `core/git.md` › Cloud sync):
   - A document whose name, or a folder's name, has a control character, a quote or a backslash never travels: `prepare` names it as not sent, so `land` no longer finds it coming back and stops. One created in the cloud is refused by `land`, which says how to remove it there. Both sides use the same rule.

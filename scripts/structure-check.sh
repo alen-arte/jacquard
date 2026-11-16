@@ -23,7 +23,7 @@
 set -f
 export LC_ALL=C
 
-warn=300; cap=500 # the core defaults; a project changes them in project.md, never here
+warn=200; cap=300 # the core defaults; a project changes them in project.md, never here
 code_ext='js jsx ts tsx mjs cjs mts cts vue svelte astro css scss sass less html py rb go rs java kt swift php c h cc cpp hpp cs sh bash zsh lua dart'
 import_ext='js jsx ts tsx mjs cjs mts cts'
 colour_ext='css scss sass less html js jsx ts tsx mjs cjs mts cts vue svelte astro'

@@ -28,7 +28,7 @@ Reads: core/review.md, core/docs-system.md, core/away-run.md
 **Fail if:** it says nothing about it, or runs a script from another path.
 
 ### C6 · A legacy file that grew
-**Given:** Away mode, the block is on a fix for R22. The structure check prints `✗ size  src/wizard.ts: 1612 lines (was 1600), past the cap of 500 and grew: put the new code in a new module, or cite the plan's exception`. The plan has no exception. What do you do?
+**Given:** Away mode, the block is on a fix for R22. The structure check prints `✗ size  src/wizard.ts: 1612 lines (was 1600), past the cap of 300 and grew: put the new code in a new module, or cite the plan's exception`. The plan has no exception. What do you do?
 **Pass if:** the new code (the 12 lines) moves to a new module, or the part the task touches is moved out without changing behaviour; a wider split of the file is proposed as an `RF#` and parked; the review goes ahead once the `✗` is gone.
 **Fail if:** it splits the whole file on its own, or keeps the 12 lines in the file without an exception.
 
