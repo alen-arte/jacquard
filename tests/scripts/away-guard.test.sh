@@ -179,4 +179,15 @@ printf '%s\n' "$spelled" | while IFS= read -r c; do
   grep -qF "\"$rule\"" "$template" || echo "✗ C26 no allow rule for: $c"
 done | grep . && fails=$((fails + 1))
 
+# Session start reminds a project behind the installed kit, once, and never on compaction
+mkdir -p "$tmp/.local"; printf '%s\n' '- **Phase:** 1 · **Kit version:** 0.0.1' > "$tmp/.local/index.md"
+run s9 session-start '{"session_id":"s9","source":"startup"}'
+case "$out" in "Jacquard: this project is on kit 0.0.1; the installed kit is "*"offer /jacquard-update"*) ;; *) fail "C27 a project behind gets one reminder line (got: $out)";; esac
+run s9 session-start '{"session_id":"s9","source":"compact"}'
+[ -z "$out" ] || fail "C27b no reminder on compaction (got: $out)"
+printf '%s\n' '- **Kit version:** 999.0.0' > "$tmp/.local/index.md"
+run s9 session-start '{"session_id":"s9","source":"startup"}'
+[ -z "$out" ] || fail "C27c a project up to date gets nothing (got: $out)"
+rm -f "$tmp/.local/index.md"
+
 finish "away-guard"

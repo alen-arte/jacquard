@@ -1,9 +1,11 @@
 ---
 name: jacquard-update
 description: "Bring this project's Jacquard files up to date with the installed kit version, piece by piece, with the user's OK."
-argument-hint: "[--check]"
+argument-hint: "[--check | --all]"
 disable-model-invocation: true
 ---
+
+**With `--all`:** works from any session, with or without a project. Run `~/.claude/jacquard/scripts/kit-version.sh all` (read-only; it reads each `projects/*/index.md` in the personal layer). For each project behind, say in plain words which changes since its version need `/jacquard-update` in that project (template, permissions, hooks, the version steps below), from `~/.claude/jacquard/CHANGELOG.md`; changes to core files already apply. Change nothing, then end with the projects to open and update, most behind first. Stop there.
 
 Update this project to the installed Jacquard version (`~/.claude/jacquard`, pinned to a release). If "Jacquard core standards" and this project's index were not loaded at session start (via `CLAUDE.local.md`), stop: say the project does not use Jacquard (suggest `/kickoff`), its imports were not approved, or kickoff ran in this same session (check `/context`; restart the session and approve).
 

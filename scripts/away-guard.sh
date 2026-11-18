@@ -9,7 +9,8 @@
 #   off            run by /back and the end of the block
 #   permission     PermissionRequest hook: deny with a park message
 #   elicitation    Elicitation hook: decline
-#   session-start  SessionStart hook: a resumed or cleared Away session starts in Present
+#   session-start  SessionStart hook: a resumed or cleared Away session starts in Present; a project behind
+#                  the installed kit gets one reminder line (kit-version.sh)
 # The marker <project>/<local folder>/away/.away-active holds the Away session's id and, on its
 # second line, when the guard expires (epoch seconds): the end time plus a margin, or a default
 # when the block has no end time, so a user who comes back without /back is not left with a guard
@@ -99,6 +100,10 @@ EOF
 EOF
     ;;
   session-start)
-    [ "$(field source)" = compact ] || { mine && rm -f "$marker"; } ;;
+    [ "$(field source)" = compact ] && exit 0
+    mine && rm -f "$marker"
+    # The one SessionStart hook every project has, so the kit-version reminder rides on it: a project behind
+    # the installed kit gets one line of context (kit-version.sh prints nothing otherwise)
+    "$(dirname "$0")/kit-version.sh" project "${dir%/away}/index.md" 2>/dev/null ;;
 esac
 exit 0
