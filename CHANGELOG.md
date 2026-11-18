@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.12
 - **The engineering advisor costs what the work is worth** (`core/review.md` › Intensity): strong · high whenever the work under review includes a level-2 task or a structural change (a new module or area, or a file newly past the cap, counts), plan reviews included; standard · normal only when all of it is level 0–1 and non-structural: a milestone or batch close over such work, or a duplication found in it. The re-review keeps the original review's tier. New prompt cases economy C7, C8; `docs/GUIDE.md` › Economy updated.
 - **One responsibility per file; smaller default limits** (`core/standards.md` › Scalability, `scripts/structure-check.sh`): the rule is now "a file does one thing, and its name says which"; line counts only flag a file that may do more. Defaults go from warn 300 / cap 500 to warn 200 / cap 300; projects that set their own numbers keep them.
   - **On upgrade:** a project on the core defaults now sees files of 301–500 lines as past the cap: they block when a task grows them, and the advisor's first whole read proposes an `RF#` for each. `/jacquard-update` says so once and offers to keep 300 / 500 or take the new limits after seeing the list.
