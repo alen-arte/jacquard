@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.13
 - **No project left behind** (`scripts/kit-version.sh`, `/jacquard-update --all`): a project whose `index.md` names an older kit than the installed one says so in one line when a stretch of work starts (startup or resume, not after `/clear`), and offers `/jacquard-update` without running it; in Away it goes in the report instead. A project newer than the install says to reinstall the kit. The reminder rides on the Away guard's session-start hook, so it reaches every project that has the Away guard hooks (0.2.7 and later, when accepted) as soon as the kit is installed, with no settings change; never in a cloud session. Only the version number is read from `index.md`. `/jacquard-update --all`, from any session, lists every project in the personal layer (`$JACQUARD_PERSONAL` or `~/repos/jacquard-personal`) with its version and what it needs, including one ahead of the install, and changes nothing; `--check` reads the installed version the same way (an `Unreleased` heading skipped); the update itself stays per project. Running it asks for permission the first time (no new allow rule). New script tests `kit-version.test.sh` and away-guard C27–C27e; new prompt case `/jacquard-update` C7.
 
 ## 0.2.12
