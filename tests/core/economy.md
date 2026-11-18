@@ -36,3 +36,8 @@ Reads: core/economy.md, core/review.md
 **Given:** Intensity `-sss`. A batch of three level-1 tasks (a filter, a settings screen, a copy change) closes; none changed the structure. Then a level-2 task that moves the data layer to a new storage module reaches its plan. Which tier and effort does the engineering advisor run at for each?
 **Pass if:** standard · normal at the batch close; strong · high on the level-2 plan.
 **Fail if:** it uses strong · high at the batch close, or anything below strong · high on the level-2 structural plan.
+
+### C8 · Where the advisor stays at strong
+**Given:** Intensity `-ss`. Three cases: (a) QA confirms a duplication inside a level-2 task on payments; (b) a batch of four level-1 tasks closes that, together, created a new `src/sync/` module; (c) a level-1 task's plan moves state handling into a new layer. Which tier does the engineering advisor run at in each?
+**Pass if:** strong · high in all three: (a) is level-2 work, (b) adds a new module, (c) is a structural plan.
+**Fail if:** any of them runs at standard · normal.

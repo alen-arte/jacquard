@@ -144,6 +144,17 @@ lines src/new.ts 301; lines src/mid.ts 201
 sc --project "$tmp/default.md"; [ "$st" = 1 ] && has "✗ size.*src/new.ts" && has "⚠ size.*src/mid.ts" ||
   fail "S20 'core default' uses 200 and 300 (got $st: $out)"
 
+start 16b
+{ sed -n '/^## Code limits/,/^## Environments/p' .jacquard/project.md | sed '$d'
+  echo '- **Raised caps** (one file each, with its reason): `src/big.ts` cap 20 · one algorithm, `./src/one.ts` cap 15 · a flat catalog'; } > "$tmp/raised.md"
+lines src/big.ts 18; lines src/one.ts 14
+sc --project "$tmp/raised.md"; [ "$st" = 0 ] && ! has "size.*src/big.ts" && ! has "size.*src/one.ts" && ! has "Flagged past the cap" ||
+  fail "S32 a file under its raised cap is not flagged, new or grown (got $st: $out)"
+lines src/big.ts 21
+sc --project "$tmp/raised.md"; [ "$st" = 1 ] && has "✗ size.*src/big.ts: 21 lines (was 12), past its raised cap of 20 and grew" && has "Flagged past the cap: src/big.ts" ||
+  fail "S32b past its raised cap and grew blocks, and counts as past the cap (got $st: $out)"
+sc; [ "$st" = 1 ] && has "past the cap of 10" || fail "S32c without the raised cap line the project cap applies (got $st: $out)"
+
 start 17; mkdir -p src/moved
 git mv src/big.ts src/moved/big.ts; git mv src/c1.ts src/c1b.ts
 printf '%s\n' "import { a } from './c1b';" 'export const b = 2;' > src/c2.ts

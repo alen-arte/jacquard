@@ -1,8 +1,11 @@
 # Changelog
 
 ## Unreleased
-- **The engineering advisor costs what the work is worth** (`core/review.md` › Intensity): strong · high stays for level-2 or structural work (its plan review included); its milestone and batch closes over level 0–1 work, and a duplication found, run at standard · normal. New prompt case economy C7.
-- **One task per file; smaller default limits** (`core/standards.md` › Scalability, `scripts/structure-check.sh`): the rule is now stated as "a file does one thing, and its name says which"; line counts only flag a file that may be doing more. Defaults go from warn 300 / cap 500 to warn 200 / cap 300. A file past the cap that still does one clear task is examined once: split along real seams, or listed as exempt in `project.md` › Code limits with the reason. Projects that set their own numbers keep them. Script tests S1c, S20 and S28 updated.
+- **The engineering advisor costs what the work is worth** (`core/review.md` › Intensity): strong · high whenever the work under review includes a level-2 task or a structural change (a new module or area, or a file newly past the cap, counts), plan reviews included; standard · normal only when all of it is level 0–1 and non-structural: a milestone or batch close over such work, or a duplication found in it. The re-review keeps the original review's tier. New prompt cases economy C7, C8; `docs/GUIDE.md` › Economy updated.
+- **One responsibility per file; smaller default limits** (`core/standards.md` › Scalability, `scripts/structure-check.sh`): the rule is now "a file does one thing, and its name says which"; line counts only flag a file that may do more. Defaults go from warn 300 / cap 500 to warn 200 / cap 300; projects that set their own numbers keep them.
+  - **On upgrade:** a project on the core defaults now sees files of 301–500 lines as past the cap: they block when a task grows them, and the advisor's first whole read proposes an `RF#` for each. `/jacquard-update` says so once and offers to keep 300 / 500 or take the new limits after seeing the list.
+  - **Raised caps** (`project.md` › Code limits, new template line): a file past the cap that does one clear thing (a single algorithm, a flat catalog) can get its own cap with its reason, proposed at its first whole read and approved by the user, never to clear a `✗` the task caused. It keeps that ceiling and stays in the duplicate, cycle and colour checks, which the exempt list (now marked for generated files only) skips.
+  - Script tests S1c, S20, S28 updated, new S32–S32c; prompt cases structure-check C6 updated, new C9; new `/jacquard-update` C6.
 
 ## 0.2.11
 - **Cloud sync, closed further** (security review of 0.2.10; `scripts/cloud.sh`, `core/git.md` › Cloud sync):
