@@ -120,7 +120,7 @@ git -C ~/.claude/jacquard checkout --detach v0.2.12
 
 New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/jacquard-update` in each project to bring its files up to date, piece by piece.
 
-To see whether a project or the install lags behind, `/jacquard-update --check` compares versions without changing anything; `/jacquard-update --all`, from any session, lists every project in your personal layer with what each needs. A project behind the installed kit also says so at the start of each session (from the Away guard's session-start hook, so no settings change is needed).
+To see whether a project or the install lags behind, `/jacquard-update --check` compares versions without changing anything; `/jacquard-update --all`, from any session, lists every project in your personal layer with what each needs. A project behind the installed kit also says so when a session starts, if it has the Away guard hooks (in the permissions template; a project set up before 0.2.7 gets them from `/jacquard-update`): the reminder rides on their session-start hook, so no other settings change is needed. Projects without them are covered by `--all` only.
 
 ### Upgrading from 0.1.1
 

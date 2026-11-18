@@ -102,8 +102,11 @@ EOF
   session-start)
     [ "$(field source)" = compact ] && exit 0
     mine && rm -f "$marker"
-    # The one SessionStart hook every project has, so the kit-version reminder rides on it: a project behind
-    # the installed kit gets one line of context (kit-version.sh prints nothing otherwise)
-    "$(dirname "$0")/kit-version.sh" project "${dir%/away}/index.md" 2>/dev/null ;;
+    # The SessionStart hook projects already have, so the kit-version reminder reaches them without a settings
+    # change: one line of context when the project and the installed kit differ (nothing otherwise). Only when a
+    # stretch of work starts (not after /clear), and never in a cloud session, which must not change the kit's files.
+    case "$(field source)" in startup|resume) ;; *) exit 0 ;; esac
+    [ "${CLAUDE_CODE_REMOTE:-}" = true ] && exit 0
+    sh "$(dirname "$0")/kit-version.sh" project "${dir%/away}/index.md" 2>/dev/null ;;
 esac
 exit 0

@@ -58,7 +58,7 @@ run s1 session-start '{"session_id":"s1","source":"compact"}'
 [ -e "$marker" ] || fail "C10 compaction must keep the marker"
 run s2 session-start '{"session_id":"s2","source":"startup"}'
 [ -e "$marker" ] || fail "C11 a new session elsewhere must keep another session's marker"
-[ -z "$out" ] || fail "C11b session-start must print nothing (stdout becomes context)"
+[ -z "$out" ] || fail "C11b session-start prints nothing for a project with no index (stdout becomes context)"
 
 # Resuming the Away session starts in Present: marker cleared
 run s1 session-start '{"session_id":"s1","source":"resume"}'
@@ -185,7 +185,11 @@ run s9 session-start '{"session_id":"s9","source":"startup"}'
 case "$out" in "Jacquard: this project is on kit 0.0.1; the installed kit is "*"offer /jacquard-update"*) ;; *) fail "C27 a project behind gets one reminder line (got: $out)";; esac
 run s9 session-start '{"session_id":"s9","source":"compact"}'
 [ -z "$out" ] || fail "C27b no reminder on compaction (got: $out)"
-printf '%s\n' '- **Kit version:** 999.0.0' > "$tmp/.local/index.md"
+run s9 session-start '{"session_id":"s9","source":"clear"}'
+[ -z "$out" ] || fail "C27d no reminder after /clear (got: $out)"
+out="$(printf '%s' '{"session_id":"s9","source":"startup"}' | CLAUDE_CODE_REMOTE=true "$guard" session-start .local 2>/dev/null)"
+[ -z "$out" ] || fail "C27e no reminder in a cloud session (got: $out)"
+printf '%s\n' "- **Kit version:** $(awk '/^## [0-9]+\.[0-9]+\.[0-9]+/ { print $2; exit }' "$kit/CHANGELOG.md")" > "$tmp/.local/index.md"
 run s9 session-start '{"session_id":"s9","source":"startup"}'
 [ -z "$out" ] || fail "C27c a project up to date gets nothing (got: $out)"
 rm -f "$tmp/.local/index.md"
