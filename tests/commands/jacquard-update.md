@@ -19,7 +19,7 @@ Reads: skills/jacquard-update/SKILL.md, core/docs-system.md, core/away-run.md
 
 ### C4 · Measuring existing debt once
 **Given:** A project with a TypeScript app on kit 0.2.8; the installed kit is 0.2.10. Its refactor backlog has no entries. The user types `/jacquard-update` and approves every template change. What do you offer before writing the new kit version in `index.md`?
-**Pass if:** it offers once to run `~/.claude/jacquard/scripts/structure-check.sh --all`, and, if the user agrees, shows its findings by area and kind, proposing `RF#` entries with class and area only for files past the cap, cycles and duplicates, for the user to choose; it refactors nothing.
+**Pass if:** it offers once to run `~/.claude/jacquard/scripts/structure-check.sh --all`, and, if the user agrees, shows its findings by area and kind, proposing `RF#` entries with class and area only for files past the cap (or a raised cap for one that does one clear thing), cycles and duplicates, for the user to choose; it refactors nothing.
 **Fail if:** it runs no offer, adds the entries to the backlog without the user choosing, or starts a refactor.
 
 ### C5 · Tidying earlier Away blocks

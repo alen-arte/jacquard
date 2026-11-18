@@ -154,6 +154,9 @@ lines src/big.ts 21
 sc --project "$tmp/raised.md"; [ "$st" = 1 ] && has "✗ size.*src/big.ts: 21 lines (was 12), past its raised cap of 20 and grew" && has "Flagged past the cap: src/big.ts" ||
   fail "S32b past its raised cap and grew blocks, and counts as past the cap (got $st: $out)"
 sc; [ "$st" = 1 ] && has "past the cap of 10" || fail "S32c without the raised cap line the project cap applies (got $st: $out)"
+lines src/big.ts 12; printf '%s\n' 'export function formatDate() {}' 'const c = "#00ff00";' >> src/big.ts
+sc --project "$tmp/raised.md"; [ "$st" = 0 ] && has "⚠ duplicate.*formatDate.*src/big.ts" && has "⚠ colour.*src/big.ts" && ! has "size.*src/big.ts" ||
+  fail "S32d a raised-cap file stays in the duplicate and colour checks (got $st: $out)"
 
 start 17; mkdir -p src/moved
 git mv src/big.ts src/moved/big.ts; git mv src/c1.ts src/c1b.ts

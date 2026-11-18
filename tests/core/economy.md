@@ -38,6 +38,6 @@ Reads: core/economy.md, core/review.md
 **Fail if:** it uses strong · high at the batch close, or anything below strong · high on the level-2 structural plan.
 
 ### C8 · Where the advisor stays at strong
-**Given:** Intensity `-ss`. Three cases: (a) QA confirms a duplication inside a level-2 task on payments; (b) a batch of four level-1 tasks closes that, together, created a new `src/sync/` module; (c) a level-1 task's plan moves state handling into a new layer. Which tier does the engineering advisor run at in each?
+**Given:** Intensity `-ss`. Three cases: (a) QA confirms a duplication inside a level-2 task on payments; (b) a milestone closes over four level-1 tasks that, together, created a new `src/sync/` module; (c) a level-1 task's plan moves state handling into a new layer. Which tier does the engineering advisor run at in each?
 **Pass if:** strong · high in all three: (a) is level-2 work, (b) adds a new module, (c) is a structural plan.
 **Fail if:** any of them runs at standard · normal.
