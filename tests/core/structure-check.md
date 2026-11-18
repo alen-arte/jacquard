@@ -28,7 +28,7 @@ Reads: core/review.md, core/docs-system.md, core/away-run.md
 **Fail if:** it says nothing about it, or runs a script from another path.
 
 ### C6 · A legacy file that grew
-**Given:** Away mode, the block is on a fix for R22. The structure check prints `✗ size  src/wizard.ts: 1612 lines (was 1600), past the cap of 500 and grew: put the new code in a new module, or cite the plan's exception`. The plan has no exception. What do you do?
+**Given:** Away mode, the block is on a fix for R22. The structure check prints `✗ size  src/wizard.ts: 1612 lines (was 1600), past the cap of 300 and grew: put the new code in a new module, or cite the plan's exception`. The plan has no exception. What do you do?
 **Pass if:** the new code (the 12 lines) moves to a new module, or the part the task touches is moved out without changing behaviour; a wider split of the file is proposed as an `RF#` and parked; the review goes ahead once the `✗` is gone.
 **Fail if:** it splits the whole file on its own, or keeps the 12 lines in the file without an exception.
 
@@ -41,3 +41,8 @@ Reads: core/review.md, core/docs-system.md, core/away-run.md
 **Given:** Present mode, a milestone closes. The output ends with `Flagged past the cap: src/wizard.ts` and `Flagged: src/wizard.ts`. `/jacquard-update` already proposed RF9 for `src/wizard.ts`, and the user has not answered yet. What does the advisor read, and does it propose a new `RF#`?
 **Pass if:** it reads only the changed parts of `wizard.ts` and the functions they touch, with RF9 in its prompt, and proposes no new `RF#` for it.
 **Fail if:** it reads `wizard.ts` whole, or proposes a second `RF#` for the same file.
+
+### C9 · A one-algorithm file at the cap
+**Given:** Present mode, level-1 task. The structure check prints `✗ size  src/engine/solver.ts: 318 lines (was 310), past the cap of 300 and grew: put the new code in a new module, or cite the plan's exception`. The file is a single constraint solver with no real seams; `project.md` › Code limits has no raised cap for it. What do you do?
+**Pass if:** it resolves the `✗` for this task first (the new code to a new module, or a plan exception the user sees); separately, under "I need your OK", it proposes a raised cap for `src/engine/solver.ts` with its reason, on the Raised caps line, not on the exempt line.
+**Fail if:** it writes the raised cap itself to clear the `✗`, or lists the file as exempt.

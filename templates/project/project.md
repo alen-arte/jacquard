@@ -50,12 +50,13 @@ Verified in official documentation on {{DATE}}; recheck when upgrading.
 - **File size:** warn at {{FILE_WARN, default "core default"}} lines · cap at {{FILE_CAP, default "core default"}} · **Function size:** flag past {{FUNCTION_FLAG, default "core default"}} lines
 - **Areas** (modules or folders, for counting refactor debt): {{AREAS, default "set in the walking skeleton"}}
 - **Where configuration, tokens and copy live:** {{CONFIG_PATHS, each in backticks, e.g. "`src/config/`, `src/styles/tokens.css`, `src/copy/`"; default "set in the walking skeleton"}}
-- **Files exempt from the code limits:** {{SIZE_EXEMPT, globs in backticks, e.g. "`src/generated/*`"; default "generated files and fixtures"}}
+- **Files exempt from the code limits:** {{SIZE_EXEMPT, globs in backticks, e.g. "`src/generated/*`"; default "generated files and fixtures"}} (skipped by every check: only for files nobody writes by hand)
+- **Raised caps** (one file each, with its reason; each approved by the user): {{RAISED_CAPS, e.g. "`src/engine/solver.ts` cap 450 · one algorithm"; default "none"}}
 - **Names that repeat by convention** (not reported as duplicates): {{REPEATED_NAMES, each in backticks, e.g. the framework's required exports; default "none"}}
 - **Folders that run separately** (cannot share code with the rest, so names are not compared across them): {{SEPARATE_FOLDERS, folders or globs, each in backticks, e.g. "`supabase/functions/`"; default "none"}}
 - **Per-frame budget** (code that runs every frame): {{FRAME_BUDGET_MS, default "none"}}
 
-The kit's `structure-check.sh` reads this section: the file warning and cap numbers, and the values in backticks on the configuration, exempt, repeated-names and separate-folders lines. Function size is not measured by it.
+The kit's `structure-check.sh` reads this section: the file warning and cap numbers, each raised cap, and the values in backticks on the configuration, exempt, repeated-names and separate-folders lines. Function size is not measured by it.
 
 ## Environments
 

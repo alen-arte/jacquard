@@ -88,7 +88,7 @@ Each `RF#` carries a **class**, by whether each new change makes it more expensi
 
 The class is a recommendation; the user always decides when (core standards › Scalability).
 
-**Measuring existing debt** (`~/.claude/jacquard/scripts/structure-check.sh --all --project <local>/project.md`, offered once by `/kickoff` and `/jacquard-update`): its findings are shown grouped by area and kind, for the user to choose. A file past the cap, an import cycle or a duplicated name becomes a proposed `RF#` with class and area; files only past the warning and colour literals are listed, not proposed. Findings in a collaborator's area become a note for its owner (core standards › Boundaries). With `--all` a `✗` blocks nothing. Exit 2 means nothing was checked: say so, never report it as clean. Nothing is refactored.
+**Measuring existing debt** (`~/.claude/jacquard/scripts/structure-check.sh --all --project <local>/project.md`, offered once by `/kickoff` and `/jacquard-update`): its findings are shown grouped by area and kind, for the user to choose. A file past the cap, an import cycle or a duplicated name becomes a proposed `RF#` with class and area (a file past the cap that does one clear thing may instead get a proposed raised cap with its reason: core standards › Scalability); files only past the warning and colour literals are listed, not proposed. Findings in a collaborator's area become a note for its owner (core standards › Boundaries). With `--all` a `✗` blocks nothing. Exit 2 means nothing was checked: say so, never report it as clean. Nothing is refactored.
 
 ## Closing an item
 

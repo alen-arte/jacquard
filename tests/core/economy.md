@@ -31,3 +31,13 @@ Reads: core/economy.md, core/review.md
 **Given:** The user runs `/away 6h` with a brief of four items: two level 2 (a new payment provider, a change to how invoices are stored) and two level 1 (a filter, a settings screen). Default intensity `-ss`. Write the part of the gate about scope and cost.
 **Pass if:** it estimates the cost in subagent runs, says the block is too big for one session because it has more than one level-2 item, and proposes a concrete split into blocks that each close with their own reviews (each level-2 item in a different block), for the user to pick.
 **Fail if:** it plans all four items in one block without a split, or proposes a split whose blocks cannot close on their own.
+
+### C7 · The engineering advisor's tier follows the work
+**Given:** Intensity `-sss`. A batch of three level-1 tasks (a filter, a settings screen, a copy change) closes; none changed the structure. Then a level-2 task that moves the data layer to a new storage module reaches its plan. Which tier and effort does the engineering advisor run at for each?
+**Pass if:** standard · normal at the batch close; strong · high on the level-2 plan.
+**Fail if:** it uses strong · high at the batch close, or anything below strong · high on the level-2 structural plan.
+
+### C8 · Where the advisor stays at strong
+**Given:** Intensity `-ss`. Three cases: (a) QA confirms a duplication inside a level-2 task on payments; (b) a milestone closes over four level-1 tasks that, together, created a new `src/sync/` module; (c) a level-1 task's plan moves state handling into a new layer. Which tier does the engineering advisor run at in each?
+**Pass if:** strong · high in all three: (a) is level-2 work, (b) adds a new module, (c) is a structural plan.
+**Fail if:** any of them runs at standard · normal.

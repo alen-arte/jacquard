@@ -9,6 +9,7 @@
 #   --all    every file in the repo, once, to measure existing debt
 # Settings come from project.md › Code limits (default <repo>/.jacquard/project.md): the numbers after "warn at" and
 # "cap at", and the values in backticks on the lines for tokens, exempt files, names that repeat by convention and folders that run separately;
+# "Raised caps" gives one file its own cap ("`src/x.ts` cap 450 · reason"): it has no warning zone and stays in every other check;
 # without it, the core defaults. The first line says which.
 # Only what the change made worse is reported (--all: everything):
 # ✗ (blocking): a code file past the cap that grew or is new; an import cycle between JS/TS files (relative or tsconfig
@@ -23,7 +24,7 @@
 set -f
 export LC_ALL=C
 
-warn=300; cap=500 # the core defaults; a project changes them in project.md, never here
+warn=200; cap=300 # the core defaults; a project changes them in project.md, never here
 code_ext='js jsx ts tsx mjs cjs mts cts vue svelte astro css scss sass less html py rb go rs java kt swift php c h cc cpp hpp cs sh bash zsh lua dart'
 import_ext='js jsx ts tsx mjs cjs mts cts'
 colour_ext='css scss sass less html js jsx ts tsx mjs cjs mts cts vue svelte astro'
@@ -57,6 +58,7 @@ trap 'exit 2' HUP INT TERM
 # Settings: only the Code limits section counts; the path is shown without the home folder
 case "$project" in "$root"/*) shown="${project#"$root"/}" ;; "$HOME"/*) shown="~/${project#"$HOME"/}" ;; *) shown="$project" ;; esac
 settings="core defaults (no project.md)"
+: > "$tmp/raised"
 if [ -f "$project" ]; then
   awk '/^## / { on = ($0 ~ /^## Code limits/); next } on' "$project" > "$tmp/limits"
   settings="core defaults ($shown has no Code limits section)"
@@ -69,6 +71,9 @@ if [ -s "$tmp/limits" ]; then
   # paths <line>: its values in backticks, a leading ./ dropped (git paths have none)
   paths() { for _v in $(ticks "$1"); do printf '%s ' "${_v#./}"; done; }
   exempt="$exempt $(paths 'Files exempt')"
+  # raised caps as "<cap><TAB><path>"
+  awk 'index($0, "Raised caps") { s = $0; while (match(s, /`[^`]+`[ \t]+cap[ \t]+(at[ \t]+)?[0-9]+/)) { m = substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
+    p = m; sub(/^`/, "", p); sub(/`.*/, "", p); sub(/^\.\//, "", p); n = m; sub(/.*[^0-9]/, "", n); print n "\t" p } }' "$tmp/limits" > "$tmp/raised"
   tokens="$tokens $(paths 'Where configuration, tokens and copy live')"
   repeat_names="$repeat_names $(ticks 'Names that repeat by convention')"
   # a folder may be written without its closing /
@@ -155,21 +160,23 @@ count_lines() { awk -v list="$1" 'BEGIN { while ((getline f < list) > 0) { n = 0
 count_lines "$tmp/code" > "$tmp/sizes"
 (cd "$tmp/cbase" && count_lines "$tmp/cbase.list") > "$tmp/sizes.base"
 while IFS="$tab" read -r n f; do
-  [ "$n" -gt "$warn" ] || continue
+  fcap="$(lookup "$tmp/raised" "$f" 1)"
+  if [ -n "$fcap" ]; then fwarn="$fcap"; capname="its raised cap"; else fcap="$cap"; fwarn="$warn"; capname="the cap"; fi
+  [ "$n" -gt "$fwarn" ] || continue
   was="$(lookup "$tmp/sizes.base" "$f" 1)"
   if [ "$all" = 1 ]; then
     flag "$f"
-    if [ "$n" -gt "$cap" ]; then report "⚠" size "$f: $n lines, past the cap of $cap (log an RF)"
+    if [ "$n" -gt "$fcap" ]; then report "⚠" size "$f: $n lines, past $capname of $fcap (log an RF)"
     else report "⚠" size "$f: $n lines, past the warning of $warn"; fi
   elif [ -z "$was" ]; then
     flag "$f"
-    if [ "$n" -gt "$cap" ]; then report "✗" size "$f: $n lines, new and past the cap of $cap: split it"
+    if [ "$n" -gt "$fcap" ]; then report "✗" size "$f: $n lines, new and past $capname of $fcap: split it"
     else report "⚠" size "$f: $n lines, new and past the warning of $warn"; fi
-  elif [ "$n" -gt "$cap" ]; then
+  elif [ "$n" -gt "$fcap" ]; then
     if [ "$n" -gt "$was" ]; then
-      flag "$f"; report "✗" size "$f: $n lines (was $was), past the cap of $cap and grew: put the new code in a new module, or cite the plan's exception"
+      flag "$f"; report "✗" size "$f: $n lines (was $was), past $capname of $fcap and grew: put the new code in a new module, or cite the plan's exception"
     else pre_cap=$((pre_cap + 1)); fi
-  elif [ "$was" -le "$warn" ]; then flag "$f"; report "⚠" size "$f: $n lines (was $was), crossed the warning of $warn"
+  elif [ "$was" -le "$fwarn" ]; then flag "$f"; report "⚠" size "$f: $n lines (was $was), crossed the warning of $warn"
   elif [ "$n" -gt "$was" ]; then flag "$f"; report "⚠" size "$f: $n lines (was $was), past the warning of $warn and grew"
   else pre_warn=$((pre_warn + 1)); fi
 done < "$tmp/sizes"
@@ -254,7 +261,8 @@ if [ $((block + warns)) = 0 ]; then echo "✓ no findings"; exit 0; fi
 echo "$block blocking · $warns warnings"
 # A reviewer reads a file past the cap whole only once (core/review.md), so those are named whatever flagged them
 printf '%s\n' $flagged > "$tmp/flagged"
-big="$(count_lines "$tmp/flagged" | awk -F "$tab" -v cap="$cap" '$1 > cap { printf "%s%s", (n++ ? " " : ""), $2 }')"
+big="$(count_lines "$tmp/flagged" | awk -F "$tab" -v cap="$cap" -v raised="$tmp/raised" 'BEGIN { while ((getline l < raised) > 0) { split(l, r, "\t"); own[r[2]] = r[1] } }
+  $1 > ($2 in own ? own[$2] : cap) { printf "%s%s", (n++ ? " " : ""), $2 }')"
 [ -z "$big" ] || echo "Flagged past the cap: $big"
 echo "Flagged: $flagged"
 [ "$block" = 0 ]

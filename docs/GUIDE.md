@@ -36,7 +36,7 @@ Sensitive work (data, money, auth, privacy, irreversible) always gets its review
 
 ## Economy
 
-Set `budget` (`lean`, `balanced`, `generous`) and `tiers` (a model and effort for `light`, `standard`, `strong`) in your preferences. Mechanical checks run at light; building and QA at standard; advisors, security and audits at strong. Reviews of sensitive work never drop below their tier. Before expensive steps Claude says the cost in subagent runs; it cannot see how much of your usage limit is left. See `core/economy.md`.
+Set `budget` (`lean`, `balanced`, `generous`) and `tiers` (a model and effort for `light`, `standard`, `strong`) in your preferences. Mechanical checks run at light; building, QA and most advisor reviews at standard; security, audits and reviews of level-2 or structural work at strong. Reviews of sensitive work never drop below their tier. Before expensive steps Claude says the cost in subagent runs; it cannot see how much of your usage limit is left. See `core/economy.md`.
 
 ## Design and visual checks
 

@@ -46,7 +46,7 @@ start 1; echo "more" >> README.md
 sc; [ "$st" = 0 ] && has "no findings" || fail "S1 a change with no code must pass with 'no findings' (got $st: $out)"
 has "warn 5 · cap 10; settings: .*project.md; import aliases: none" || fail "S1b the limits come from the Code limits section only, and the aliases are named (got: $out)"
 printf '%s\n' '## Stack' > "$tmp/nolimits.md"
-sc --project "$tmp/nolimits.md"; has "warn 300 · cap 500; settings: core defaults (.*has no Code limits section)" || fail "S1c a project.md without Code limits says so (got: $out)"
+sc --project "$tmp/nolimits.md"; has "warn 200 · cap 300; settings: core defaults (.*has no Code limits section)" || fail "S1c a project.md without Code limits says so (got: $out)"
 cp "$script" "$tmp/alone.sh"; out="$("$tmp/alone.sh" 2>&1)"; st=$?
 [ "$st" = 2 ] && has "nothing was checked" || fail "S1d without its awk parts it must exit 2, never pass (got $st: $out)"
 
@@ -140,9 +140,23 @@ has "huge" && fail "S19 --all skips exempt files too (got: $out)"
 
 start 16
 printf '%s\n' '## Code limits' '- **File size:** warn at core default lines · cap at core default' > "$tmp/default.md"
-lines src/new.ts 501; lines src/mid.ts 301
+lines src/new.ts 301; lines src/mid.ts 201
 sc --project "$tmp/default.md"; [ "$st" = 1 ] && has "✗ size.*src/new.ts" && has "⚠ size.*src/mid.ts" ||
-  fail "S20 'core default' uses 300 and 500 (got $st: $out)"
+  fail "S20 'core default' uses 200 and 300 (got $st: $out)"
+
+start 16b
+{ sed -n '/^## Code limits/,/^## Environments/p' .jacquard/project.md | sed '$d'
+  echo '- **Raised caps** (one file each, with its reason): `src/big.ts` cap 20 · one algorithm, `./src/one.ts` cap at 15 · a flat catalog, was cap 5'; } > "$tmp/raised.md"
+lines src/big.ts 18; lines src/one.ts 14
+sc --project "$tmp/raised.md"; [ "$st" = 0 ] && ! has "size.*src/big.ts" && ! has "size.*src/one.ts" && ! has "Flagged past the cap" ||
+  fail "S32 a file under its raised cap is not flagged, new or grown (got $st: $out)"
+lines src/big.ts 21
+sc --project "$tmp/raised.md"; [ "$st" = 1 ] && has "✗ size.*src/big.ts: 21 lines (was 12), past its raised cap of 20 and grew" && has "Flagged past the cap: src/big.ts" ||
+  fail "S32b past its raised cap and grew blocks, and counts as past the cap (got $st: $out)"
+sc; [ "$st" = 1 ] && has "past the cap of 10" || fail "S32c without the raised cap line the project cap applies (got $st: $out)"
+lines src/big.ts 12; printf '%s\n' 'export function formatDate() {}' 'const c = "#00ff00";' >> src/big.ts
+sc --project "$tmp/raised.md"; [ "$st" = 0 ] && has "⚠ duplicate.*formatDate.*src/big.ts" && has "⚠ colour.*src/big.ts" && ! has "size.*src/big.ts" ||
+  fail "S32d a raised-cap file stays in the duplicate and colour checks (got $st: $out)"
 
 start 17; mkdir -p src/moved
 git mv src/big.ts src/moved/big.ts; git mv src/c1.ts src/c1b.ts
@@ -255,7 +269,7 @@ sc; [ "$st" = 0 ] && ! has "link.tsx" || fail "S33 a symlink is not read (got $s
 
 # A clone where main exists only as origin/main
 git clone -q -b main "$r" "$tmp/cl"; cd "$tmp/cl" || exit 1
-git switch -q -c work; git branch -q -D main; lines src/mid.ts 301
+git switch -q -c work; git branch -q -D main; lines src/mid.ts 201
 sc; [ "$st" = 0 ] && has "changed against origin/main" && has "⚠ size.*src/mid.ts" || fail "S28 with no local main, origin/main is the base (got $st: $out)"
 
 # A repo with neither main nor master, and no project.md
