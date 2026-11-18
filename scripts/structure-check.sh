@@ -72,8 +72,8 @@ if [ -s "$tmp/limits" ]; then
   paths() { for _v in $(ticks "$1"); do printf '%s ' "${_v#./}"; done; }
   exempt="$exempt $(paths 'Files exempt')"
   # raised caps as "<cap><TAB><path>"
-  awk 'index($0, "Raised caps") { s = $0; while (match(s, /`[^`]+`[^`]*cap [0-9]+/)) { m = substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
-    p = m; sub(/^`/, "", p); sub(/`.*/, "", p); sub(/^\.\//, "", p); n = m; sub(/.*cap /, "", n); print n "\t" p } }' "$tmp/limits" > "$tmp/raised"
+  awk 'index($0, "Raised caps") { s = $0; while (match(s, /`[^`]+`[ \t]+cap[ \t]+(at[ \t]+)?[0-9]+/)) { m = substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
+    p = m; sub(/^`/, "", p); sub(/`.*/, "", p); sub(/^\.\//, "", p); n = m; sub(/.*[^0-9]/, "", n); print n "\t" p } }' "$tmp/limits" > "$tmp/raised"
   tokens="$tokens $(paths 'Where configuration, tokens and copy live')"
   repeat_names="$repeat_names $(ticks 'Names that repeat by convention')"
   # a folder may be written without its closing /

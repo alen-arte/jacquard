@@ -146,7 +146,7 @@ sc --project "$tmp/default.md"; [ "$st" = 1 ] && has "✗ size.*src/new.ts" && h
 
 start 16b
 { sed -n '/^## Code limits/,/^## Environments/p' .jacquard/project.md | sed '$d'
-  echo '- **Raised caps** (one file each, with its reason): `src/big.ts` cap 20 · one algorithm, `./src/one.ts` cap 15 · a flat catalog'; } > "$tmp/raised.md"
+  echo '- **Raised caps** (one file each, with its reason): `src/big.ts` cap 20 · one algorithm, `./src/one.ts` cap at 15 · a flat catalog, was cap 5'; } > "$tmp/raised.md"
 lines src/big.ts 18; lines src/one.ts 14
 sc --project "$tmp/raised.md"; [ "$st" = 0 ] && ! has "size.*src/big.ts" && ! has "size.*src/one.ts" && ! has "Flagged past the cap" ||
   fail "S32 a file under its raised cap is not flagged, new or grown (got $st: $out)"
