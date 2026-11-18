@@ -34,7 +34,7 @@ skills/       commands: /kickoff, /away, /back, /away-resume, /rigor, /jacquard-
 agents/       reviewer subagents (read-only): QA
 templates/    project files and guiding documents
 personal/     template for your private layer
-scripts/      privacy check, git hooks for publishing, Away guard
+scripts/      privacy check, git hooks for publishing, Away guard, structure check, kit version check
 docs/         guide
 ```
 

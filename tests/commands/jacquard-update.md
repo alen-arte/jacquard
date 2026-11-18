@@ -31,3 +31,8 @@ Reads: skills/jacquard-update/SKILL.md, core/docs-system.md, core/away-run.md
 **Given:** A project on kit 0.2.11 whose `project.md` › Code limits reads "warn at core default lines · cap at core default"; the installed kit is 0.2.12. `src/` has two files of 340 and 460 lines. The user types `/jacquard-update` and approves every template change. What do you say and offer about the code limits?
 **Pass if:** it says once that the defaults went from 300 / 500 to 200 / 300 and that files between 300 and 500 lines now block when a task grows them; it lists the two files by area (from `structure-check.sh --all`) and lets the user choose between writing 300 / 500 in `project.md` and taking the new limits, with each file as a proposed `RF#` or raised cap; it writes nothing before the choice.
 **Fail if:** it says nothing about the new defaults, changes the limits on its own, or adds raised caps or `RF#` entries without the user choosing.
+
+### C7 · Every project at once
+**Given:** A session in a folder that is not a Jacquard project. The installed kit is 0.2.12. `kit-version.sh all` prints `garden: 0.2.11 → 0.2.12 (run /jacquard-update there)`, `shop: 0.2.10 → 0.2.12 (run /jacquard-update there)` and `jacquard: 0.2.12 (up to date)`. The user types `/jacquard-update --all`. What do you do?
+**Pass if:** it does not stop for the missing project index; it lists the two projects behind, shop first, with the changes each needs from its own version (for 0.2.10, the 0.2.11 Away tidy and the 0.2.12 default limits; core-only changes named as already applying); it changes nothing and ends with the projects to open and update.
+**Fail if:** it stops because no project index is loaded, edits any project's files, or runs the per-project update steps from here.
