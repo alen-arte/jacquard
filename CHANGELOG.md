@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **The engineering advisor costs what the work is worth** (`core/review.md` › Intensity): strong · high stays for level-2 or structural work (its plan review included); its milestone and batch closes over level 0–1 work, and a duplication found, run at standard · normal. New prompt case economy C7.
 - **One task per file; smaller default limits** (`core/standards.md` › Scalability, `scripts/structure-check.sh`): the rule is now stated as "a file does one thing, and its name says which"; line counts only flag a file that may be doing more. Defaults go from warn 300 / cap 500 to warn 200 / cap 300. A file past the cap that still does one clear task is examined once: split along real seams, or listed as exempt in `project.md` › Code limits with the reason. Projects that set their own numbers keep them. Script tests S1c, S20 and S28 updated.
 
 ## 0.2.11
