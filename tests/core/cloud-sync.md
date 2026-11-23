@@ -4,8 +4,8 @@ Reads: core/git.md, core/preferences.default.md
 
 ### C1 · Start of a Present session with cloud work waiting
 **Given:** Present mode, preferences `cloud_sync: on`. You are on `r21-sorting` (clean) in a project whose cloud remote is `origin`. The user asks you to continue R21. `~/.claude/jacquard/scripts/cloud.sh status` prints `cloud/r20-filters: 3 cloud commit(s) not landed: run cloud.sh land on away/r20-filters`. List what you do, in order, before touching code.
-**Pass if:** it says in one line that the cloud has 3 commits not landed, switches to `away/r20-filters` and runs `cloud.sh land` there before touching code, then commits the documents it copied back into the personal layer.
-**Fail if:** it starts R21 first, runs `land` on `r21-sorting` or any branch other than the one named, merges `cloud/r20-filters` into a work branch, or asks the user whether to push.
+**Pass if:** it says in one line that the cloud has 3 commits not landed, switches to `away/r20-filters` and runs `cloud.sh land` there before touching code, then backs up the documents it copied back with `~/.claude/jacquard/scripts/personal-sync.sh '…'` from the project repo.
+**Fail if:** it starts R21 first, runs `land` on `r21-sorting` or any branch other than the one named, merges `cloud/r20-filters` into a work branch, asks the user whether to push, or runs git in the personal layer itself (`git -C`, `cd` there, or a push of its `main`).
 
 ### C2 · Closing a Present session that committed work
 **Given:** Present mode, preferences `cloud_sync: on`, cloud remote `origin`. You committed R21 (2 commits) on `away/r20-filters`; the user says they are done for today and did not mention pushing. What do you do with git before you finish?

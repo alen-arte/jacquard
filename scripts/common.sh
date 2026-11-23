@@ -17,6 +17,15 @@ local_folder() {
   case "$local_dir" in .|..|*[!A-Za-z0-9._-]*) die "unusual local folder name in CLAUDE.local.md ($(printf '%s\n' "$local_dir" | plain)): letters, digits, '.', '_' and '-' only" ;; esac
 }
 
+# An Away block is running in the project whose local folder is $1: its marker exists and has not expired (the
+# second line, epoch seconds, as away-guard.sh writes it; anything but a past number keeps it on, fail safe).
+away_active() {
+  [ -f "$1/away/.away-active" ] || return 1
+  _exp="$(sed -n 2p "$1/away/.away-active")"
+  case "$_exp" in ""|*[!0-9]*) return 0 ;; esac
+  [ "$(date +%s)" -le "$_exp" ]
+}
+
 # The one push URL of $remote must be a plain GitHub address of a private repo with no other collaborators.
 # Fail closed. Sets slug (owner/repo).
 private_remote() {

@@ -25,7 +25,7 @@
       "Bash(git fetch)",
       "Bash(git fetch origin)",
       "Bash(git fetch origin *)",
-      "{{PUSH_ALLOW_RULES, own origin: \"Bash(git push origin *)\", \"Bash(git push -u origin *)\"; origin shared with others: none, so every push asks}}",
+      "{{PUSH_ALLOW_RULES, origin the user's own and private: \"Bash(git push origin *)\", \"Bash(git push -u origin *)\"; public or shared with others: none, so every push asks}}",
       "Edit(/{{LOCAL_FOLDER}}/**)",
       "Edit(~/repos/jacquard-personal/projects/{{PROJECT_SLUG}}/**)",
       "{{CHECK_COMMANDS_AS_BASH_RULES}}"
@@ -133,12 +133,22 @@
       "Bash(git push * -d *)",
       "Bash(git push * -d)",
       "Bash(git push * :*)",
-      "{{PROJECT_DENY_RULES, e.g. push to a shared main}}"
+      "Bash(git push * -*)",
+      "Bash(git push *refs/*)",
+      "Bash(git push *'*)",
+      "Bash(git push *\"*)",
+      "Bash(git fetch *--u*)",
+      "Bash(git fetch * +*)",
+      "Bash(git fetch *:*)",
+      "{{PROJECT_DENY_RULES, e.g. a push to each branch that deploys or is shared, from project.md › Git and › Irreversible here: \"Bash(git push * production)\", \"Bash(git push * production *)\", \"Bash(git push *:production*)\"}}"
     ]
   },
   "hooks": {
     "PermissionRequest": [
       { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" permission \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" pre-bash \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
     ],
     "Elicitation": [
       { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" elicitation \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }

@@ -37,7 +37,7 @@ record="$(git rev-parse --absolute-git-dir)/jacquard-cloud"  # local only, one f
 
 [ -L "$local_dir" ] || die "$local_dir is not a link into $layer/projects/: run this inside a Jacquard project"
 proj="$(readlink "$local_dir")"
-[ ! -e "$proj/away/.away-active" ] || die "an Away block is running in this project: cloud sync waits for Present"
+! away_active "$proj" || die "an Away block is running in this project: cloud sync waits for Present"
 branch="$(git symbolic-ref -q --short HEAD)" || die "no branch checked out: run cloud.sh on the work branch"
 case "$branch" in cloud/*) die "$branch is a kit branch: run cloud.sh on the work branch it comes from" ;; esac
 out="cloud/${branch#away/}"

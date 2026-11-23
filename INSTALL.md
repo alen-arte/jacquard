@@ -80,6 +80,7 @@ done
 1. Create a **private** repository from the `personal/` folder of this kit.
 2. Clone it to `~/repos/jacquard-personal/` (not under `~/.claude/`: see above).
 3. Fill `preferences.md` (only the keys you want to change) and `privacy-terms.txt` (your name, handles, collaborators, project names).
+4. Backups: in Present, after work is committed or a project's documents change, Claude runs `scripts/personal-sync.sh` from the project repo. It commits that project's folder in your personal layer and pushes the layer's `main`, fast-forward only. It refuses unless `gh` is signed in and the layer's `main` tracks a private GitHub repo where you are the only collaborator. The project sessions never run git in the layer directly.
 
 ## 4. Permissions
 

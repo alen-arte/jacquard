@@ -9,6 +9,8 @@
 #   off            run by /back and the end of the block
 #   permission     PermissionRequest hook: deny with a park message
 #   elicitation    Elicitation hook: decline
+#   pre-bash       PreToolUse hook on Bash: deny a git push or fetch, which allow rules let run without a prompt
+#                  (so the permission hook never sees them); Away never pushes or fetches
 #   session-start  SessionStart hook: a resumed or cleared Away session starts in Present; a project behind
 #                  the installed kit gets one reminder line (kit-version.sh)
 # The marker <project>/<local folder>/away/.away-active holds the Away session's id and, on its
@@ -18,8 +20,8 @@
 margin=10800           # after the end time: room for the closing reviews, which run after it
 no_end_time=43200      # a block with no end time: 12 h from on
 cmd="$1"; local_dir="$2"; end="$3"
-case "$cmd" in on|off|permission|elicitation|session-start) ;; *)
-  echo "usage: away-guard.sh <on|off|permission|elicitation|session-start> <local folder> [HH:MM]" >&2; exit 2 ;; esac
+case "$cmd" in on|off|permission|elicitation|pre-bash|session-start) ;; *)
+  echo "usage: away-guard.sh <on|off|permission|elicitation|pre-bash|session-start> <local folder> [HH:MM]" >&2; exit 2 ;; esac
 [ -n "$local_dir" ] || { echo "away-guard: missing local folder" >&2; exit 2; }
 [ $# -le 3 ] && { [ -z "$end" ] || [ "$cmd" = on ]; } || { echo "away-guard: only on takes an end time, and nothing after it" >&2; exit 2; }
 case "$end" in ""|[01][0-9]:[0-5][0-9]|2[0-3]:[0-5][0-9]) ;; *) echo "away-guard: end time must be HH:MM (00:00–23:59)" >&2; exit 2 ;; esac
@@ -41,7 +43,7 @@ marker="$dir/.away-active"
 
 # Hooks get their input on stdin, and its session id decides; on and off use the environment's.
 input=""
-case "$cmd" in permission|elicitation|session-start) input="$(cat)" ;; esac
+case "$cmd" in permission|elicitation|pre-bash|session-start) input="$(cat)" ;; esac
 # First occurrence of a string field: the top-level ones come before tool_input.
 field() { printf '%s' "$input" | tr '\n' ' ' | grep -o "\"$1\" *: *\"[^\"]*\"" | head -n 1 | sed 's/.*: *"\(.*\)"$/\1/'; }
 session="$(field session_id)"; session="${session:-$CLAUDE_CODE_SESSION_ID}"
@@ -85,6 +87,19 @@ case "$cmd" in
       "behavior": "deny",
       "message": "Away mode is on and nobody is here to answer this permission prompt, so it was denied automatically. Do not retry it or wait for an answer: use a safe equivalent the settings already allow, or park the step in the Away journal (what it needed and why) and continue with other work. If the user is actually back, ask them to type /back, which turns this guard off."
     }
+  }
+}
+EOF
+    ;;
+  pre-bash)
+    # Anywhere in the input, chained or spaced oddly: a false match only parks a step, a missed one would publish
+    printf '%s' "$input" | tr '\n' ' ' | grep -Eq 'git[[:space:]]+(push|fetch)' || exit 0
+    mine && cat <<'EOF'
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "Away mode is on: Away never pushes or fetches (core/git.md › Push). Do not retry it: park the step in the Away journal and continue with other work. If the user is actually back, ask them to type /back."
   }
 }
 EOF

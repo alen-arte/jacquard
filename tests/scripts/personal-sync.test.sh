@@ -4,6 +4,7 @@
 # address of me/layer, and gh is simulated; the script's own checks are not loosened. Exits 0 when every case passes.
 . "$(dirname "$0")/lib.sh"
 sync="${PERSONAL_SYNC_SH:-$kit/scripts/personal-sync.sh}"
+[ -n "${PERSONAL_SYNC_SH:-}" ] || [ -x "$sync" ] || { echo "✗ $sync missing or not executable (the allow rule runs it directly)"; exit 1; }
 
 mkdir -p "$tmp/bin" "$tmp/remotes/me"
 cat > "$tmp/bin/gh" <<'EOF'
@@ -117,11 +118,33 @@ touch "$layer/.git/MERGE_HEAD"; run && fail "P10 refused with a merge in progres
 
 # P11 git environment pointing elsewhere is ignored
 GIT_DIR="$tmp/remotes/me/layer.git" GIT_WORK_TREE="$tmp" run || fail "P11 a stray GIT_DIR does not redirect the backup: $(cat "$tmp/out")"
-remote_files | grep -q '^projects/demo/' || fail "P11 still the layer's project folder"
+git --git-dir="$r" show main:projects/demo/index.md | grep -q p10 || fail "P11 the layer's own change went up"
 
 # P12 more than one local import, or arguments beyond the message: refused
 printf '@.notes/index.md\n@.other/index.md\n' > CLAUDE.local.md; run && fail "P12 two local imports are refused"; grep -q 'more than one' "$tmp/out" || fail "P12 says why"
 printf '@.notes/index.md\n' > CLAUDE.local.md
 sh "$sync" a b > /dev/null 2>&1; [ $? = 2 ] || fail "P12 two arguments: usage, exit 2"
+
+# P13 an Away marker past its expiry no longer blocks; one without an expiry line still does
+mkdir -p "$p/away"; printf 's1\n1\n' > "$p/away/.away-active"; echo p13 >> "$p/index.md"
+run || fail "P13 an expired Away marker does not block: $(cat "$tmp/out")"
+printf 's1\n' > "$p/away/.away-active"; echo p13b >> "$p/index.md"
+run && fail "P13 a marker without expiry still blocks"; rm -f "$p/away/.away-active"
+
+# P14 a remote whose fetch URL differs from the checked push URL: refused
+(cd "$layer" && git remote set-url --push origin "git${at}github.com:me/layer.git" && git remote set-url origin "$tmp/elsewhere")
+run && fail "P14 fetch and push URLs must match"; grep -q 'fetches from one URL' "$tmp/out" || fail "P14 says why"
+(cd "$layer" && git remote set-url origin "git${at}github.com:me/layer.git" && git config --unset remote.origin.pushurl)
+
+# P15 a git repo inside the project folder is named as not backed up
+mkdir -p "$p/tools/sub"; git init -q "$p/tools/sub"
+run || fail "P15 backup with a nested repo: $(cat "$tmp/out")"
+grep -q 'tools/sub' "$tmp/out" || fail "P15 the nested repo is named"; rm -rf "$p/tools"
+
+# P16 first backup: the remote has no main yet
+git init -q --bare -b main "$tmp/remotes/me/fresh.git"
+(cd "$layer" && git remote set-url origin "git${at}github.com:me/fresh.git")
+run || fail "P16 first backup to an empty remote: $(cat "$tmp/out")"
+git --git-dir="$tmp/remotes/me/fresh.git" rev-parse -q --verify main >/dev/null || fail "P16 main is on the remote"
 
 finish personal-sync

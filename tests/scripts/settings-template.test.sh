@@ -105,8 +105,17 @@ for r in "Bash(git *--upload-pack*)" "Bash(git *--receive-pack*)" "Bash(git *--e
   "Bash(git push * master)" "Bash(git push * master *)" "Bash(git push *:master*)" "Bash(git push *heads/master*)" \
   "Bash(git push * HEAD)" "Bash(git push * HEAD *)" "Bash(git push * @)" "Bash(git push * @ *)" \
   "Bash(git push *--all*)" "Bash(git push *--tags*)" \
-  "Bash(git push *--delete*)" "Bash(git push * -d *)" "Bash(git push * -d)" "Bash(git push * :*)"; do
+  "Bash(git push *--delete*)" "Bash(git push * -d *)" "Bash(git push * -d)" "Bash(git push * :*)" \
+  "Bash(git push * -*)" "Bash(git push *refs/*)" "Bash(git push *'*)" 'Bash(git push *\"*)' "Bash(git fetch *--u*)" \
+  "Bash(git fetch * +*)" "Bash(git fetch *:*)"; do
   printf '%s\n' "$deny" | grep -qxF "$r" || fail "S8 no deny rule $r"
 done
+# S8b · git takes any unique abbreviation of a long option and bundles short ones (--m is --mirror, -qf forces), so
+# after the remote no option at all goes through; -u before the remote stays allowed
+printf '%s\n' "$allow" | grep -q '^{{PUSH_ALLOW_RULES[^}]*private' || fail "S8b the push placeholder must say the origin is the user's own and private"
+
+# S9 · Allowed pushes and fetches never prompt, so the PermissionRequest hook never sees them: the Away guard also
+# runs before every Bash command, to deny them while Away is on
+grep -qF '"matcher": "Bash", "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" pre-bash \"{{LOCAL_FOLDER}}\""' "$template" || fail "S9 no PreToolUse Bash hook running away-guard.sh pre-bash"
 
 finish "settings-template"
