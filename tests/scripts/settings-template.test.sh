@@ -57,7 +57,17 @@ printf '%s\n' "$allow" | grep '\.claude/jacquard/' | grep -vxF \
   -e 'Bash(~/.claude/jacquard/scripts/roadmap-index.sh --write {{LOCAL_FOLDER}}/docs/roadmap.md)' \
   -e 'Bash(~/.claude/jacquard/scripts/structure-check.sh)' \
   -e 'Bash(~/.claude/jacquard/scripts/structure-check.sh *)' \
-  -e 'Bash(~/.claude/jacquard/scripts/cloud.sh status)' | grep -q . && fail "S4f an allow rule for a kit script outside the exact list"
+  -e 'Bash(~/.claude/jacquard/scripts/cloud.sh status)' \
+  -e 'Bash(~/.claude/jacquard/scripts/personal-sync.sh)' \
+  -e "Bash(~/.claude/jacquard/scripts/personal-sync.sh *)" | grep -q . && fail "S4f an allow rule for a kit script outside the exact list"
+
+# S4h · personal-sync.sh is the one allowed way to back up the personal layer: bare or with its message, no looser
+# spelling (personal-sync.sh* would match any file whose name starts the same); core spells it the same way
+for r in "Bash(~/.claude/jacquard/scripts/personal-sync.sh)" "Bash(~/.claude/jacquard/scripts/personal-sync.sh *)"; do
+  printf '%s\n' "$allow" | grep -qxF "$r" || fail "S4h no allow rule $r"
+done
+[ "$(printf '%s\n' "$allow" | grep -c 'personal-sync')" = 2 ] || fail "S4h personal-sync.sh must have exactly the two allow rules"
+grep -qF '`~/.claude/jacquard/scripts/personal-sync.sh' "$kit/core/git.md" || fail "S4h core/git.md does not spell personal-sync.sh as the allow rules do"
 
 # S4g · cloud.sh: only `status` runs without asking (it fetches and counts); `prepare` pushes and `land` commits,
 # so they keep the confirmation; core spells the allowed form exactly
@@ -76,5 +86,27 @@ case "$(basename "$template")" in *settings.local.json*) fail "S6 the template's
 grep -qF '"Edit(~/.claude/jacquard/**)"' "$template" || fail "S7 no Edit deny for ~/.claude/jacquard/**"
 awk '/"deny": \[/ { on = 1; next } on && /\]/ { exit } on' "$template" | grep -qF '"Edit(~/.claude/jacquard/**)"' || fail "S7 the Edit rule for ~/.claude/jacquard/** must be in deny"
 grep -qE '"(Write|MultiEdit|NotebookEdit)\(' "$template" && fail "S7 a Write/MultiEdit/NotebookEdit path rule is never consulted: use Edit(path)"
+
+# S8 · Git with remotes: fetching from origin runs without asking, but no form that runs a program (--upload-pack);
+# pushing a work branch is allowed only where the project fills the push placeholder (its own origin); the main
+# branches, HEAD, @, every branch, tags and deleting remote branches are denied in every form the rules can see.
+# Claude Code checks deny, then ask, then allow: a broad ask rule would hide the narrow allows, so none is left.
+ask="$(awk '/"ask": \[/ { on = 1; next } on && /\]/ { exit } on' "$template" | sed 's/^ *"//; s/",\{0,1\} *$//')"
+deny="$(awk '/"deny": \[/ { on = 1; next } on && /\]/ { exit } on' "$template" | sed 's/^ *"//; s/",\{0,1\} *$//')"
+for r in "Bash(git fetch)" "Bash(git fetch origin)" "Bash(git fetch origin *)"; do
+  printf '%s\n' "$allow" | grep -qxF "$r" || fail "S8 no allow rule $r"
+done
+printf '%s\n' "$allow" "$ask" | grep -qxE 'Bash\(git (fetch|push) ?\*\)' && fail "S8 a blanket fetch or push rule (it would hide or widen the narrow ones)"
+printf '%s\n' "$allow" | grep -q '^Bash(git push' && fail "S8 push is allowed only through the project's push placeholder"
+printf '%s\n' "$allow" | grep -q '^{{PUSH_ALLOW_RULES' || fail "S8 no push placeholder in allow"
+for r in "Bash(git *--upload-pack*)" "Bash(git *--receive-pack*)" "Bash(git *--exec*)" \
+  "Bash(git push)" "Bash(git push origin)" "Bash(git push -u origin)" \
+  "Bash(git push * main)" "Bash(git push * main *)" "Bash(git push *:main*)" "Bash(git push *heads/main*)" \
+  "Bash(git push * master)" "Bash(git push * master *)" "Bash(git push *:master*)" "Bash(git push *heads/master*)" \
+  "Bash(git push * HEAD)" "Bash(git push * HEAD *)" "Bash(git push * @)" "Bash(git push * @ *)" \
+  "Bash(git push *--all*)" "Bash(git push *--tags*)" \
+  "Bash(git push *--delete*)" "Bash(git push * -d *)" "Bash(git push * -d)" "Bash(git push * :*)"; do
+  printf '%s\n' "$deny" | grep -qxF "$r" || fail "S8 no deny rule $r"
+done
 
 finish "settings-template"

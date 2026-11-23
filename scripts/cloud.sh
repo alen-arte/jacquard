@@ -21,9 +21,7 @@
 # Known limit: a cloud commit amended or squashed after it landed, then force-pushed, is not landed again.
 set -eu
 
-die() { echo "✗ $*" >&2; exit 1; }
-# Text the cloud can write (commit subjects, git's messages about them), printed without terminal controls (C0, DEL, C1).
-plain() { LC_ALL=C awk '{ gsub(/[\001-\037\177]/, ""); gsub(/\302[\200-\237]/, ""); gsub(/\342\200[\252-\256]|\342\201[\246-\251]/, ""); print }'; }   # and bidi overrides
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"   # die, plain, local_folder, private_remote
 [ "${CLAUDE_CODE_REMOTE:-}" != true ] || die "cloud.sh runs on the computer only: in a cloud session, commit and push this same cloud/ branch"
 parts="$(cd "$(dirname "$0")" && pwd)/cloud"
 remote="$(git config --local --get jacquard.cloudRemote || echo origin)"  # private remote the cloud session is attached to
@@ -31,10 +29,7 @@ kit="${JACQUARD_KIT:-$(cd "$(dirname "$0")/.." && pwd)}"                  # inst
 layer="${JACQUARD_PERSONAL:-$HOME/repos/jacquard-personal}"
 cmd="${1:-}"; take=0; [ "${2:-}" != --take-over ] || take=1
 repo="$(git rev-parse --show-toplevel)"; cd "$repo"
-# the project's local folder: the one whose index.md CLAUDE.local.md imports (a link into the personal layer)
-local_dir=""; [ ! -f CLAUDE.local.md ] || local_dir="$(tr -d '\r' < CLAUDE.local.md | sed -n 's#^@\([^~/][^ ]*\)/index\.md$#\1#p' | head -n 1)"
-local_dir="${local_dir:-.jacquard}"
-case "$local_dir" in .|..|*[!A-Za-z0-9._-]*) die "unusual local folder name in CLAUDE.local.md ($local_dir): letters, digits, '.', '_' and '-' only" ;; esac
+local_folder   # sets local_dir: the project's local folder, a link into the personal layer
 marker="Jacquard cloud kit"                        # subject of every sync commit
 kit_paths=".cloud-kit CLAUDE.local.md .claude/settings.json .claude/skills .claude/agents"
 legacy=""                                          # an older sync point kept the kit in CLAUDE.md: that one never lands
