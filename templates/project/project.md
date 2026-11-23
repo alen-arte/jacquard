@@ -65,7 +65,7 @@ The kit's `structure-check.sh` reads this section: the file warning and cap numb
 ## Git
 
 - **Main branch:** {{MAIN}} (Claude never pushes it: after the user's OK it gives them the exact command) · **origin:** {{OWN_PRIVATE | OWN_PUBLIC | SHARED_WITH_OTHERS}} (decides whether pushing a work branch asks; `/kickoff` checks it)
-- **Branches that deploy or are shared, besides main:** {{DEPLOY_OR_SHARED_BRANCHES, in backticks, default "none"}} (Claude never pushes them either)
+- **Branches only the user pushes, besides main** (production, releases): {{USER_ONLY_BRANCHES, in backticks, default "none"}}. Claude pushes work, test and dev branches (e.g. `dev`, `demo`); never these.
 - **Branch convention from collaborators, if any:** {{BRANCH_CONVENTION, default none}}
 - **Cloud remote** (only with `cloud_sync: on`, `core/git.md` › Cloud sync): {{CLOUD_REMOTE, default "`origin`"; a separate private remote only when origin is shared with other people, also set in the repo's local git config `jacquard.cloudRemote`}}
 

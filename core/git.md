@@ -36,7 +36,7 @@ Integrating into `main` is also what closes roadmap items: as the last commit on
 - Only in Present, only when the user asks in writing for that specific push. One OK does not cover the next.
 - Before pushing, say in one line which branch goes to which remote branch and how many commits.
 - Never force-push. Never push in Away.
-- Claude never pushes the main branch, or a branch `project.md` › Git lists as deploying or shared: after the user's OK, it gives them the exact command to run in their terminal. The permissions deny those pushes.
+- Claude never pushes the main branch, or a branch `project.md` › Git lists as one only the user pushes (production, releases): after the user's OK, it gives them the exact command to run in their terminal. The permissions deny those pushes. Work, test and dev branches (`dev`, `demo`) Claude pushes itself.
 - **The one standing OK:** with `cloud_sync: on` (preferences), the pushes of Cloud sync below, and making the kit branch the repo's default branch, need no new OK each time. They go to the cloud remote only, never to `main` and never to a remote shared with other people.
 - **The personal layer's backup** (below) needs no OK: its `main` is a private backup, not a release branch, and the script is the only way it is pushed. No git rule allows pushing any `main`.
 

@@ -140,7 +140,7 @@
       "Bash(git fetch *--u*)",
       "Bash(git fetch * +*)",
       "Bash(git fetch *:*)",
-      "{{PROJECT_DENY_RULES, e.g. a push to each branch that deploys or is shared, from project.md › Git and › Irreversible here: \"Bash(git push * production)\", \"Bash(git push * production *)\", \"Bash(git push *:production*)\"}}"
+      "{{PROJECT_DENY_RULES, e.g. a push to each branch only the user pushes, from project.md › Git: \"Bash(git push * production)\", \"Bash(git push * production *)\", \"Bash(git push *:production*)\"}}"
     ]
   },
   "hooks": {
