@@ -92,20 +92,25 @@ untravelled() {
   git -c core.quotePath=false ls-tree -r "$1" -- .cloud-kit/local \
     | awk -F '\t' '{ split($1, a, " "); sub(/^\.cloud-kit\/local\//, "", $2); print a[3] " " $2 }' > "$_t/there"
   printf '%s\n' "$2" | grep . > "$_t/names" || true
-  sed "s|^|$proj_real/|" "$_t/names" | git hash-object --no-filters --stdin-paths | paste -d ' ' - "$_t/names" > "$_t/here"   # raw bytes, as prepare stores them
+  P="$proj_real/" awk '{ print ENVIRON["P"] $0 }' "$_t/names" | git hash-object --no-filters --stdin-paths \
+    | paste -d ' ' - "$_t/names" > "$_t/here"   # raw bytes, as prepare stores them; absolute paths
   git -C "$proj" -c core.quotePath=false ls-files --others --exclude-standard -- . > "$_t/new"
   awk 'FILENAME == ARGV[1] { there[substr($0, index($0, " ") + 1)] = $1; next }
        FILENAME == ARGV[2] { fresh[$0] = 1; next }
-       { p = substr($0, index($0, " ") + 1); if (!(p in there) || there[p] != $1) print ((p in fresh) ? "new " : "send ") p; delete there[p] }
+       { p = substr($0, index($0, " ") + 1); if (p in fresh) print "new " p; else if (!(p in there) || there[p] != $1) print "send " p; delete there[p] }
        END { for (p in there) print "gone " p }' "$_t/there" "$_t/new" "$_t/here" | sort > "$_t/diff"
-  : > "$_t/send"; : > "$_t/fresh"; stale=0
-  while read -r kind f; do
-    case "$kind" in
-      send) echo "$f" >> "$_t/send" ;;
-      new) echo "$f" >> "$_t/fresh" ;;
-      gone) if [ -e "$proj/$f" ]; then stale=$((stale + 1)); else echo "$f" >> "$_t/send"; fi ;;   # deleted here, or excluded since
+  : > "$_t/send"; : > "$_t/fresh"; : > "$_t/gone"; stale=0
+  while IFS= read -r line; do
+    f="${line#* }"
+    case "$line" in
+      "send "*) echo "$f" >> "$_t/send" ;;
+      "new "*) echo "$f" >> "$_t/fresh" ;;
+      "gone "*) if [ -e "$proj/$f" ]; then stale=$((stale + 1)); else echo "$f" >> "$_t/gone"; fi ;;   # excluded since, or deleted here
     esac
   done < "$_t/diff"
+  # deleted here: prepare takes it out of the cloud's tip; one this computer never takes back is only counted
+  taken_back < "$_t/gone" > "$_t/kept"; cat "$_t/kept" >> "$_t/send"
+  stale=$((stale + $(grep -c . "$_t/gone" || true) - $(grep -c . "$_t/kept" || true)))
   [ ! -s "$_t/send" ] || { echo "  ⚠ $(grep -c . "$_t/send") file(s) of $local_dir changed here after the last prepare and did not travel to $out (cloud.sh prepare sends them):"; plain < "$_t/send" | capped; }
   [ ! -s "$_t/fresh" ] || { echo "  ⚠ $(grep -c . "$_t/fresh") new file(s) of $local_dir did not travel and are not backed up yet: back them up with personal-sync.sh or ignore them in the layer, then cloud.sh prepare:"; plain < "$_t/fresh" | capped; }
   [ "$stale" = 0 ] || echo "  ⚠ $stale file(s) are still in the cloud though this computer no longer sends them (ignored or excluded since): they stay in the kit branch's history until its cloud/ branches are deleted"

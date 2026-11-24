@@ -11,9 +11,8 @@ cloud_docs() {
     mode="${line%% *}"; f="${line#*"$tab"}"; f="${f#.cloud-kit/local/}"
     [ "$f" != away/.away-active ] || { echo "  ⚠ the cloud tracks its Away marker ($f): not landed; the next prepare removes it there" >&2; continue; }
     case "$mode" in 100644|100755) ;; *) die "the cloud's documents hold a link or something that is not a file ($(printf '%s' "$f" | plain)): nothing landed; $out_of_it" ;; esac
-    p="$(doc_problem "$f")"
-    [ "$p" != "looks like settings or keys" ] || { echo "$f" >> "$tmp/skipped"; continue; }
-    [ -z "$p" ] || die "$p among the cloud's documents ($(printf '%s' "$f" | plain)): nothing landed; $out_of_it"
+    ! secret_shape "$f" || { echo "$f" >> "$tmp/skipped"; continue; }
+    p="$(doc_problem "$f")"; [ -z "$p" ] || die "$p among the cloud's documents ($(printf '%s' "$f" | plain)): nothing landed; $out_of_it"
     echo "$f"
   done
 }
@@ -21,21 +20,22 @@ cloud_docs() {
 # The files the cloud changed from the sync point ($1) to its tip ($2) that run code or give Claude instructions, in
 # the repo and in the local folder (its instruction files, an Away brief, a document that gains an @ import, scripts,
 # anything executable before or after): the user sees them before any check runs here or anyone follows them.
-# Matched in any case, for case-insensitive disks. One line, plain.
+# Matched in any case, for case-insensitive disks; a local file land does not take back is never named. One line, plain.
 landed_runs() {
   _g="git -c core.quotePath=false diff --no-ext-diff --no-textconv"
   { $_g --name-only "$1" "$2" -- . $(excludes) \
       | grep -iE '(^|/)(package\.json|Makefile|CLAUDE[^/]*\.md|\.mcp\.json|\.envrc|\.pre-commit-config\.yaml|\.?lefthook(-local)?\.ya?ml)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)\.?(git-?)?hooks/' || true
-    $_g --name-only "$1" "$2" -- .cloud-kit/local | sed 's|^\.cloud-kit/local/||' | while IFS= read -r f; do
-      _l="$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')"
-      local_instruction "$_l" && { echo "$local_dir/$f"; continue; }
-      case "$_l" in away/brief*.md|package.json|*/package.json|makefile|*/makefile|claude*.md|*/claude*.md|*.sh|*.bash|*.zsh|*.py|*.mjs|*.cjs|*.js|*.ts|*.rb|*.pl|*.ps1)
-        echo "$local_dir/$f" ;; esac
-    done
-    $_g --text -U0 "$1" "$2" -- '.cloud-kit/local/*.md' \
-      | awk -v l="$local_dir/" '/^\+\+\+ / { f = $0; sub(/^\+\+\+ b\/\.cloud-kit\/local\//, "", f); next } /^\+(.*[ \t])?@[^ \t]/ { print l f }'
-    $_g --raw "$1" "$2" -- .cloud-kit/local \
-      | awk -F '\t' -v l="$local_dir/" '{ split($1, a, " ") } a[1] == ":100755" || a[2] == "100755" { sub(/^\.cloud-kit\/local\//, "", $2); print l $2 }'
+    { $_g --name-only "$1" "$2" -- .cloud-kit/local | sed 's|^\.cloud-kit/local/||' | while IFS= read -r f; do
+        _l="$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')"
+        local_instruction "$_l" && { echo "$f"; continue; }
+        case "$_l" in away/brief*.md|package.json|*/package.json|makefile|*/makefile|claude*.md|*/claude*.md|*.sh|*.bash|*.zsh|*.py|*.mjs|*.cjs|*.js|*.ts|*.rb|*.pl|*.ps1)
+          echo "$f" ;; esac
+      done
+      $_g --text -U0 "$1" "$2" -- '.cloud-kit/local/*.md' \
+        | awk '/^\+\+\+ / { f = $0; sub(/^\+\+\+ b\/\.cloud-kit\/local\//, "", f); next } /^\+(.*[ \t])?@[^ \t]/ { print f }'
+      $_g --raw "$1" "$2" -- .cloud-kit/local \
+        | awk -F '\t' '{ split($1, a, " ") } a[1] == ":100755" || a[2] == "100755" { sub(/^\.cloud-kit\/local\//, "", $2); print $2 }'
+    } | sort -u | taken_back | sed "s|^|$local_dir/|"
   } | plain | sort -u | tr '\n' ' '
 }
 
@@ -48,7 +48,7 @@ land_deletions() {
 '; kept=""
   git -c core.quotePath=false ls-tree -r --name-only "$tip" -- .cloud-kit/local | sed 's|^\.cloud-kit/local/||' > "$tmp/now"
   git -c core.quotePath=false ls-tree -r --name-only "$sp" -- .cloud-kit/local | sed 's|^\.cloud-kit/local/||' \
-    | { grep -vxF -f "$tmp/now" || true; } > "$tmp/gone"
+    | { grep -vxF -f "$tmp/now" || true; } | taken_back > "$tmp/gone"   # what land never took back is never counted
   n="$(grep -c . "$tmp/gone" || true)"; [ "$n" != 0 ] || return 0
   had="$(git ls-tree -r --name-only "$sp" -- .cloud-kit/local | grep -c .)"
   why=""

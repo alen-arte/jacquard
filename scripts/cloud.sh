@@ -11,7 +11,8 @@
 #                      deletions included
 #   cloud.sh status    is there cloud work not landed yet? did something here not travel? (is the remote still private?)
 # What travels from the local folder, both ways, is one rule (cloud/rule.sh): everything, except what the personal
-# layer ignores, a name with a part that starts with a dot, an unusual name, and one that looks like settings or keys.
+# layer ignores, a name with a part that starts with a dot, an unusual name, a <file>.cloud, a file shaped like
+# settings or keys, and a link (named, left out).
 # A kit branch follows one work branch; `prepare|land --take-over` moves it to this one when that branch is gone and the
 # user says its work is not wanted here.
 #
@@ -19,7 +20,7 @@
 # separate private remote is set in this repo's own git config (never global, never tracked):
 # `git config jacquard.cloudRemote <name>`. `prepare` checks on GitHub, every time, that its one push URL is a private
 # repo with no other collaborators; a repo that deploys or runs workflows needs `git config jacquard.cloudDeployOk true`
-# from the user once. What the personal layer git-ignores never travels. Needs git, gh and python3.
+# from the user once. What the personal layer git-ignores never travels. Needs git, gh, python3 and iconv.
 # Never check out cloud/<branch> on the computer: it tracks CLAUDE.local.md, which would replace yours.
 # Known limit: a cloud commit amended or squashed after it landed, then force-pushed, is not landed again.
 set -eu
@@ -195,14 +196,13 @@ land)
   # 0) the documents are checked before anything lands: only plain files the rule lets travel; what this computer
   #    does not take back (ignored by the layer, shaped like settings or keys) is skipped and counted, never written
   cloud_docs "$tip" > "$tmp/all"
-  rc=0; ign="$(git -C "$proj" -c core.quotePath=false check-ignore --no-index --stdin < "$tmp/all")" || rc=$?
-  [ "$rc" -le 1 ] || die "the private-file check failed (rc=$rc): nothing landed"
-  if [ -n "$ign" ]; then grep -vxF -e "$ign" "$tmp/all" > "$tmp/docs" || true; printf '%s\n' "$ign" >> "$tmp/skipped"; else cp "$tmp/all" "$tmp/docs"; fi
+  not_ignored < "$tmp/all" | grep . > "$tmp/docs" || true
+  grep -vxF -f "$tmp/docs" "$tmp/all" >> "$tmp/skipped" || true
   skipped="$(grep -c . "$tmp/skipped" || true)"
   [ "$skipped" = 0 ] || echo "  ⚠ $skipped file(s) in the cloud this computer does not take back (ignored by the personal layer, or shaped like settings or keys): not landed. They stay in the kit branch's history until its cloud/ branches are deleted."
   while IFS= read -r f; do   # every target checked before anything is written: never through a link, never over a folder
-    [ ! -L "$proj/$f" ] && [ ! -L "$proj/$f.cloud" ] && [ ! -d "$proj/$f" ] && inside_local "$f" \
-      || die "$f is a link or a folder here, or a link or a file stands in its way in $local_dir: nothing landed"
+    [ ! -L "$proj/$f.cloud" ] && [ ! -d "$proj/$f" ] && inside_local "$f" \
+      || die "$f is a folder here, or a link or a file stands in its way in $local_dir: nothing landed"
   done < "$tmp/docs"
   # files that run or instruct, changed by the cloud since the sync point (said on every run, a stopped one too):
   # the user sees them before any check runs here
@@ -249,6 +249,11 @@ land)
     if git cat-file -e "$sp:.cloud-kit/local/$f" 2>/dev/null; then
       git show "$sp:.cloud-kit/local/$f" > "$base"
       cmp -s "$new" "$base" && continue                                  # the cloud did not touch it
+    fi
+    if [ -L "$proj/$f" ]; then                                            # never written through a link: yours stays
+      cp "$new" "$proj/$f.cloud"; echo "  ⚠ $f is a link here: yours kept, cloud's saved as $f.cloud"; both="$both $f.cloud"; continue
+    fi
+    if git cat-file -e "$sp:.cloud-kit/local/$f" 2>/dev/null; then
       if [ -f "$proj/$f" ] && ! cmp -s "$proj/$f" "$base"; then
         cp "$new" "$proj/$f.cloud"; echo "  ⚠ $f changed in both places: yours kept, cloud's saved as $f.cloud"; both="$both $f.cloud"; continue
       fi

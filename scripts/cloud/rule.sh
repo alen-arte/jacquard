@@ -9,9 +9,7 @@
 travelling() {
   _all="$(git -C "$proj" -c core.quotePath=false ls-files --cached --others --exclude-standard -- .)"
   [ -n "$_all" ] || return 0
-  _rc=0; _ign="$(printf '%s\n' "$_all" | git -C "$proj" -c core.quotePath=false check-ignore --no-index --stdin)" || _rc=$?
-  [ "$_rc" -le 1 ] || die "the private-file check failed (rc=$_rc): nothing done"
-  [ -z "$_ign" ] || _all="$(printf '%s\n' "$_all" | grep -vxF -e "$_ign" || true)"   # tracked, then ignored: never travels
+  _all="$(printf '%s\n' "$_all" | not_ignored)" || exit 1   # tracked, then ignored: never travels
   _seen=""
   printf '%s\n' "$_all" | while IFS= read -r f; do
     [ -n "$f" ] || continue
@@ -35,13 +33,13 @@ inside_local() {
 }
 
 # The rule for a name that travels, both ways. Prints why not, or nothing.
-# - unusual: a control character, a quote or a backslash (git quotes such names, so they arrive with a quote), a name
-#   that is not valid UTF-8, or one plain would change (C1 controls, bidi overrides, in any locale);
+# - unusual: a leading colon, a control character, a quote or a backslash (git quotes such names, so they arrive with
+#   a quote), a name that is not valid UTF-8, or one plain would change (C1 controls, bidi overrides, in any locale);
 # - a part that starts with a dot: internal marks (away/.away-active), and also .., .git, .gitignore, .gitattributes;
 # - <file>.cloud: a copy waiting to be merged, on this computer only;
 # - secret_shape.
 doc_problem() {
-  case "$1" in *[[:cntrl:]]*|*\"*|*\\*) echo "unusual file name"; return ;; esac
+  case "$1" in :*|*[[:cntrl:]]*|*\"*|*\\*) echo "unusual file name"; return ;; esac   # git reads a leading : as pathspec magic
   printf '%s' "$1" | iconv -f UTF-8 -t UTF-8 >/dev/null 2>&1 || { echo "unusual file name"; return; }
   [ "$(printf '%s' "$1" | plain)" = "$1" ] || { echo "unusual file name"; return; }
   case "$1" in .*|*/.*) echo "name starts with a dot"; return ;; esac
@@ -69,12 +67,26 @@ local_instruction() {
   return 1
 }
 
-# 0 when the personal layer ignores the local file $1, 1 when it does not; a failed check stops the script.
+# 0 when the personal layer ignores the local file $1, 1 when it does not; a failed check stops the script. A name
+# with a leading colon is read as pathspec magic even on stdin: doc_problem refuses those before this runs.
 layer_ignored() {
-  _rc=0; printf '%s\n' "$1" | git -C "$proj" check-ignore -q --no-index --stdin || _rc=$?   # --stdin: a path, never a pattern
+  _rc=0; printf '%s\n' "$1" | git -C "$proj" check-ignore -q --no-index --stdin || _rc=$?
   [ "$_rc" -le 1 ] || die "the private-file check failed (rc=$_rc): nothing more done"
   return "$_rc"
 }
+
+# The names on stdin (relative to the local folder) the personal layer does not ignore, in one check; a name with a
+# leading colon passes through unchecked (git would read it as magic) for doc_problem to refuse. A failed check stops.
+not_ignored() {
+  _in="$(cat)"; [ -n "$_in" ] || return 0
+  _rc=0; _ign="$(printf '%s\n' "$_in" | grep -v '^:' | git -C "$proj" -c core.quotePath=false check-ignore --no-index --stdin)" || _rc=$?
+  [ "$_rc" -le 1 ] || die "the private-file check failed (rc=$_rc): nothing done"
+  if [ -n "$_ign" ]; then printf '%s\n' "$_in" | grep -vxF -e "$_ign" || true; else printf '%s\n' "$_in"; fi
+}
+
+# The names on stdin this computer would take back from the cloud: not ignored, and passing doc_problem. What it
+# would not take back is never named or counted as travelling.
+taken_back() { not_ignored | while IFS= read -r f; do [ -z "$f" ] || [ -n "$(doc_problem "$f")" ] || echo "$f"; done; }
 
 # The left-out entries of travelling's output ($1) worth a person's eye, one per line, capped: dot names are internal
 # marks and stay silent.

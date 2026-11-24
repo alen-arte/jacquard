@@ -171,7 +171,7 @@ run prepare || fail "L30 prepare: $(cat "$tmp/out")"
 at .cloud-kit/local/plans/credential-rotation.md >/dev/null || fail "L30b a markdown plan about credentials travels"
 grep -q 'first time in the cloud' "$tmp/out" && grep -q 'plans/credential-rotation.md' "$tmp/out" || fail "L30c prepare names what reaches the cloud for the first time: $(cat "$tmp/out")"
 cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
-echo '{}' > .cloud-kit/local/docs/Client_Secret.json; mkdir -p .cloud-kit/local/nueva2; echo leak > .cloud-kit/local/nueva2/private.md
+echo '{}' > .cloud-kit/local/docs/Client_Secret.json; mkdir -p .cloud-kit/local/nueva2; printf 'leak\n@../x.md\n' > .cloud-kit/local/nueva2/private.md
 echo 'see @../y.md' > .cloud-kit/local/plans/inline.md; mkdir -p .cloud-kit/local/tools; echo 'echo' > .cloud-kit/local/tools/run; chmod +x .cloud-kit/local/tools/run
 echo z > .cloud-kit/local/plans/z.md; echo 'plan 2' > .cloud-kit/local/plans/credential-rotation.md
 git add -A; git commit -q -m "R11: mixed"; cloud_push
@@ -182,6 +182,10 @@ grep -q '2 file(s) in the cloud this computer does not take back' "$tmp/out" || 
 [ "$(cat "$p/plans/credential-rotation.md")" = 'plan 2' ] && [ -f "$p/plans/z.md" ] || fail "L31d the rest lands"
 grep 'run or give instructions' "$tmp/out" | grep -q '.notes/plans/inline.md' || fail "L31e an inline @ import is named: $(cat "$tmp/out")"
 grep 'run or give instructions' "$tmp/out" | grep -q '.notes/tools/run' || fail "L31f an executable is named"
+grep -q -e 'private.md' -e 'Client_Secret' "$tmp/out" && fail "L31g a file land skipped is never named, even with an @ line: $(cat "$tmp/out")"
+run status || fail "L31h status after the land: $(cat "$tmp/out")"
+grep -q -e 'private.md' -e 'Client_Secret' "$tmp/out" && fail "L31i status never names what land skipped: $(cat "$tmp/out")"
+grep -A5 'not backed up yet' "$tmp/out" | grep -q 'plans/z.md' || fail "L31j a landed file not backed up yet is listed, though it matches the cloud: $(cat "$tmp/out")"
 cd "$c" || exit 1; git rm -q .cloud-kit/local/plans/z.md .cloud-kit/local/docs/Client_Secret.json .cloud-kit/local/nueva2/private.md
 git commit -q -m "R12: drop z"; cloud_push
 cd "$w" || exit 1
@@ -201,5 +205,23 @@ run status || fail "L34 status: $(cat "$tmp/out")"
 grep -A3 'not backed up yet' "$tmp/out" | grep -q 'plans/fresh.md' || fail "L34b a new file not backed up is sorted apart: $(cat "$tmp/out")"
 grep -q '1 file(s) are still in the cloud though this computer no longer sends them' "$tmp/out" || fail "L34c a file ignored since is counted as left in the cloud's history: $(cat "$tmp/out")"
 grep -q 'R7.md' "$tmp/out" && fail "L34d and never named"
+
+# a name with a leading colon (git would read it as pathspec magic) is unusual: named, never sent, never blocking
+echo c > "$p/:odd.md"; commit_layer colon
+rm -f "$p/plans/fresh.md"
+run prepare || fail "L35 prepare with a name that starts with a colon: $(cat "$tmp/out")"
+grep -q 'unusual file name): :odd.md' "$tmp/out" || fail "L35b it is named as unusual: $(cat "$tmp/out")"
+at '.cloud-kit/local/:odd.md' >/dev/null && fail "L35c and never sent"
+
+# a link here and a file the cloud wrote at that name: the link stays, the cloud's file waits as .cloud; a broken
+# link is never written through
+ln -s "$tmp/nowhere.md" "$p/docs/dangling.md"; commit_layer dangling
+cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
+echo 'cloud alias' > .cloud-kit/local/docs/alias.md; echo 'cloud dangling' > .cloud-kit/local/docs/dangling.md
+git add -A; git commit -q -m "R13: alias"; cloud_push
+cd "$w" || exit 1
+run land || fail "L36 land with a cloud file where a link is here: $(cat "$tmp/out")"
+[ -L "$p/docs/alias.md" ] && [ "$(cat "$p/docs/alias.md.cloud")" = 'cloud alias' ] || fail "L36b the link stays and the cloud's file waits as .cloud"
+[ ! -e "$tmp/nowhere.md" ] && [ -L "$p/docs/dangling.md" ] || fail "L36c a broken link here is never written through"
 
 finish "cloud-local"
