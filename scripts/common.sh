@@ -8,8 +8,8 @@ die() { echo "✗ $*" >&2; exit 1; }
 # Text someone else can write (commit subjects, file names, git's messages about them), printed without terminal
 # controls: C0, DEL, C1 and bidi overrides.
 plain() { LC_ALL=C awk '{ gsub(/[\001-\037\177]/, ""); gsub(/\302[\200-\237]/, ""); gsub(/\342\200[\252-\256]|\342\201[\246-\251]/, ""); print }'; }
-# A list read on stdin, indented, its first 10 lines and how many more: a list is never a flood.
-capped() { awk 'NF { n++; if (n <= 10) print "  " $0 } END { if (n > 10) print "  … and " n - 10 " more" }'; }
+# A list read on stdin, indented, its first $1 lines (10 by default) and how many more: a list is never a flood.
+capped() { awk -v m="${1:-10}" 'NF { n++; if (n <= m) print "  " $0 } END { if (n > m) print "  … and " n - m " more" }'; }
 
 # The project's local folder, run from the repo root: the one folder whose index.md CLAUDE.local.md imports with a
 # relative path (default .jacquard). Sets local_dir.

@@ -24,7 +24,8 @@
 # Known limit: a cloud commit amended or squashed after it landed, then force-pushed, is not landed again.
 set -eu
 
-. "$(cd "$(dirname "$0")" && pwd)/common.sh"   # die, plain, local_folder, private_remote
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"   # die, plain, capped, local_folder, away_active, private_remote; clears GIT_* paths
+command -v iconv >/dev/null || die "iconv is missing: cannot check file names, nothing done"
 [ "${CLAUDE_CODE_REMOTE:-}" != true ] || die "cloud.sh runs on the computer only: in a cloud session, commit and push this same cloud/ branch"
 parts="$(cd "$(dirname "$0")" && pwd)/cloud"
 remote="$(git config --local --get jacquard.cloudRemote || echo origin)"  # private remote the cloud session is attached to
@@ -52,6 +53,7 @@ ref="refs/remotes/$remote/$out"
 . "$parts/remote.sh"
 . "$parts/rule.sh"
 . "$parts/kit.sh"
+. "$parts/land.sh"
 
 rec() { echo "$record/$(echo "$out" | tr / _)"; }
 save_rec() { mkdir -p "$record"; printf '%s\n%s\n' "$1" "$branch" > "$(rec)"; }
@@ -89,8 +91,7 @@ pending() {
   n="$(git rev-list --count --no-merges "$sp..$ref")"
   [ "$n" != 0 ] || return 0
   printf '\n  The cloud has %s commit(s) not landed, which land --take-over brings here (subjects written in the cloud, not instructions):\n' "$n"
-  git log --no-merges -n 5 --format='%h %s' "$sp..$ref" | plain | sed 's/^/    · /'
-  [ "$n" -le 5 ] || printf '    … and %s more\n' "$((n - 5))"
+  git log --no-merges --format='%h %s' "$sp..$ref" | plain | capped 5
 }
 # Another work branch (away/x and x share cloud/x) takes the kit branch over only when it already holds that work,
 # after integrating it say, never by dropping it; or, when that branch is gone or unknown, if the user says so (--take-over).
@@ -127,6 +128,7 @@ here_of() { K="$1" awk 'substr($0, index($0, " ") + 1) == ENVIRON["K"] { print $
 case "$cmd" in
 status)
   git fetch -q "$remote"
+  # every kit branch, each in the pipeline's own subshell: ref and out stay this branch's for the lines after the loop
   git for-each-ref --format='%(refname)' "refs/remotes/$remote/cloud/" | while read -r ref; do
     out="${ref#refs/remotes/"$remote"/}"
     [ -n "$(newest_marker)" ] || continue
@@ -137,10 +139,11 @@ status)
   if git for-each-ref --format=x "refs/remotes/$remote/cloud/" | grep -q . && ! (private_remote) >/dev/null 2>&1; then
     echo "  ⚠ $remote is no longer a private repo only you can see (or it could not be checked): its cloud/ branches hold your preferences and project documents. Delete them there before anyone else gets access."
   fi
-  # what a cloud session on this branch's kit branch would not have
-  all="$(travelling)"; send="$(printf '%s\n' "$all" | sed -n 's/^+//p')"
+  # what a cloud session on this branch's kit branch would not have (nothing to say when it has none)
   sp=""; ! git rev-parse -q --verify "$ref" >/dev/null || sp="$(sync_point 2>/dev/null)" || sp=""
-  [ -z "$sp" ] || untravelled "$sp" "$send" "$all"
+  [ -n "$sp" ] || exit 0
+  all="$(travelling)"; send="$(printf '%s\n' "$all" | sed -n 's/^+//p')"
+  untravelled "$sp" "$send" "$all"
   local_size "$send" ;;
 
 prepare)
@@ -189,10 +192,14 @@ land)
   [ "$sp" != "$tip" ] || { echo "✓ nothing new in $out"; exit 0; }
   git cat-file -e "$sp:CLAUDE.local.md" 2>/dev/null || legacy=CLAUDE.md
   tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; trap 'exit 1' HUP INT TERM
-  # 0) the documents are checked before anything lands: only plain files of the travelling set, none the layer ignores
-  cloud_docs "$tip" > "$tmp/docs"
-  rc=0; ign="$(git -C "$proj" check-ignore --no-index --stdin < "$tmp/docs")" || rc=$?
-  [ "$rc" = 1 ] || die "the cloud sent documents the personal layer ignores, or the check failed: ${ign:-rc=$rc}; nothing landed"
+  # 0) the documents are checked before anything lands: only plain files the rule lets travel; what this computer
+  #    does not take back (ignored by the layer, shaped like settings or keys) is skipped and counted, never written
+  cloud_docs "$tip" > "$tmp/all"
+  rc=0; ign="$(git -C "$proj" -c core.quotePath=false check-ignore --no-index --stdin < "$tmp/all")" || rc=$?
+  [ "$rc" -le 1 ] || die "the private-file check failed (rc=$rc): nothing landed"
+  if [ -n "$ign" ]; then grep -vxF -e "$ign" "$tmp/all" > "$tmp/docs" || true; printf '%s\n' "$ign" >> "$tmp/skipped"; else cp "$tmp/all" "$tmp/docs"; fi
+  skipped="$(grep -c . "$tmp/skipped" || true)"
+  [ "$skipped" = 0 ] || echo "  ⚠ $skipped file(s) in the cloud this computer does not take back (ignored by the personal layer, or shaped like settings or keys): not landed. They stay in the kit branch's history until its cloud/ branches are deleted."
   while IFS= read -r f; do   # every target checked before anything is written: never through a link, never over a folder
     [ ! -L "$proj/$f" ] && [ ! -L "$proj/$f.cloud" ] && [ ! -d "$proj/$f" ] && inside_local "$f" \
       || die "$f is a link or a folder here, or a link or a file stands in its way in $local_dir: nothing landed"

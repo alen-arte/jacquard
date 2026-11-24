@@ -121,11 +121,15 @@ run land && fail "C31 a link among the cloud's documents stops the land"
 cd "$c" || exit 1; git rm -q .cloud-kit/local/docs/roadmap.md; mkdir -p .cloud-kit/local/docs; echo 'plain again' > .cloud-kit/local/docs/roadmap.md
 echo 'leaked' > .cloud-kit/local/docs/private.md; git add -A; git commit -q -m "R13: plain"; cloud_push
 cd "$w" || exit 1
-run land && fail "C32 a document the personal layer ignores never lands"
+run land || fail "C32 a document the personal layer ignores is skipped, and the rest lands: $(cat "$tmp/out")"
+[ "$(cat "$p/docs/private.md")" = 'invented private notes' ] || fail "C32b a document the personal layer ignores is never written"
+grep -q '1 file(s) in the cloud this computer does not take back' "$tmp/out" || fail "C32c land counts it: $(cat "$tmp/out")"
+grep -q 'private.md' "$tmp/out" && fail "C32d and never names it"
 cd "$c" || exit 1; git rm -q .cloud-kit/local/docs/private.md; git commit -q -m "R14: tidy"; cloud_push
 cd "$w" || exit 1
 run land || fail "C33 once the cloud's documents are plain, land works: $(cat "$tmp/out")"
 [ -f c11.txt ] && grep -q 'plain again' "$p/docs/roadmap.md" || fail "C33b the held-back work lands"
+[ "$(cat "$p/docs/private.md")" = 'invented private notes' ] || fail "C33bb deleting it in the cloud never deletes what the layer ignores"
 commit_layer docs
 # an Away block run in the cloud tracked its marker: land skips it with a warning instead of blocking for good
 cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
@@ -137,7 +141,7 @@ run land || fail "C33c a tracked Away marker from the cloud does not block land:
 touch "$p/docs/.gitkeep"; commit_layer keep
 run prepare || fail "C33e prepare with a dot file in the layer: $(cat "$tmp/out")"
 at .cloud-kit/local/docs/.gitkeep >/dev/null && fail "C33f a file land would refuse is never sent"
-grep -q 'not sent to the cloud.*docs/.gitkeep' "$tmp/out" || fail "C33g prepare names what it did not send"
+grep -q 'docs/.gitkeep' "$tmp/out" && fail "C33g a dot name is an internal mark: prepare leaves it out without naming it"
 # names with a newline (in the file or in a folder), a quote or a backslash are never sent, so they never block the way back
 echo n > "$p/docs/new${nl}line.md"; mkdir -p "$p/docs/sub${nl}dir"; echo d > "$p/docs/sub${nl}dir/in.md"
 echo q > "$p/docs/q\"uote.md"; echo b > "$p/docs/back\\slash.md"; echo c > "$p/docs/c1${c1}x.md"; echo r > "$p/docs/bidi${bidi}x.md"; commit_layer odd

@@ -9,7 +9,7 @@
 # Usage (inside the project repo): personal-sync.sh ['message']   default message: "<name>: docs"
 # Exit 0: backed up, or nothing to back up · 1: refused (nothing pushed) · 2: usage.
 set -eu
-. "$(cd "$(dirname "$0")" && pwd)/common.sh"   # die, plain, local_folder, private_remote; clears inherited GIT_* paths
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"   # die, plain, capped, local_folder, away_active, private_remote; clears GIT_* paths
 
 [ $# -le 1 ] || { echo "usage: ${0##*/} ['message']" >&2; exit 2; }
 repo="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not inside a git repo: run this inside a Jacquard project"
@@ -57,9 +57,9 @@ first="$(git -c core.quotePath=false diff --cached --name-only --diff-filter=A -
 [ -z "$first" ] || printf 'Backed up for the first time (if one holds real data or names, ignore it in the layer and remove it):\n%s\n' \
   "$(printf '%s\n' "$first" | capped)"
 if git diff --cached --quiet -- "$@"; then committed=0; else git commit -q -m "$msg" -- "$@"; committed=1; fi
-[ -z "$nested" ] || printf 'Not backed up (a git repo of its own inside the project folder):\n%s\n' "$(printf '%s\n' "$nested" | plain | sed 's/^/  /')"
+[ -z "$nested" ] || printf 'Not backed up (a git repo of its own inside the project folder):\n%s\n' "$(printf '%s\n' "$nested" | plain | capped)"
 others="$(git status --porcelain -- . ":(exclude)projects/$name" | plain)"
-[ -z "$others" ] || printf 'Left as they are (not this project):\n%s\n' "$(printf '%s\n' "$others" | sed 's/^/  /')"
+[ -z "$others" ] || printf 'Left as they are (not this project):\n%s\n' "$(printf '%s\n' "$others" | capped)"
 
 # push main, fast-forward only, after saying what goes up
 kept="$( [ $committed = 0 ] || echo ' (the commit stays on this computer)')"

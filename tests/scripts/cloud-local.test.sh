@@ -143,7 +143,7 @@ git commit -q -m "R8: mass delete"; cloud_push
 cd "$w" || exit 1
 run land || fail "L27b land with a mass deletion: $(cat "$tmp/out")"
 [ -f "$p/docs/roadmap.md" ] && [ -f "$p/design/foto.png" ] || fail "L27c a mass deletion is named, not applied"
-grep -q 'more than land deletes on its own' "$tmp/out" || fail "L27d and land says why: $(cat "$tmp/out")"
+grep -q 'more than half the folder' "$tmp/out" || fail "L27d and land says why: $(cat "$tmp/out")"
 run prepare || fail "L28 prepare: $(cat "$tmp/out")"
 cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
 git rm -q .cloud-kit/local/docs/roadmap.md; git commit -q -m "R9: one delete"; cloud_push
@@ -152,5 +152,54 @@ sed -n 1p .git/jacquard-cloud/cloud_feat > "$tmp/rec"; cp "$tmp/rec" .git/jacqua
 run land || fail "L28b land from a sync point without this computer's record: $(cat "$tmp/out")"
 [ -f "$p/docs/roadmap.md" ] || fail "L28c deletions wait when this computer did not write the sync point"
 grep -q 'did not write the last sync point' "$tmp/out" || fail "L28d and land says why: $(cat "$tmp/out")"
+
+# more deletions than the limit at once are named, not applied, even when they are less than half the folder
+mkdir -p "$p/lote"; i=0; while [ $i -lt 45 ]; do echo "$i" > "$p/lote/f$i.md"; i=$((i + 1)); done; commit_layer lote
+run prepare || fail "L29 prepare with many files: $(cat "$tmp/out")"
+cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
+i=0; while [ $i -lt 21 ]; do git rm -q ".cloud-kit/local/lote/f$i.md"; i=$((i + 1)); done; git commit -q -m "R10: 21 deletes"; cloud_push
+cd "$w" || exit 1
+run land || fail "L29b land: $(cat "$tmp/out")"
+[ -f "$p/lote/f0.md" ] && grep -q 'more than the 20' "$tmp/out" || fail "L29c past the limit, deletions are named, not applied: $(cat "$tmp/out")"
+i=0; while [ $i -lt 21 ]; do rm "$p/lote/f$i.md"; i=$((i + 1)); done; commit_layer by-hand   # the user deletes them by hand
+
+# what the cloud sends that this computer does not take back is skipped and counted, and the rest lands; a plan about
+# credentials is an ordinary document; a file landed but not backed up yet is never deleted; inline @ imports and
+# executables are named
+echo 'plan' > "$p/plans/credential-rotation.md"; commit_layer cred
+run prepare || fail "L30 prepare: $(cat "$tmp/out")"
+at .cloud-kit/local/plans/credential-rotation.md >/dev/null || fail "L30b a markdown plan about credentials travels"
+grep -q 'first time in the cloud' "$tmp/out" && grep -q 'plans/credential-rotation.md' "$tmp/out" || fail "L30c prepare names what reaches the cloud for the first time: $(cat "$tmp/out")"
+cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
+echo '{}' > .cloud-kit/local/docs/Client_Secret.json; mkdir -p .cloud-kit/local/nueva2; echo leak > .cloud-kit/local/nueva2/private.md
+echo 'see @../y.md' > .cloud-kit/local/plans/inline.md; mkdir -p .cloud-kit/local/tools; echo 'echo' > .cloud-kit/local/tools/run; chmod +x .cloud-kit/local/tools/run
+echo z > .cloud-kit/local/plans/z.md; echo 'plan 2' > .cloud-kit/local/plans/credential-rotation.md
+git add -A; git commit -q -m "R11: mixed"; cloud_push
+cd "$w" || exit 1
+run land || fail "L31 land with files this computer does not take back: $(cat "$tmp/out")"
+[ ! -e "$p/docs/Client_Secret.json" ] && [ ! -e "$p/nueva2/private.md" ] || fail "L31b settings-shaped (any case) and ignored files are never written"
+grep -q '2 file(s) in the cloud this computer does not take back' "$tmp/out" || fail "L31c land counts them: $(cat "$tmp/out")"
+[ "$(cat "$p/plans/credential-rotation.md")" = 'plan 2' ] && [ -f "$p/plans/z.md" ] || fail "L31d the rest lands"
+grep 'run or give instructions' "$tmp/out" | grep -q '.notes/plans/inline.md' || fail "L31e an inline @ import is named: $(cat "$tmp/out")"
+grep 'run or give instructions' "$tmp/out" | grep -q '.notes/tools/run' || fail "L31f an executable is named"
+cd "$c" || exit 1; git rm -q .cloud-kit/local/plans/z.md .cloud-kit/local/docs/Client_Secret.json .cloud-kit/local/nueva2/private.md
+git commit -q -m "R12: drop z"; cloud_push
+cd "$w" || exit 1
+run land || fail "L32 land: $(cat "$tmp/out")"
+[ -f "$p/plans/z.md" ] && grep -A3 'kept here' "$tmp/out" | grep -q 'plans/z.md' || fail "L32b a file landed but not backed up yet is never deleted: $(cat "$tmp/out")"
+commit_layer mixed
+
+# a link inside the folder is named and left out, and does not block; status sorts what did not travel
+ln -s roadmap.md "$p/docs/alias.md"; commit_layer alias
+run prepare || fail "L33 a link inside the folder does not block prepare: $(cat "$tmp/out")"
+at .cloud-kit/local/docs/alias.md >/dev/null && fail "L33b a link never travels"
+grep -q 'a link): docs/alias.md' "$tmp/out" || fail "L33c prepare names it: $(cat "$tmp/out")"
+printf 'private.md\nR7.md\n' > "$layer/.gitignore"; commit_layer ignore-r7
+git -C "$layer" rm -q --cached "projects/demo/plans/R7.md"; commit_layer untrack
+echo fresh > "$p/plans/fresh.md"   # new, not backed up yet
+run status || fail "L34 status: $(cat "$tmp/out")"
+grep -A3 'not backed up yet' "$tmp/out" | grep -q 'plans/fresh.md' || fail "L34b a new file not backed up is sorted apart: $(cat "$tmp/out")"
+grep -q '1 file(s) are still in the cloud though this computer no longer sends them' "$tmp/out" || fail "L34c a file ignored since is counted as left in the cloud's history: $(cat "$tmp/out")"
+grep -q 'R7.md' "$tmp/out" && fail "L34d and never named"
 
 finish "cloud-local"
