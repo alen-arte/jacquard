@@ -1,9 +1,15 @@
 # Jacquard: helpers shared by the scripts that run from a project repo (cloud.sh, personal-sync.sh). Sourced, never run.
 
+# git must act on the repos these scripts name, never on one an inherited environment points to
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES \
+  GIT_NAMESPACE GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT   # the user's own GIT_CONFIG_GLOBAL/NOSYSTEM stay
+
 die() { echo "✗ $*" >&2; exit 1; }
 # Text someone else can write (commit subjects, file names, git's messages about them), printed without terminal
 # controls: C0, DEL, C1 and bidi overrides.
 plain() { LC_ALL=C awk '{ gsub(/[\001-\037\177]/, ""); gsub(/\302[\200-\237]/, ""); gsub(/\342\200[\252-\256]|\342\201[\246-\251]/, ""); print }'; }
+# A list read on stdin, indented, its first 10 lines and how many more: a list is never a flood.
+capped() { awk 'NF { n++; if (n <= 10) print "  " $0 } END { if (n > 10) print "  … and " n - 10 " more" }'; }
 
 # The project's local folder, run from the repo root: the one folder whose index.md CLAUDE.local.md imports with a
 # relative path (default .jacquard). Sets local_dir.

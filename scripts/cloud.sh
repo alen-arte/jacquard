@@ -7,8 +7,11 @@
 #
 # Usage (on the computer, inside the project repo, on the work branch):
 #   cloud.sh prepare   sync up: write cloud/<branch> from this branch plus the kit, push it, make it the default branch
-#   cloud.sh land      sync down: copy the cloud's new commits here (kit paths left out), copy its documents back
-#   cloud.sh status    is there cloud work not landed yet? (and is the cloud remote still private?)
+#   cloud.sh land      sync down: copy the cloud's new commits here (kit paths left out), copy its documents back,
+#                      deletions included
+#   cloud.sh status    is there cloud work not landed yet? did something here not travel? (is the remote still private?)
+# What travels from the local folder, both ways, is one rule (cloud/rule.sh): everything, except what the personal
+# layer ignores, a name with a part that starts with a dot, an unusual name, and one that looks like settings or keys.
 # A kit branch follows one work branch; `prepare|land --take-over` moves it to this one when that branch is gone and the
 # user says its work is not wanted here.
 #
@@ -27,6 +30,9 @@ parts="$(cd "$(dirname "$0")" && pwd)/cloud"
 remote="$(git config --local --get jacquard.cloudRemote || echo origin)"  # private remote the cloud session is attached to
 kit="${JACQUARD_KIT:-$(cd "$(dirname "$0")/.." && pwd)}"                  # installed framework
 layer="${JACQUARD_PERSONAL:-$HOME/repos/jacquard-personal}"
+max_local_mb="${JACQUARD_CLOUD_MAX_MB:-25}"   # past this size, prepare and status say the local folder is heavy
+case "$max_local_mb" in ""|*[!0-9]*) die "JACQUARD_CLOUD_MAX_MB must be a whole number of MB" ;; esac
+max_deletions=20                               # more cloud deletions than this in one land are named, not applied
 cmd="${1:-}"; take=0; [ "${2:-}" != --take-over ] || take=1
 repo="$(git rev-parse --show-toplevel)"; cd "$repo"
 local_folder   # sets local_dir: the project's local folder, a link into the personal layer
@@ -37,12 +43,14 @@ record="$(git rev-parse --absolute-git-dir)/jacquard-cloud"  # local only, one f
 
 [ -L "$local_dir" ] || die "$local_dir is not a link into $layer/projects/: run this inside a Jacquard project"
 proj="$(readlink "$local_dir")"
+proj_real="$(cd "$proj" && pwd -P)" || die "$local_dir points to $proj, which is not a folder"
 ! away_active "$proj" || die "an Away block is running in this project: cloud sync waits for Present"
 branch="$(git symbolic-ref -q --short HEAD)" || die "no branch checked out: run cloud.sh on the work branch"
 case "$branch" in cloud/*) die "$branch is a kit branch: run cloud.sh on the work branch it comes from" ;; esac
 out="cloud/${branch#away/}"
 ref="refs/remotes/$remote/$out"
 . "$parts/remote.sh"
+. "$parts/rule.sh"
 . "$parts/kit.sh"
 
 rec() { echo "$record/$(echo "$out" | tr / _)"; }
@@ -128,7 +136,12 @@ status)
   done
   if git for-each-ref --format=x "refs/remotes/$remote/cloud/" | grep -q . && ! (private_remote) >/dev/null 2>&1; then
     echo "  ⚠ $remote is no longer a private repo only you can see (or it could not be checked): its cloud/ branches hold your preferences and project documents. Delete them there before anyone else gets access."
-  fi ;;
+  fi
+  # what a cloud session on this branch's kit branch would not have
+  all="$(travelling)"; send="$(printf '%s\n' "$all" | sed -n 's/^+//p')"
+  sp=""; ! git rev-parse -q --verify "$ref" >/dev/null || sp="$(sync_point 2>/dev/null)" || sp=""
+  [ -z "$sp" ] || untravelled "$sp" "$send" "$all"
+  local_size "$send" ;;
 
 prepare)
   halfway; clean
@@ -180,10 +193,14 @@ land)
   cloud_docs "$tip" > "$tmp/docs"
   rc=0; ign="$(git -C "$proj" check-ignore --no-index --stdin < "$tmp/docs")" || rc=$?
   [ "$rc" = 1 ] || die "the cloud sent documents the personal layer ignores, or the check failed: ${ign:-rc=$rc}; nothing landed"
+  while IFS= read -r f; do   # every target checked before anything is written: never through a link, never over a folder
+    [ ! -L "$proj/$f" ] && [ ! -L "$proj/$f.cloud" ] && [ ! -d "$proj/$f" ] && inside_local "$f" \
+      || die "$f is a link or a folder here, or a link or a file stands in its way in $local_dir: nothing landed"
+  done < "$tmp/docs"
   # files that run or instruct, changed by the cloud since the sync point (said on every run, a stopped one too):
   # the user sees them before any check runs here
-  runs="$(git diff --name-only "$sp" "$tip" -- . $(excludes) | grep -E '(^|/)(package\.json|Makefile|CLAUDE\.md|\.mcp\.json|\.envrc|\.pre-commit-config\.yaml|\.?lefthook(-local)?\.ya?ml)$|^\.husky/|^\.github/workflows/|^\.claude/|(^|/)\.?(git-?)?hooks/' | plain | tr '\n' ' ' || true)"
-  [ -z "$runs" ] || echo "  ⚠ the cloud changed files that run or give instructions: $runs— show them to the user before running any check"
+  runs="$(landed_runs "$sp" "$tip")"
+  [ -z "$runs" ] || echo "  ⚠ the cloud changed files that run or give instructions: $runs— show them to the user before running any check or following them"
   mkdir -p "$record"; printf '%s' "$runs" > "$(runs_file)"   # repeated if this land stops halfway and is run again
   # 1) code: the cloud's commits since the sync point, kit paths left out, subjects kept exactly (-k). One already
   #    here (same author, date and subject: a land that stopped halfway, finished by hand) is not applied twice.
@@ -234,6 +251,7 @@ land)
     fi
     mkdir -p "$(dirname "$proj/$f")"; cp "$new" "$proj/$f"; echo "  layer ← $f"
   done < "$tmp/docs"
+  land_deletions
   save_rec "$tip"; rm -f "$(runs_file)"
   [ -z "$both" ] || echo "  Merge each into its file and delete it before committing the layer:$both"
   echo "✓ $out landed on $branch. Next: commit the personal layer, then cloud.sh prepare to sync back up." ;;

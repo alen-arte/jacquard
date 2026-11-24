@@ -9,10 +9,7 @@
 # Usage (inside the project repo): personal-sync.sh ['message']   default message: "<name>: docs"
 # Exit 0: backed up, or nothing to back up · 1: refused (nothing pushed) · 2: usage.
 set -eu
-. "$(cd "$(dirname "$0")" && pwd)/common.sh"   # die, plain, local_folder, private_remote
-# git must act on the repos named here, never on one an inherited environment points to
-unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES \
-  GIT_NAMESPACE GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT   # the user's own GIT_CONFIG_GLOBAL/NOSYSTEM stay
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"   # die, plain, local_folder, private_remote; clears inherited GIT_* paths
 
 [ $# -le 1 ] || { echo "usage: ${0##*/} ['message']" >&2; exit 2; }
 repo="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not inside a git repo: run this inside a Jacquard project"
@@ -55,6 +52,10 @@ while IFS= read -r d; do [ -z "$d" ] || set -- "$@" ":(exclude)$d"; done <<EOF
 $nested
 EOF
 git add -A -- "$@"
+# files backed up for the first time also reach the cloud on the next prepare: named, so real data can still be ignored
+first="$(git -c core.quotePath=false diff --cached --name-only --diff-filter=A -- "$@" | plain)"
+[ -z "$first" ] || printf 'Backed up for the first time (if one holds real data or names, ignore it in the layer and remove it):\n%s\n' \
+  "$(printf '%s\n' "$first" | capped)"
 if git diff --cached --quiet -- "$@"; then committed=0; else git commit -q -m "$msg" -- "$@"; committed=1; fi
 [ -z "$nested" ] || printf 'Not backed up (a git repo of its own inside the project folder):\n%s\n' "$(printf '%s\n' "$nested" | plain | sed 's/^/  /')"
 others="$(git status --porcelain -- . ":(exclude)projects/$name" | plain)"

@@ -53,6 +53,8 @@ run || fail "P1 a plain backup succeeds: $(cat "$tmp/out")"
 remote_files | grep -qx projects/demo/design/manual.md || fail "P1 the whole project folder travels"
 remote_files | grep -qx projects/demo/migration-backup/index.md || fail "P1 backups travel too"
 remote_files | grep -q private.md && fail "P1 what the layer ignores never travels"
+grep -A3 'for the first time' "$tmp/out" | grep -q 'design/manual.md' || fail "P1b files backed up for the first time are named: $(cat "$tmp/out")"
+grep -A3 'for the first time' "$tmp/out" | grep -q 'docs/roadmap.md' && fail "P1c a file already backed up is not named again"
 
 # P2 another project's changes, even staged, are named and stay out of the commit
 echo changed >> "$q/index.md"; (cd "$layer" && git add projects/other/index.md)
