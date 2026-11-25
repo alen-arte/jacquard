@@ -23,7 +23,7 @@ description: "How guiding documents work: markdown as source of truth, artifacts
 | `RF#` | Planned refactor | `refactor-backlog.md` |
 | `§n` | Section of the system manual | `system-manual.md` |
 
-IDs are stable and never reused. Origin (user or Claude) is a field, not part of the ID. Cite IDs in commits, Away briefs, report cards, review findings and handoff notes.
+IDs are stable and never reused. Origin (user or Claude) is a field, not part of the ID. A new `D#` row's date cell also names its batch or release (`2026-11-25 · 0.3.0`), so `/retro` can scope decisions. Cite IDs in commits, Away briefs, report cards, review findings and handoff notes.
 
 ## Loading levels
 
@@ -92,16 +92,17 @@ The class is a recommendation; the user always decides when (core standards › 
 
 ## Closing an item
 
-The commit that closes an item (the one that marks it 🚀 or ✅ at integration, `core/git.md` › Integration) also writes its **closing data**, in the data line, with these fields in the docs language:
+The commit that closes an item (the one that marks it 🚀 or ✅ at integration, `core/git.md` › Integration) also writes its **closing data** in the data line: these fields, each named with one fixed word in the docs language (the same word every time, so `/retro` can find it):
 
 `level: 2 · reviews: plan (security), QA, security, 1 re-review · findings: 0/3/7 · rounds: 2 · rework: 3`
 
+- `level`: the item's risk level (0–2, core standards › Verification).
 - `reviews`: the independent reviews run, by role; "none" when there were none.
 - `findings`: Blocker/Major/Minor, exact counts over all its reviews (`core/review.md` › Running a review, one severity scale).
 - `rounds`: review rounds, the first included (a re-review is a round).
 - `rework`: reverts and fix commits after the first review (`R12 fix:`, `core/git.md` › Commits).
 
-When several items close together (a batch or one PR) and the reviews looked at the batch, each item still gets its own line, with the batch's numbers marked `(batch)`: `findings: 0/3/7 (batch)`. A field that cannot be known is written "not recorded", never estimated. A new `D#` row's date cell also names its batch or release (`2026-11-25 · 0.3.0`). `/retro` reads these lines instead of the history.
+When several items close together (a batch or one PR) and the reviews looked at the batch, each item still gets its own line, with the batch's numbers marked `(batch)`: `findings: 0/3/7 (batch)`. A field that cannot be known is written "not recorded", never estimated. `/retro` reads these lines instead of the history.
 
 ## Planning against the roadmap
 
