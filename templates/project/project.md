@@ -60,7 +60,7 @@ The kit's `structure-check.sh` reads this section: the file warning and cap numb
 
 ## Code map
 
-Optional, for projects with code: where to go to change something, so a task opens the right files without searching. One row per responsibility, not per folder; 15 rows at most. If the repo already maps its code (`CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`), this section is one line that points there, never a copy. A task that moves, renames or splits a file named here updates its row; `structure-check.sh` warns about a path here that no longer exists (only the Files column, and plain paths, are checked).
+> Optional, for projects with code: where to go to change something, so a task opens the right files without searching. One row per responsibility, not per folder; 15 rows at most. If the repo already maps its code (`CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`), this section is one line that points there, never a copy. A task that moves, renames or splits a file named here updates its row. The kit's `structure-check.sh` warns about a path here that is not in the repo: in the table only the Files column, elsewhere every value in backticks, except notes like this one (lines starting with `>`) and anything that is not a plain path (spaces, wildcards, braces, `~`, `$`, a `:line` or `#anchor`).
 
 | To change | Files | Check |
 |---|---|---|

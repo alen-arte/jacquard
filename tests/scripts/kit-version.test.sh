@@ -4,8 +4,7 @@
 . "$(dirname "$0")/lib.sh"
 script="$kit/scripts/kit-version.sh"
 [ -x "$script" ] || { echo "✗ $script missing or not executable"; exit 1; }
-kv() { out="$("$script" "$@" 2>&1)"; st=$?; }
-has() { printf '%s\n' "$out" | grep -q -e "$1"; }
+kv() { sc "$@"; }
 installed="$(awk '/^## [0-9]+\.[0-9]+\.[0-9]+/ { print $2; exit }' "$kit/CHANGELOG.md")"
 
 l="$tmp/layer"; mkdir -p "$l/projects/old" "$l/projects/same" "$l/projects/none" "$l/projects/newer"

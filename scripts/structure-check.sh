@@ -17,7 +17,8 @@
 # ⚠ (warning): a file that crossed the warning, grew past it, or is new past it; an existing cycle through a touched
 #   file; a top-level function name this change added in a second file of one language (never across folders
 #   that run separately, such as edge functions); colour literals it added
-#   outside the token files; a path project.md › Code map names that is not in the repo (it flags no file).
+#   outside the token files; a path project.md › Code map names that is not in the repo, on every run, whatever the
+#   change touched (cheap to fix, and a stale map misleads every task; it flags no file).
 #   Touched debt it did not make worse is one "Touched, not made worse" line, not flagged.
 # Exit 0: no ✗ · 1: at least one ✗ · 2: usage or git error. The last line is "✓ no findings" or "Flagged: <files|none>",
 # the files a reviewer reads whole (only this change's files, except a new cycle); paths with spaces are not supported there.

@@ -5,9 +5,6 @@
 script="$kit/scripts/structure-check.sh"
 [ -x "$script" ] || { echo "✗ $script missing or not executable"; exit 1; }
 
-# sc <args…>: runs the check, leaves its output in $out and its exit status in $st
-sc() { out="$("$script" "$@" 2>&1)"; st=$?; }
-has() { printf '%s\n' "$out" | grep -q -e "$1"; }
 flagged() { printf '%s\n' "$out" | grep '^Flagged:' | grep -q -e " $1\( \|$\)"; }
 lines() { seq 1 "$2" | sed 's/^/const v = 1; \/\/ /' > "$1"; }
 
