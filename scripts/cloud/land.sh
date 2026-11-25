@@ -2,7 +2,7 @@
 # names before anything runs, and which deletions it applies. The rule for names is rule.sh's.
 
 # The documents a cloud tip ($1) may carry back: regular files that pass doc_problem, one path per line, relative to
-# the local folder. A file shaped like settings or keys is never taken back and only counted, in $tmp/skipped. A link,
+# the local folder. A file that stays_here (settings or keys, a kit update's backup) is never taken back and only counted, in $tmp/skipped. A link,
 # a special file, a dot name, an unusual name or a .cloud copy stops the land before a file is written.
 cloud_docs() {
   tab="$(printf '\t')"; out_of_it="remove it in a cloud session (git rm), push, then cloud.sh land again"
@@ -11,7 +11,7 @@ cloud_docs() {
     mode="${line%% *}"; f="${line#*"$tab"}"; f="${f#.cloud-kit/local/}"
     [ "$f" != away/.away-active ] || { echo "  ⚠ the cloud tracks its Away marker ($f): not landed; the next prepare removes it there" >&2; continue; }
     case "$mode" in 100644|100755) ;; *) die "the cloud's documents hold a link or something that is not a file ($(printf '%s' "$f" | plain)): nothing landed; $out_of_it" ;; esac
-    ! secret_shape "$f" || { echo "$f" >> "$tmp/skipped"; continue; }
+    ! stays_here "$f" || { echo "$f" >> "$tmp/skipped"; continue; }
     p="$(doc_problem "$f")"; [ -z "$p" ] || die "$p among the cloud's documents ($(printf '%s' "$f" | plain)): nothing landed; $out_of_it"
     echo "$f"
   done

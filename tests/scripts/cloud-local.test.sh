@@ -83,12 +83,15 @@ run status; grep -q ' MB' "$tmp/out" && fail "L20 no size line under the limit: 
 env JACQUARD_CLOUD_MAX_MB=0 sh "$cloud" status > "$tmp/out" 2>&1
 grep -q 'over 0 MB' "$tmp/out" || fail "L20b status says when the folder passes the limit: $(cat "$tmp/out")"
 
-# names that look like settings or keys never travel (backups of settings.local.json among them)
-mkdir -p "$p/migration-backup/x"; echo '{}' > "$p/migration-backup/x/settings.local.json"; echo k > "$p/docs/deploy.pem"; commit_layer backup
+# names that look like settings or keys never travel; the kit update's backups stay on this computer, unnamed
+mkdir -p "$p/migration-backup/x"; echo '{}' > "$p/migration-backup/x/settings.local.json"; echo old > "$p/migration-backup/x/index.md"
+echo k > "$p/docs/deploy.pem"; echo '{}' > "$p/docs/app-settings.json"; commit_layer backup
 run prepare || fail "L21 prepare with a settings backup: $(cat "$tmp/out")"
-at .cloud-kit/local/migration-backup/x/settings.local.json >/dev/null && fail "L21b a settings file never travels"
-at .cloud-kit/local/docs/deploy.pem >/dev/null && fail "L21c a key file never travels"
+at .cloud-kit/local/migration-backup/x/settings.local.json >/dev/null && fail "L21b a settings backup never travels"
+at .cloud-kit/local/docs/deploy.pem >/dev/null && at .cloud-kit/local/docs/app-settings.json >/dev/null && fail "L21c a key or settings file never travels"
 grep -q 'looks like settings or keys' "$tmp/out" || fail "L21d prepare names them: $(cat "$tmp/out")"
+at .cloud-kit/local/migration-backup/x/index.md >/dev/null && fail "L21e nothing in migration-backup travels"
+grep -q 'migration-backup' "$tmp/out" && fail "L21f and it is never named: $(cat "$tmp/out")"
 
 # a folder that became a link out of the local folder stops prepare: nothing outside is read
 mkdir -p "$tmp/client"; echo outside > "$tmp/client/R7.md"   # the same name as the tracked plans/R7.md
@@ -174,19 +177,20 @@ cd "$c" || exit 1; git pull -q --ff-only origin cloud/feat
 echo '{}' > .cloud-kit/local/docs/Client_Secret.json; mkdir -p .cloud-kit/local/nueva2; printf 'leak\n@../x.md\n' > .cloud-kit/local/nueva2/private.md
 echo 'see @../y.md' > .cloud-kit/local/plans/inline.md; mkdir -p .cloud-kit/local/tools; echo 'echo' > .cloud-kit/local/tools/run; chmod +x .cloud-kit/local/tools/run
 echo z > .cloud-kit/local/plans/z.md; echo 'plan 2' > .cloud-kit/local/plans/credential-rotation.md
+mkdir -p .cloud-kit/local/migration-backup/y; echo cloud > .cloud-kit/local/migration-backup/y/index.md
 git add -A; git commit -q -m "R11: mixed"; cloud_push
 cd "$w" || exit 1
 run land || fail "L31 land with files this computer does not take back: $(cat "$tmp/out")"
-[ ! -e "$p/docs/Client_Secret.json" ] && [ ! -e "$p/nueva2/private.md" ] || fail "L31b settings-shaped (any case) and ignored files are never written"
-grep -q '2 file(s) in the cloud this computer does not take back' "$tmp/out" || fail "L31c land counts them: $(cat "$tmp/out")"
+[ ! -e "$p/docs/Client_Secret.json" ] && [ ! -e "$p/nueva2/private.md" ] && [ ! -e "$p/migration-backup/y" ] || fail "L31b settings-shaped (any case), backup and ignored files are never written"
+grep -q '3 file(s) in the cloud this computer does not take back' "$tmp/out" || fail "L31c land counts them: $(cat "$tmp/out")"
 [ "$(cat "$p/plans/credential-rotation.md")" = 'plan 2' ] && [ -f "$p/plans/z.md" ] || fail "L31d the rest lands"
 grep 'run or give instructions' "$tmp/out" | grep -q '.notes/plans/inline.md' || fail "L31e an inline @ import is named: $(cat "$tmp/out")"
 grep 'run or give instructions' "$tmp/out" | grep -q '.notes/tools/run' || fail "L31f an executable is named"
-grep -q -e 'private.md' -e 'Client_Secret' "$tmp/out" && fail "L31g a file land skipped is never named, even with an @ line: $(cat "$tmp/out")"
+grep -q -e 'private.md' -e 'Client_Secret' -e 'migration-backup' "$tmp/out" && fail "L31g a file land skipped is never named, even with an @ line: $(cat "$tmp/out")"
 run status || fail "L31h status after the land: $(cat "$tmp/out")"
-grep -q -e 'private.md' -e 'Client_Secret' "$tmp/out" && fail "L31i status never names what land skipped: $(cat "$tmp/out")"
+grep -q -e 'private.md' -e 'Client_Secret' -e 'migration-backup' "$tmp/out" && fail "L31i status never names what land skipped: $(cat "$tmp/out")"
 grep -A5 'not backed up yet' "$tmp/out" | grep -q 'plans/z.md' || fail "L31j a landed file not backed up yet is listed, though it matches the cloud: $(cat "$tmp/out")"
-cd "$c" || exit 1; git rm -q .cloud-kit/local/plans/z.md .cloud-kit/local/docs/Client_Secret.json .cloud-kit/local/nueva2/private.md
+cd "$c" || exit 1; git rm -q -r .cloud-kit/local/plans/z.md .cloud-kit/local/docs/Client_Secret.json .cloud-kit/local/nueva2/private.md .cloud-kit/local/migration-backup
 git commit -q -m "R12: drop z"; cloud_push
 cd "$w" || exit 1
 run land || fail "L32 land: $(cat "$tmp/out")"

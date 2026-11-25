@@ -37,19 +37,26 @@ inside_local() {
 #   a quote), a name that is not valid UTF-8, or one plain would change (C1 controls, bidi overrides, in any locale);
 # - a part that starts with a dot: internal marks (away/.away-active), and also .., .git, .gitignore, .gitattributes;
 # - <file>.cloud: a copy waiting to be merged, on this computer only;
-# - secret_shape.
+# - stays_here.
 doc_problem() {
   case "$1" in :*|*[[:cntrl:]]*|*\"*|*\\*) echo "unusual file name"; return ;; esac   # git reads a leading : as pathspec magic
   printf '%s' "$1" | iconv -f UTF-8 -t UTF-8 >/dev/null 2>&1 || { echo "unusual file name"; return; }
   [ "$(printf '%s' "$1" | plain)" = "$1" ] || { echo "unusual file name"; return; }
   case "$1" in .*|*/.*) echo "name starts with a dot"; return ;; esac
   case "$1" in *.cloud) echo "a copy waiting to be merged"; return ;; esac
+  case "$1" in migration-backup/*) echo "a kit update's backup"; return ;; esac
   ! secret_shape "$1" || echo "looks like settings or keys"
 }
 
-# A file shaped like settings, keys or credentials (backups of settings.local.json among them), in any case; never a
-# markdown document, so a plan about credentials still travels. Provisional until the user decides where the
-# migration backups live.
+# A file that never leaves this computer and is skipped when the cloud sends it: the copies /jacquard-update and
+# kickoff keep before replacing a file (settings.local.json among them; the layer still backs them up), and secret_shape.
+stays_here() {
+  case "$1" in migration-backup/*) return 0 ;; esac
+  secret_shape "$1"
+}
+
+# A file shaped like settings, keys or credentials, in any case; never a markdown document, so a plan about
+# credentials still travels. It also catches some ordinary files (a Keynote .key): they are named when left out.
 secret_shape() {
   _b="$(printf '%s' "${1##*/}" | tr '[:upper:]' '[:lower:]')"
   case "$_b" in *.md) return 1 ;; esac
@@ -89,5 +96,5 @@ not_ignored() {
 taken_back() { not_ignored | while IFS= read -r f; do [ -z "$f" ] || [ -n "$(doc_problem "$f")" ] || echo "$f"; done; }
 
 # The left-out entries of travelling's output ($1) worth a person's eye, one per line, capped: dot names are internal
-# marks and stay silent.
-left_out() { printf '%s\n' "$1" | sed -n '/^-name starts with a dot: /d; s/^-\([^:]*\): /⚠ not sent to the cloud (\1): /p' | capped; }
+# marks and kit update backups are expected, and stay silent.
+left_out() { printf '%s\n' "$1" | sed -n '/^-name starts with a dot: /d; /^-a kit update.s backup: /d; s/^-\([^:]*\): /⚠ not sent to the cloud (\1): /p' | capped; }

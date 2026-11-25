@@ -12,7 +12,7 @@
 #   cloud.sh status    is there cloud work not landed yet? did something here not travel? (is the remote still private?)
 # What travels from the local folder, both ways, is one rule (cloud/rule.sh): everything, except what the personal
 # layer ignores, a name with a part that starts with a dot, an unusual name, a <file>.cloud, a file shaped like
-# settings or keys, and a link (named, left out).
+# settings or keys, migration-backup/, and a link (named, left out).
 # A kit branch follows one work branch; `prepare|land --take-over` moves it to this one when that branch is gone and the
 # user says its work is not wanted here.
 #
@@ -194,12 +194,12 @@ land)
   git cat-file -e "$sp:CLAUDE.local.md" 2>/dev/null || legacy=CLAUDE.md
   tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT; trap 'exit 1' HUP INT TERM
   # 0) the documents are checked before anything lands: only plain files the rule lets travel; what this computer
-  #    does not take back (ignored by the layer, shaped like settings or keys) is skipped and counted, never written
+  #    does not take back (ignored by the layer, shaped like settings or keys, a kit update's backup) is skipped and counted, never written
   cloud_docs "$tip" > "$tmp/all"
   not_ignored < "$tmp/all" | grep . > "$tmp/docs" || true
   grep -vxF -f "$tmp/docs" "$tmp/all" >> "$tmp/skipped" || true
   skipped="$(grep -c . "$tmp/skipped" || true)"
-  [ "$skipped" = 0 ] || echo "  ⚠ $skipped file(s) in the cloud this computer does not take back (ignored by the personal layer, or shaped like settings or keys): not landed. They stay in the kit branch's history until its cloud/ branches are deleted."
+  [ "$skipped" = 0 ] || echo "  ⚠ $skipped file(s) in the cloud this computer does not take back (ignored by the personal layer, shaped like settings or keys, or a kit update's backup): not landed. They stay in the kit branch's history until its cloud/ branches are deleted."
   while IFS= read -r f; do   # every target checked before anything is written: never through a link, never over a folder
     [ ! -L "$proj/$f.cloud" ] && [ ! -d "$proj/$f" ] && inside_local "$f" \
       || die "$f is a folder here, or a link or a file stands in its way in $local_dir: nothing landed"
