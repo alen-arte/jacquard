@@ -37,7 +37,7 @@ Checked in a real render (`core/visual-qa.md`: when to look at the captures, and
 
 ## Severity
 
-Blocker (data loss, broken core flow, security issue) · Major (wrong behaviour or clear spec deviation) · Minor (polish) · Suggestion.
+The one scale in `core/review.md` › Running a review: Blocker · Major · Minor, each counted exactly. A Suggestion is listed apart and not counted.
 
 ## Output
 

@@ -42,7 +42,7 @@ Reviews follow `core/review.md` with the session's intensity and the floor for l
 
 **Final report:** a self-contained, sober HTML file `away-report-YYYY-MM-DD-HHMM.html` (format per preferences; with `budget: lean`, `away-report-YYYY-MM-DD-HHMM.md` instead, and HTML only when the user asks: `core/economy.md`), generated once at the end of the build block and updated in place after the review block; published as a private artifact when preferences allow; plus a short summary in chat on return. Sections:
 1. **Needs your OK:** a review cut first (`core/review.md`, Rounds), then parked items, each with options and a recommendation
-2. **Summary:** what was asked, done, not done, time used
+2. **Summary:** what was asked, done, not done, time used, and one line `Parked: R#…` (or `Parked: none`) naming every item parked in this block, so `/retro` can count what was parked more than once
 3. **Decisions I made:** one card each: the decision, why, alternatives and why not, impact, how to reverse it (commit)
 4. **State:** branch, commits, check results
 5. **Reviews:** verdicts

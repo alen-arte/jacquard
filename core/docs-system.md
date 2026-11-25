@@ -92,7 +92,16 @@ The class is a recommendation; the user always decides when (core standards › 
 
 ## Closing an item
 
-When a roadmap item is marked ✅, its data line also records `reviews` (independent reviews run), `findings` (Blocker/Major/Minor) and `rework` (reverts and fix commits after the first review). `/retro` reads these lines instead of the history.
+The commit that closes an item (the one that marks it 🚀 or ✅ at integration, `core/git.md` › Integration) also writes its **closing data**, in the data line, with these fields in the docs language:
+
+`level: 2 · reviews: plan (security), QA, security, 1 re-review · findings: 0/3/7 · rounds: 2 · rework: 3`
+
+- `reviews`: the independent reviews run, by role; "none" when there were none.
+- `findings`: Blocker/Major/Minor, exact counts over all its reviews (`core/review.md` › Running a review, one severity scale).
+- `rounds`: review rounds, the first included (a re-review is a round).
+- `rework`: reverts and fix commits after the first review (`R12 fix:`, `core/git.md` › Commits).
+
+When several items close together (a batch or one PR) and the reviews looked at the batch, each item still gets its own line, with the batch's numbers marked `(batch)`: `findings: 0/3/7 (batch)`. A field that cannot be known is written "not recorded", never estimated. A new `D#` row's date cell also names its batch or release (`2026-11-25 · 0.3.0`). `/retro` reads these lines instead of the history.
 
 ## Planning against the roadmap
 

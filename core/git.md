@@ -21,7 +21,7 @@ The user may not be an engineer: choose branches and messages yourself and expla
 
 ## Commits
 
-- One commit per completed task or logical change, message starting with the ID: `R12: add tag filter to board header`.
+- One commit per completed task or logical change, message starting with the ID: `R12: add tag filter to board header`. A commit that fixes review findings starts `R12 fix:`, so `/retro` counts it as rework and never mistakes it for a version change.
 - Never rewrite history: no amend of earlier commits, no rebase of shared work, no `reset --hard`. Undo with `git revert`.
 - A known-good commit before any risky step.
 
@@ -29,7 +29,7 @@ The user may not be an engineer: choose branches and messages yourself and expla
 
 A branch is integrated when its checks are green, its reviews per `review.md` are done, no review cut is open on it (`review.md`, Rounds; only the user's explicit OK to integrate despite the cut overrides it), and the user says OK. Prefer `git merge --ff-only`; if it refuses because the target moved, stop and explain the options (a merge commit, or bringing the branch up to date first). Finishing a merge is allowed by the guard; a plain commit on `main` is not. Delete the branch afterwards with `git branch -d` (safe delete).
 
-Integrating into `main` is also what closes roadmap items: as the last commit on the branch, before the merge, mark its items ✅ with the done date (`core/docs-system.md`, Status marks) and regenerate the status index. If `main` is not production, mark them 🚀 instead and ✅ only after the release. If the merge does not go through, revert that commit.
+Integrating into `main` is also what closes roadmap items: as the last commit on the branch, before the merge, mark its items ✅ with the done date (`core/docs-system.md`, Status marks) and their closing data (`core/docs-system.md`, Closing an item), and regenerate the status index. If `main` is not production, mark them 🚀 instead and ✅ only after the release. If the merge does not go through, revert that commit.
 
 ## Push
 

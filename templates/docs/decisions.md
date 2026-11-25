@@ -4,7 +4,7 @@
 
 | ID | Date | Area | Decision | Why (one line) | Status | Owner |
 |---|---|---|---|---|---|---|
-| D1 | YYYY-MM-DD | {{product · design · tech · data}} | {{…}} | {{…}} | {{Proposed · Approved · To test · Superseded by D#}} | {{user · collaborator}} |
+| D1 | YYYY-MM-DD · {{batch or release, e.g. 0.3.0}} | {{product · design · tech · data}} | {{…}} | {{…}} | {{Proposed · Approved · To test · Superseded by D#}} | {{user · collaborator}} |
 
 ## Open decisions
 

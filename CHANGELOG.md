@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Closing data on every closed item** (`core/docs-system.md` › Closing an item): the commit that marks an item 🚀 or ✅ writes `level · reviews · findings B/M/m · rounds · rework`, exact counts, "not recorded" when unknown; items closed together each get their own line, marked `(batch)`. One severity scale for every review (`core/review.md` › Running a review: Blocker, Major, Minor; Suggestions uncounted). Fix commits start `R12 fix:` (`core/git.md` › Commits). The Away report's summary names what was parked (`Parked: R#…`). New decision rows name their batch or release next to the date.
+
 ## 0.2.15
 - **Everything in the local folder travels to the cloud and back** (`scripts/cloud/rule.sh`, `core/git.md` › Cloud sync): one rule both ways instead of a fixed list, so plans, the design manual, archives and any new folder reach a cloud session. Never: what the personal layer ignores, a name with a part that starts with a dot, an unusual name, a `<file>.cloud`, a file shaped like settings or keys, the local folder's `migration-backup/` (the copies `/jacquard-update` and kickoff keep before replacing a file stay on the computer; the personal layer still backs them up). Bytes travel raw, past the project's filters.
   - `prepare` names what reaches the cloud for the first time, and stops on any file the layer does not version yet, anywhere in the folder, saying how to classify it. This reverses 0.2.11's exception: a freshly archived Away block now stops the first `prepare` until the layer is backed up.

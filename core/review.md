@@ -60,6 +60,7 @@ A design mistake (what enters, what leaves, what triggers what) is cheapest to c
 - The prompt names the role file and the handoff note, and passes the diff, the files in point 6 of the handoff note and only the document sections cited by ID. A diff alone cannot show that a behaviour already exists elsewhere: QA and the engineering advisor also search the repo for equivalents of what the diff adds; an advisor triggered by QA gets QA's finding and its files. It never pastes or re-reads the always-loaded files: the subagent already has them.
 - The reviewer returns only its verdict and findings.
 - The verdict and every open finding go into the report.
+- **One severity scale for every review:** **Blocker** (data loss, a broken core flow, a security hole), **Major** (wrong behaviour or a clear deviation from the spec, the manual or a `D#`), **Minor** (polish, wording, a contained improvement). A Suggestion is not a finding and is not counted. Counts are exact, written `B/M/m` (`0/3/7`), never approximate (`~15`) and never in other words ("important", "low", "changes requested").
 
 ## Rounds
 
