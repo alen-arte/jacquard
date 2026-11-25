@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.15
 - **Everything in the local folder travels to the cloud and back** (`scripts/cloud/rule.sh`, `core/git.md` › Cloud sync): one rule both ways instead of a fixed list, so plans, the design manual, archives and any new folder reach a cloud session. Never: what the personal layer ignores, a name with a part that starts with a dot, an unusual name, a `<file>.cloud`, a file shaped like settings or keys, the local folder's `migration-backup/` (the copies `/jacquard-update` and kickoff keep before replacing a file stay on the computer; the personal layer still backs them up). Bytes travel raw, past the project's filters.
   - `prepare` names what reaches the cloud for the first time, and stops on any file the layer does not version yet, anywhere in the folder, saying how to classify it. This reverses 0.2.11's exception: a freshly archived Away block now stops the first `prepare` until the layer is backed up.
   - `land` brings deletions back with brakes (only from this computer's own sync point, only unchanged files the layer versions, never the folder's instruction files, never a mass deletion), skips and counts what this computer does not take back, and names local files that instruct or run. An Away block closed in the cloud is archived there.
