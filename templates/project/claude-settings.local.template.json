@@ -57,6 +57,7 @@
       "Bash(rm -R*)",
       "Bash(gh *)",
       "Bash(~/.claude/jacquard/scripts/protected-push.sh *)",
+      "Bash(~/.claude/jacquard/scripts/push-guard.sh install --widen)",
       "Edit(/.claude/**)",
       "{{PACKAGE_INSTALL_AS_BASH_RULES}}",
       "{{DEPLOY_CLI_AS_BASH_RULES}}"
@@ -163,6 +164,10 @@
       "Bash(*>*.git/*)",
       "Bash(*>*gitconfig*)",
       "Bash(*>*config/git*)",
+      "Bash(cd .git)",
+      "Bash(cd .git/*)",
+      "Bash(cd */.git)",
+      "Bash(cd */.git/*)",
       "Edit(/.git/**)",
       "Edit(/.husky/pre-push)",
       "Edit(/.husky/_/**)",

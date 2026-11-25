@@ -8,11 +8,18 @@
 set -f
 PATH=/usr/bin:/bin
 export PATH
-here="$(cd "$(dirname "$0")" && pwd -P)"
+# Only by its real path: a link elsewhere would also load the common.sh beside the link
+real="$(readlink -f "$0" 2>/dev/null)"
+[ -n "$real" ] && [ "$0" = "$real" ] || { echo "✗ protected-push.sh: run it by its real path${real:+, $real}" >&2; exit 1; }
+here="${real%/*}"
 . "$here/common.sh"
-# Nothing inherited may change what git or a shell does: every GIT_*, husky's switch, shell start files, the loader
+# Nothing inherited may change what git or a shell does: every GIT_*, husky's switch, shell start files, the loader,
+# and where git finds the user's own settings (HOME from the system, never from the command)
 for v in $(env | sed -n 's/^\(GIT_[A-Za-z0-9_]*\)=.*/\1/p; s/^\(LD_[A-Za-z0-9_]*\)=.*/\1/p'); do unset "$v"; done
-unset HUSKY BASH_ENV ENV
+unset HUSKY BASH_ENV ENV XDG_CONFIG_HOME
+HOME="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)"
+[ -n "$HOME" ] || die "cannot read your home folder from the system"
+export HOME
 
 [ $# = 2 ] || { echo "usage: protected-push.sh <remote> <branch | refs/tags/<tag>>" >&2; exit 2; }
 remote="$1"; dest="$2"

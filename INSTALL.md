@@ -119,7 +119,7 @@ git -C ~/.claude/jacquard fetch --tags      # skip if you tagged it in your work
 git -C ~/.claude/jacquard checkout --detach v0.2.15
 ```
 
-New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/jacquard-update` in each project to bring its files up to date, piece by piece.
+New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/jacquard-update` in each project to bring its files up to date, piece by piece. Where a project has the push guard, Claude's pushes stop after every kit update until `/jacquard-update` writes the stub again (it pins the kit's files); from 0.2.16 until a project is updated, its plain pushes ask, since it has no stub yet.
 
 To see whether a project or the install lags behind, `/jacquard-update --check` compares versions without changing anything; `/jacquard-update --all`, from any session, lists every project in your personal layer with what each needs. A project behind the installed kit also says so when a session starts, if it has the kit's `SessionStart` hook (in the permissions template; a project set up before 0.2.7 gets it from `/jacquard-update`). That hook runs `scripts/session-start.sh`, which runs each session-start job on its own; settings from before it name `away-guard.sh session-start`, which hands over to it, so they keep working until `/jacquard-update` offers the new entry. Projects without the hook are covered by `--all` only.
 

@@ -46,6 +46,9 @@ is_claude() { for _m in $claude_markers; do eval "[ -n \"\${$_m:-}\" ]" && retur
 # A hook's input (JSON on stdin, kept in $input): the first occurrence of string field $1. The top-level fields come
 # before tool_input, so a value quoted inside a command never counts.
 field() { printf '%s' "$input" | tr '\n' ' ' | grep -o "\"$1\" *: *\"[^\"]*\"" | head -n 1 | sed 's/.*: *"\(.*\)"$/\1/'; }
+# The Bash tool's command in a hook's input, as JSON wrote it (escapes kept): the first "command" field, which only
+# tool_input has (a key quoted inside another value is escaped, so it never matches).
+hook_command() { printf '%s' "$input" | tr '\n' ' ' | grep -oE '"command" *: *"([^"\\]|\\.)*"' | head -n 1 | sed -E 's/^"command" *: *"//; s/"$//'; }
 
 # The full ref a protected push names (protected-push.sh, push-guard/hook.sh): a branch name, or refs/tags/<tag>.
 # Prints it; fails on anything else (another refs/ path, an option, a refspec, characters outside the list).

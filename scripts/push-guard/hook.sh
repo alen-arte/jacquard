@@ -41,7 +41,7 @@ authorized() {
   [ "$(argv "$p" | wc -l | tr -d ' ')" = 4 ] || return 1
   [ "$(argv "$p" | sed -n 1p)" = /bin/sh ] || return 1
   [ "$(readlink "/proc/$p/exe")" = "$JQ_SH_EXE" ] || return 1
-  [ "$(readlink -f "$(argv "$p" | sed -n 2p)")" = "$(readlink -f "$here/../protected-push.sh")" ] || return 1
+  [ "$(argv "$p" | sed -n 2p)" = "$(cd "$here/.." && pwd -P)/protected-push.sh" ] || return 1   # its real path, as is
   [ "$(argv "$p" | sed -n 3p)" = "$1" ] || return 1
   [ "$(dest_ref "$(argv "$p" | sed -n 4p)")" = "$2" ] || return 1
   ! tr '\0' '\n' < "/proc/$p/environ" | grep -Eq '^(BASH_ENV|ENV|LD_[A-Za-z0-9_]*)='

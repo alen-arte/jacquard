@@ -128,7 +128,9 @@ for r in 'Bash(~/.claude/jacquard/scripts/push-guard.sh install)' 'Bash(~/.claud
   printf '%s\n' "$allow" | grep -qxF "$r" || fail "S10 no exact allow rule $r"
 done
 [ "$(printf '%s\n' "$allow" | grep -c 'push-guard')" = 2 ] || fail "S10 push-guard.sh must have exactly the two allow rules (install, check)"
-printf '%s\n' "$ask" | grep -qxF 'Bash(~/.claude/jacquard/scripts/protected-push.sh *)' || fail "S10 no ask rule for protected-push.sh"
+for r in 'Bash(~/.claude/jacquard/scripts/protected-push.sh *)' 'Bash(~/.claude/jacquard/scripts/push-guard.sh install --widen)'; do
+  printf '%s\n' "$ask" | grep -qxF "$r" || fail "S10 no ask rule $r (it lets Claude push more, so the user says yes)"
+done
 printf '%s\n' "$allow" | grep -q 'protected-push' && fail "S10 no allow rule may cover protected-push.sh"
 grep -qF '`~/.claude/jacquard/scripts/protected-push.sh' "$kit/core/git.md" || fail "S10 core/git.md does not spell protected-push.sh as the ask rule does"
 
@@ -137,6 +139,7 @@ grep -qF '`~/.claude/jacquard/scripts/protected-push.sh' "$kit/core/git.md" || f
 for r in 'Bash(git push *--no-v*)' 'Bash(git push *$*)' 'Bash(git push *`*)' 'Bash(git push *{*)' 'Bash(git *<(*)' 'Bash(git *>(*)' \
   'Bash(env -i*)' 'Bash(env - *)' 'Bash(*CLAUDECODE*)' 'Bash(*CLAUDE_CODE_ENTRYPOINT*)' 'Bash(*JACQUARD_AGENT*)' 'Bash(*HUSKY*)' \
   'Bash(*hooksPath*)' 'Bash(*GIT_CONFIG*)' 'Bash(*HOME=*)' 'Bash(*>*.git/*)' 'Bash(*>*gitconfig*)' 'Bash(*>*config/git*)' \
+  'Bash(cd .git)' 'Bash(cd .git/*)' 'Bash(cd */.git)' 'Bash(cd */.git/*)' \
   'Edit(/.git/**)' 'Edit(/.husky/pre-push)' 'Edit(/.husky/_/**)' 'Edit(/{{LOCAL_FOLDER}}/away/.away-active)'; do
   printf '%s\n' "$deny" | grep -qxF "$r" || fail "S11 no deny rule $r"
 done

@@ -102,6 +102,42 @@ sed 's/`demo`/`demo`, `staging`/' .jacquard/project.md > "$tmp/pm" && cp "$tmp/p
 sc check; [ "$st" != 0 ] || fail "I3 check must fail when project.md's free list changed after install"
 sc install; sc check; [ "$st" = 0 ] || fail "I3 install again follows project.md"
 
+# W · Run by Claude, install only re-pins: widening asks (install --widen, its own ask rule)
+sed 's/`demo`, `staging`/`demo`, `staging`, `production`/' .jacquard/project.md > "$tmp/pm" && cp "$tmp/pm" .jacquard/project.md
+out="$(agent "$script" install 2>&1)"; st=$?
+[ "$st" != 0 ] || fail "W1 Claude's install must refuse a new free branch"
+case "$out" in *"--widen"*) ;; *) fail "W1 the refusal names install --widen (got: $out)";; esac
+grep -q "JQ_FREE='dev demo staging'" "$stub" || fail "W1 a refused widening leaves the stub as it was"
+agent "$script" install --widen >/dev/null 2>&1 || fail "W2 install --widen widens"
+agent "$script" install >/dev/null 2>&1 || fail "W3 re-pinning the same values goes through"
+git remote set-url origin "$tmp/p1.git/"
+sc check; [ "$st" != 0 ] || fail "W4 check must fail when a remote's URL changed"
+agent "$script" install >/dev/null 2>&1 && fail "W4 Claude's install must refuse new remote URLs"
+git remote set-url origin "$tmp/p1.git"; sc check; [ "$st" = 0 ] || fail "W4 the old URL passes again ($out)"
+printf -- '- **Branches that publish or deploy** (x): `production`\n' >> .jacquard/project.md
+sc install; [ "$st" != 0 ] || fail "W5 a branch both free and publishing must be refused"
+sed '/publish or deploy/d; s/, `production`//' .jacquard/project.md > "$tmp/pm" && cp "$tmp/pm" .jacquard/project.md; sc install
+new_project p7
+agent "$script" install >/dev/null 2>&1 && fail "W6 Claude's first install with free branches must ask (--widen)"
+new_project p8 'none'
+agent "$script" install >/dev/null 2>&1 || fail "W6 Claude's first install with no free branch goes through"
+cd "$tmp/p1" && r="$tmp/p1"
+
+# T3 · A protected destination never rides along with a free one
+commit_on dev; git switch -q main; commit_on main
+agent git push -q origin dev main 2>/dev/null && fail "T3 dev and main in one push must be refused"
+
+# P5 · protected-push.sh only by its real path (a link would also load the common.sh beside it)
+ln -s "$kc/scripts/protected-push.sh" "$tmp/pp"
+agent "$tmp/pp" origin main >/dev/null 2>&1 && fail "P5 protected-push.sh through a link must be refused"
+
+# I7 · More that check catches: other programs on the remote side, a shell alias, husky's off switch
+for kv in "remote.origin.receivepack x" "remote.origin.uploadpack x" "alias.x !sh"; do
+  # shellcheck disable=SC2086
+  git config $kv; sc check; [ "$st" != 0 ] || fail "I7 check must fail with $kv"
+  git config --unset "${kv%% *}"
+done
+
 # I4 · The free list never holds the main branch, in any case
 new_project p2 '`dev`, `MAIN`'
 sc install; [ "$st" != 0 ] || fail "I4 install must refuse a free list with the main branch"
@@ -146,6 +182,15 @@ rm -rf node_modules
 mkdir -p "$HOME/.config/husky"; : > "$HOME/.config/husky/init.sh"
 sc check; [ "$st" != 0 ] || fail "H4 check must fail with a husky init.sh"
 rm -rf "$HOME/.config/husky"
+HUSKY=0 sc check; [ "$st" != 0 ] || fail "H4 check must fail with HUSKY=0 in the environment"
+: > "$HOME/.huskyrc"; sc check; [ "$st" != 0 ] || fail "H4 check must fail with ~/.huskyrc"; rm -f "$HOME/.huskyrc"
+mkdir -p node_modules/.bin; printf '#!/bin/sh\n' > node_modules/.bin/git
+sc check; [ "$st" != 0 ] || fail "H4 check must fail with node_modules/.bin/git"; rm -rf node_modules
+sed -i '/husky\/pre-push/d' .git/info/exclude; sc check; [ "$st" != 0 ] || fail "H4 check must fail when .husky/pre-push is not excluded"
+sc install
+git add -f .husky/pre-push 2>/dev/null; sc check; [ "$st" != 0 ] || fail "H4 check must fail when .husky/pre-push is tracked"
+git rm -q --cached .husky/pre-push
+sc check; [ "$st" = 0 ] || fail "H4 husky passes again ($out)"
 git config core.hooksPath .husky; sc check; [ "$st" != 0 ] || fail "H4 check must fail with another hooksPath"
 
 finish "push-guard"

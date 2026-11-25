@@ -6,7 +6,7 @@ bg="$kc/scripts/bash-guard.sh"; guard="$kc/scripts/away-guard.sh"
 is_json() { command -v python3 >/dev/null || return 0; printf '%s' "$1" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; }
 
 # hook <command as it appears inside a JSON string>: output in $out (session s1, project $r)
-hook() { out="$(printf '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"%s","description":"push it"}}' "$1" | CLAUDE_PROJECT_DIR="$r" "$bg" .jacquard 2>/dev/null)"; }
+hook() { out="$(printf '{"session_id":"s1","cwd":"%s","tool_name":"Bash","tool_input":{"command":"%s","description":"push it"}}' "${cwd:-$r}" "$1" | CLAUDE_PROJECT_DIR="$r" "$bg" .jacquard 2>/dev/null)"; }
 decision() { printf '%s' "$out" | sed -n 's/.*"permissionDecision": "\([a-z]*\)".*/\1/p'; }
 expect() { # expect <none|ask|deny> <case> <command>
   hook "$3"; d="$(decision)"; [ -n "$d" ] || d=none
@@ -24,6 +24,13 @@ expect none B1 'grep -n \"git push\" core/git.md'
 expect none B1 'git log --oneline -n 5'
 expect none B1 'git commit -m \"R64: push guard\"'
 expect none B1 'npm run test'
+expect none B1 'git commit -m \"$(cat <<'"'"'EOF'"'"'\nR64: push guard (fix; tests)\n\nCo-Authored-By: x\nEOF\n)\"'
+expect none B1 'git commit -m \"R64: guard (push; fix)\"'
+expect none B1 "rg 'push|fetch' scripts"
+expect none B1 'git add src/push-notifications.ts'
+expect none B1 "~/.claude/jacquard/scripts/personal-sync.sh 'R64: push guard'"
+expect none B1 '~/.claude/jacquard/scripts/push-guard.sh install'
+expect none B1 '~/.claude/jacquard/scripts/push-guard.sh check'
 
 # B2 · Present: every other way of saying push asks, and so do $ or a backtick next to git
 expect ask B2 'git push origin ma\\in'
@@ -39,12 +46,24 @@ expect ask B2 'sh ~/.claude/jacquard/scripts/protected-push.sh origin main'
 expect ask B2 'git $(echo pu)sh origin main'
 expect ask B2 'grep -n x f; git push origin main'
 expect none B2 'git log --oneline | head'
+expect ask B2 "grep 'x' f; git push origin main"
+expect ask B2 'git commit -m \"$(cat <<'"'"'EOF'"'"'\nx\nEOF\n)\"; git push origin main'
+expect ask B2 'git commit -m \"$(cat <<'"'"'EOF'"'"'\nx\nEOF\ngit push origin main\nEOF\n)\"'
+expect ask B2 'git commit -m \"$(git push origin main)\"'
+expect ask B2 '~/.claude/jacquard/scripts/push-guard.sh install --widen'
+expect ask B2 '/tmp/pp origin main; echo protected-push'
+case "$(hook '~/.claude/jacquard/scripts/protected-push.sh origin main'; printf '%s' "$out")" in
+  *"pushes main to origin"*) ;; *) fail "B2 the protected-push prompt names the destination and the remote: $out";; esac
 
-# B3 · Present, guard not in place (stale or missing): the plain push asks, with the reason
+# B3 · Present: a guard out of date denies (approving would not help: the stub refuses); no guard in that repo asks
 printf '\n' >> "$kc/scripts/push-guard/hook.sh"
-expect ask B3 'git push origin r1-x'
-case "$out" in *"not in place"*) ;; *) fail "B3 the reason says the guard is not in place: $out";; esac
+expect deny B3 'git push origin r1-x'
+case "$out" in *"out of date"*) ;; *) fail "B3 the reason says the guard is out of date: $out";; esac
 sc install
+new_project b2; cd "$tmp/b1" || exit 1; r="$tmp/b1"
+cwd="$tmp/b2" expect ask B3 'git push origin r1-x'
+case "$out" in *"No push guard"*) ;; *) fail "B3 the check runs in the command's folder (b2, no stub), not the project's (b1): $out";; esac
+unset cwd
 
 # B4 · Away (this session): every push and fetch is denied with a park message; read-only work and commits pass
 CLAUDE_PROJECT_DIR="$r" CLAUDE_CODE_SESSION_ID=s1 "$guard" on .jacquard >/dev/null 2>&1

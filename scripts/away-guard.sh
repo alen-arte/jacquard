@@ -68,7 +68,8 @@ case "$cmd" in
     # Never its own switch-off, spelled exactly as the rules do (no escapes, nothing chained):
     # if that prompts, the user who ended Away answers it.
     if [ "$(field tool_name)" = Bash ]; then
-      raw="$(printf '%s' "$input" | tr '\n' ' ' | grep -o '"command" *: *"[^"\\]*"' | head -n 1 | sed 's/^"command" *: *"//; s/"$//')"
+      raw="$(hook_command)"
+      case "$raw" in *'\'*) raw="" ;; esac   # an escape (a quote, a line break) is never the bare command
       case "$raw" in "~/.claude/jacquard/scripts/away-guard.sh off $local_dir"|"$HOME/.claude/jacquard/scripts/away-guard.sh off $local_dir") exit 0 ;; esac
     fi
     mine && cat <<'EOF'
