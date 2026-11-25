@@ -72,7 +72,7 @@ out="$(printf '{}' | "$start" 2>/dev/null)"; st=$?
 # a cloud session; any one marker is enough
 printf '%s\n' "- **Kit version:** $installed" > "$tmp/.local/index.md"
 go "$start" s9 startup JACQUARD_AGENT=
-case "$out" in "Jacquard: this session does not mark itself as Claude"*) ;; *) fail "H8 no Claude marker: one warning line (got: $out)";; esac
+case "$out" in "Jacquard: this session does not mark itself as Claude (CLAUDECODE CLAUDE_CODE_ENTRYPOINT JACQUARD_AGENT"*) ;; *) fail "H8 no Claude marker: one warning line (got: $out)";; esac
 go "$start" s9 startup JACQUARD_AGENT= CLAUDE_CODE_REMOTE=true
 [ -z "$out" ] || fail "H8 no warning in a cloud session (got: $out)"
 for v in CLAUDECODE=1 CLAUDE_CODE_ENTRYPOINT=cli; do

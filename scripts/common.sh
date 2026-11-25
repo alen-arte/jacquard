@@ -38,6 +38,11 @@ find_local() {
   local_path="$_d/$1"
 }
 
+# The variables that mark a command as Claude's: Claude Code's own two, and the one the kit's settings template sets.
+# The push guard's stub tells Claude's pushes from the user's by them; a session start without any says so.
+claude_markers="CLAUDECODE CLAUDE_CODE_ENTRYPOINT JACQUARD_AGENT"
+is_claude() { for _m in $claude_markers; do eval "[ -n \"\${$_m:-}\" ]" && return 0; done; return 1; }
+
 # A hook's input (JSON on stdin, kept in $input): the first occurrence of string field $1. The top-level fields come
 # before tool_input, so a value quoted inside a command never counts.
 field() { printf '%s' "$input" | tr '\n' ' ' | grep -o "\"$1\" *: *\"[^\"]*\"" | head -n 1 | sed 's/.*: *"\(.*\)"$/\1/'; }

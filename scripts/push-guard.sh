@@ -25,13 +25,6 @@ read_values
 hook_target
 tool="$(sum_tool)"
 
-# Is the file at $target ours? 0: a Jacquard stub (its privacy line decides privacy), 1: the old privacy stub, 2: other
-stub_kind() {
-  if sed -n 2p "$target" | grep -q '^# Jacquard push guard:'; then grep -q "/scripts/hooks/pre-push' " "$target" && privacy=1; return 0; fi
-  [ "$(grep -c . "$target")" = 2 ] && grep -qx 'exec ".*/\.claude/jacquard/scripts/hooks/pre-push" "\$@"' "$target" && { privacy=1; return 1; }
-  return 2
-}
-
 case "$cmd" in
   install)
     away_active "$local_dir" && die "Away is on: the push guard is installed in Present"
@@ -46,7 +39,7 @@ case "$cmd" in
       ex="$(git rev-parse --git-path info/exclude)"
       grep -qx '/.husky/pre-push' "$ex" 2>/dev/null || echo '/.husky/pre-push' >> "$ex"
     fi
-    echo "✓ push guard at $target · free branches: ${free:-none} (plus away/…, cloud/…, r12-…); everything else through protected-push.sh"
+    echo "✓ push guard at $target · free branches: ${free:-none}, plus the kit's work branches (core/git.md › Branches); everything else through protected-push.sh"
     ;;
   check)
     [ -f "$target" ] || die "no push guard at $target (push-guard.sh install)"

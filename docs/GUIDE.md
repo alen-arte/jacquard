@@ -24,7 +24,7 @@ Jacquard gives every project the same hidden structure: standards that set the b
 3. Claude plans, shows the risk level of each task, builds, verifies, and ends with the report blocks: done, decisions made, how to verify, what needs your OK, what comes next.
 4. When leaving: `/away 3h | R12–R15`. Answer the gate, give the OK. On return: `/back`.
 
-Git without prompts you cannot judge: Claude fetches, and pushes its work branches where `origin` is your own private repo, without asking. It pushes work and dev branches (`dev`, `demo`), but never `main` or a production branch: it gives you the command to run. It backs up your project documents with `personal-sync.sh`. Away never pushes or fetches.
+Git without prompts you cannot judge: Claude fetches, and pushes its work branches where `origin` is your own private repo, without asking. It pushes free branches (`dev`, `demo`) and its work branches plainly; the main branch, any other branch and tags go only through `protected-push.sh`, which asks you every time, and with your yes Claude pushes. A git `pre-push` hook enforces it on the real destinations, whatever the command looks like. It backs up your project documents with `personal-sync.sh`. Away never pushes or fetches.
 
 ## Review intensity
 

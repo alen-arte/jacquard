@@ -17,6 +17,7 @@ unset HUSKY BASH_ENV ENV
 [ $# = 2 ] || { echo "usage: protected-push.sh <remote> <branch | refs/tags/<tag>>" >&2; exit 2; }
 remote="$1"; dest="$2"
 [ "${CLAUDE_CODE_REMOTE:-}" != true ] || die "this is a cloud session: protected pushes go from the computer"
+[ -r /proc/self/status ] || die "this system has no /proc, so the push guard cannot see this script run the push: push it from your terminal"
 top="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not in a git repo"
 cd "$top" || die "cannot enter $top"
 local_folder

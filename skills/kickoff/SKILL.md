@@ -37,7 +37,7 @@ The blocks of `interview.md` that apply, by its rules. Keep the answers in a run
 - Stack (A, B), proposed once, here: the latest stable versions that work together, **checked in official documentation now**, never from memory, with the date; flag any release younger than 30 days; hosting and environments. Without web access, mark versions "unverified".
 - Visual check (`render_check`), when there is an interface: what the repo already has, or a proposal (a browser tool is a dependency, so it is part of this OK); otherwise "none" (`~/.claude/jacquard/core/visual-qa.md`)
 - What is irreversible here: derived from the stack and the domain risks; the user confirms
-- Boundaries with collaborators, push policy (A, B with no remote and no collaborators: stated, not asked), default intensity
+- Boundaries with collaborators, push policy: the free branches Claude may push without asking (test or dev, such as `dev`, `demo`) and the branches that publish or deploy (A, B with no remote and no collaborators: stated, not asked), default intensity
 - Documents created now and documents that come later (`core/method.md`)
 - Away profile: where Away works (default: the whole product), checks that need a person, advisors for the review block
 - For C and D: the **adoption plan** (section 6)

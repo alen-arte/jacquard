@@ -167,7 +167,7 @@
       "Edit(/.husky/pre-push)",
       "Edit(/.husky/_/**)",
       "Edit(/{{LOCAL_FOLDER}}/away/.away-active)",
-      "{{PROJECT_DENY_RULES, e.g. a push to each branch only the user pushes, from project.md › Git: \"Bash(git push * production)\", \"Bash(git push * production *)\", \"Bash(git push *:production*)\", \"Bash(git push *heads/production*)\"}}"
+      "{{PROJECT_DENY_RULES, e.g. a push to each branch that publishes or deploys, from project.md › Git: \"Bash(git push * production)\", \"Bash(git push * production *)\", \"Bash(git push *:production*)\", \"Bash(git push *heads/production*)\"}}"
     ]
   },
   "hooks": {

@@ -40,7 +40,16 @@ sum_tool() {
   if [ -x /usr/bin/sha256sum ]; then echo "/usr/bin/sha256sum"; elif [ -x /usr/bin/shasum ]; then echo "/usr/bin/shasum -a 256"
   else die "no sha256sum or shasum in /usr/bin: cannot pin the kit's files"; fi
 }
-sums_of() { (cd "$kit" && for f in $pinned; do $tool "$kit/$f"; done) | awk '{ print $1 "  " $2 }'; }
+# The pinned files' sum lines as the tool prints them, each in single quotes, on one line (paths have no quotes)
+sums_quoted() { for f in $pinned; do $tool "$kit/$f"; done | sed "s/.*/'&'/" | tr '\n' ' '; }
+
+# stub_kind: what the file at $target is. 0: a Jacquard stub (its privacy line sets privacy=1), 1: the kit repo's old
+# privacy stub (sets privacy=1), 2: someone else's hook.
+stub_kind() {
+  if sed -n 2p "$target" | grep -q '^# Jacquard push guard:'; then grep -q "/scripts/hooks/pre-push' " "$target" && privacy=1; return 0; fi
+  [ "$(grep -c . "$target")" = 2 ] && grep -qx 'exec ".*/\.claude/jacquard/scripts/hooks/pre-push" "\$@"' "$target" && { privacy=1; return 1; }
+  return 2
+}
 
 # husky_sums: sums of husky's own runner files, pinned in the stub at install (check compares them).
 husky_sums() { [ "$husky" = 1 ] || return 0; $tool .husky/_/h .husky/_/pre-push | awk '{ printf "%s ", $1 }'; }
@@ -62,8 +71,8 @@ export PATH
 in="\$(mktemp)" || exit 1
 trap 'rm -f "\$in"' EXIT
 cat > "\$in"
-if [ -n "\${CLAUDECODE:-}\${CLAUDE_CODE_ENTRYPOINT:-}\${JACQUARD_AGENT:-}" ]; then
-  printf '%s\n' '$(sums_of | sed -n 1p)' '$(sums_of | sed -n 2p)' '$(sums_of | sed -n 3p)' | $tool -c --status - 2>/dev/null ||
+if [ -n "$(for m in $claude_markers; do printf '${%s:-}' "$m"; done)" ]; then
+  printf '%s\n' $(sums_quoted) | $tool -c --status - 2>/dev/null ||
     { echo "✗ Jacquard push guard: the installed kit changed since this hook was written: push refused. Run /jacquard-update, or push from your terminal." >&2; exit 1; }
   JQ_MAIN='$main' JQ_FREE='$free' JQ_LOCAL='$(pwd -P)/$local_dir' JQ_SH_EXE='$sh_exe' /bin/sh '$kit/scripts/push-guard/hook.sh' "\$@" < "\$in" || exit 1
 fi
