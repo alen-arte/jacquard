@@ -88,7 +88,7 @@ Every reply that builds or decides something ends with these blocks, each one **
 1. **Done**
 2. **Decisions I made**: the decision and a one-line reason; alternatives when the stakes warrant it. Decisions plainly implied by the request are not listed.
 3. **How to verify it**
-4. **I need your OK**: everything waiting for the user (parked items, questions, permissions)
+4. **I need your OK**: everything waiting for the user (parked items, questions, permissions); each `🔑` item still open in the work is named on its own line with the permission it needs, even when the gate already covered it
 5. **What comes next**: what is left that does not need the user, with IDs
 
 In the Away report, block 4 goes first. Block titles and prose use the user's reply language; cite IDs (`R#`, `D#`, `UF#`, `RF#`). Translate technical findings into their effect on the product and the people using it, at the depth set in preferences.
