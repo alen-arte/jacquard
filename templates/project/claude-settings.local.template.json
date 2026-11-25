@@ -154,7 +154,7 @@
       { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" elicitation \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
     ],
     "SessionStart": [
-      { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" session-start \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
+      { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/session-start.sh\" \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
     ]
   }
 }

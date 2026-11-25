@@ -1,4 +1,5 @@
-# Jacquard: helpers shared by the scripts that run from a project repo (cloud.sh, personal-sync.sh). Sourced, never run.
+# Jacquard: helpers shared by the scripts that run from a project repo (cloud.sh, personal-sync.sh) and by its hooks
+# (away-guard.sh, session-start.sh). Sourced, never run.
 
 # git must act on the repos these scripts name, never on one an inherited environment points to
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES \
@@ -22,6 +23,24 @@ local_folder() {
   local_dir="${local_dir:-.jacquard}"
   case "$local_dir" in .|..|*[!A-Za-z0-9._-]*) die "unusual local folder name in CLAUDE.local.md ($(printf '%s\n' "$local_dir" | plain)): letters, digits, '.', '_' and '-' only" ;; esac
 }
+
+# The local folder $1 as a full path, in local_path (an absolute $1 as is): under CLAUDE_PROJECT_DIR, which hooks get;
+# else under the nearest folder up from here that holds $1/index.md (the Bash tool may sit in a subfolder). Returns 1
+# when there is none.
+find_local() {
+  case "$1" in /*) local_path="$1"; return 0 ;; esac
+  _d="${CLAUDE_PROJECT_DIR:-}"
+  if [ -z "$_d" ]; then
+    _d="$(pwd -P)"
+    while [ -n "$_d" ] && [ ! -f "$_d/$1/index.md" ]; do [ "$_d" = / ] && _d="" || _d="$(dirname "$_d")"; done
+  fi
+  [ -n "$_d" ] || return 1
+  local_path="$_d/$1"
+}
+
+# A hook's input (JSON on stdin, kept in $input): the first occurrence of string field $1. The top-level fields come
+# before tool_input, so a value quoted inside a command never counts.
+field() { printf '%s' "$input" | tr '\n' ' ' | grep -o "\"$1\" *: *\"[^\"]*\"" | head -n 1 | sed 's/.*: *"\(.*\)"$/\1/'; }
 
 # An Away block is running in the project whose local folder is $1: its marker exists and has not expired (the
 # second line, epoch seconds, as away-guard.sh writes it; anything but a past number keeps it on, fail safe).

@@ -53,15 +53,15 @@ case "$out" in *'"behavior": "deny"'*) ;; *) fail "C8 id from hook input: must d
 run - permission '{"tool_input":{"command":"echo \"session_id\":\"s1\""},"session_id":"s2"}'
 [ -z "$out" ] || fail "C9 an id quoted inside tool input must not count as the session id"
 
-# Session start: compaction keeps Away on; another session starting leaves it alone
-run s1 session-start '{"session_id":"s1","source":"compact"}'
+# Session start (session-start.sh runs session-reset): compaction keeps Away on; another session starting leaves it alone
+run s1 session-reset '{"session_id":"s1","source":"compact"}'
 [ -e "$marker" ] || fail "C10 compaction must keep the marker"
-run s2 session-start '{"session_id":"s2","source":"startup"}'
+run s2 session-reset '{"session_id":"s2","source":"startup"}'
 [ -e "$marker" ] || fail "C11 a new session elsewhere must keep another session's marker"
-[ -z "$out" ] || fail "C11b session-start prints nothing for a project with no index (stdout becomes context)"
+[ -z "$out" ] || fail "C11b session-reset prints nothing (stdout becomes context)"
 
 # Resuming the Away session starts in Present: marker cleared
-run s1 session-start '{"session_id":"s1","source":"resume"}'
+run s1 session-reset '{"session_id":"s1","source":"resume"}'
 [ ! -e "$marker" ] || fail "C12 resume of the Away session must clear the marker"
 
 # Off only clears this session's marker
@@ -98,10 +98,10 @@ run s2 permission '{"session_id":"s1","tool_input":{"session_id":"s2"}}'
 case "$out" in *'"behavior": "deny"'*) ;; *) fail "C19 hook input session_id (first, top level) decides, not a nested one or the env";; esac
 
 # Clear and fork start in Present
-run s1 session-start '{"session_id":"s1","source":"clear"}'
+run s1 session-reset '{"session_id":"s1","source":"clear"}'
 [ ! -e "$marker" ] || fail "C20 /clear of the Away session must clear the marker"
 run s1 on
-run s1 session-start '{"session_id":"s1","source":"fork"}'
+run s1 session-reset '{"session_id":"s1","source":"fork"}'
 [ ! -e "$marker" ] || fail "C21 a fork of the Away session must clear the marker"
 
 # A second Away elsewhere warns before taking over
@@ -178,21 +178,6 @@ printf '%s\n' "$spelled" | while IFS= read -r c; do
   case "$c" in *" on "*) rule="Bash($rule *)" ;; *) rule="Bash($rule)" ;; esac
   grep -qF "\"$rule\"" "$template" || echo "✗ C26 no allow rule for: $c"
 done | grep . && fails=$((fails + 1))
-
-# Session start reminds a project behind the installed kit, once, and never on compaction
-mkdir -p "$tmp/.local"; printf '%s\n' '- **Phase:** 1 · **Kit version:** 0.0.1' > "$tmp/.local/index.md"
-run s9 session-start '{"session_id":"s9","source":"startup"}'
-case "$out" in "Jacquard: this project is on kit 0.0.1; the installed kit is "*"offer /jacquard-update"*) ;; *) fail "C27 a project behind gets one reminder line (got: $out)";; esac
-run s9 session-start '{"session_id":"s9","source":"compact"}'
-[ -z "$out" ] || fail "C27b no reminder on compaction (got: $out)"
-run s9 session-start '{"session_id":"s9","source":"clear"}'
-[ -z "$out" ] || fail "C27d no reminder after /clear (got: $out)"
-out="$(printf '%s' '{"session_id":"s9","source":"startup"}' | CLAUDE_CODE_REMOTE=true "$guard" session-start .local 2>/dev/null)"
-[ -z "$out" ] || fail "C27e no reminder in a cloud session (got: $out)"
-printf '%s\n' "- **Kit version:** $(awk '/^## [0-9]+\.[0-9]+\.[0-9]+/ { print $2; exit }' "$kit/CHANGELOG.md")" > "$tmp/.local/index.md"
-run s9 session-start '{"session_id":"s9","source":"startup"}'
-[ -z "$out" ] || fail "C27c a project up to date gets nothing (got: $out)"
-rm -f "$tmp/.local/index.md"
 
 # Before a Bash command (PreToolUse): while this session is in Away, a push or fetch is denied even when an allow rule
 # would let it run without a prompt; anything else, another session, or no Away: nothing printed

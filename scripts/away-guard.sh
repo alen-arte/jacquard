@@ -4,15 +4,15 @@
 # The guard answers "no" for that session only, and tells Claude to park the step.
 # It only ever denies or declines; it never allows anything.
 #
-# Usage: away-guard.sh <on|off|permission|elicitation|session-start> <local folder> [HH:MM]
+# Usage: away-guard.sh <on|off|permission|elicitation|pre-bash|session-reset|session-start> <local folder> [HH:MM]
 #   on [HH:MM]     run by /away (after the OK) and /away-resume, with the block's end time if it has one
 #   off            run by /back and the end of the block
 #   permission     PermissionRequest hook: deny with a park message
 #   elicitation    Elicitation hook: decline
 #   pre-bash       PreToolUse hook on Bash: deny a git push or fetch, which allow rules let run without a prompt
 #                  (so the permission hook never sees them); Away never pushes or fetches
-#   session-start  SessionStart hook: a resumed or cleared Away session starts in Present; a project behind
-#                  the installed kit gets one reminder line (kit-version.sh)
+#   session-reset  run by session-start.sh: a resumed, cleared or forked Away session starts in Present
+#   session-start  the SessionStart entry of settings made before session-start.sh existed: hands over to it
 # The marker <project>/<local folder>/away/.away-active holds the Away session's id and, on its
 # second line, when the guard expires (epoch seconds): the end time plus a margin, or a default
 # when the block has no end time, so a user who comes back without /back is not left with a guard
@@ -20,32 +20,23 @@
 margin=10800           # after the end time: room for the closing reviews, which run after it
 no_end_time=43200      # a block with no end time: 12 h from on
 cmd="$1"; local_dir="$2"; end="$3"
-case "$cmd" in on|off|permission|elicitation|pre-bash|session-start) ;; *)
-  echo "usage: away-guard.sh <on|off|permission|elicitation|pre-bash|session-start> <local folder> [HH:MM]" >&2; exit 2 ;; esac
+case "$cmd" in on|off|permission|elicitation|pre-bash|session-reset|session-start) ;; *)
+  echo "usage: away-guard.sh <on|off|permission|elicitation|pre-bash|session-reset|session-start> <local folder> [HH:MM]" >&2; exit 2 ;; esac
 [ -n "$local_dir" ] || { echo "away-guard: missing local folder" >&2; exit 2; }
 [ $# -le 3 ] && { [ -z "$end" ] || [ "$cmd" = on ]; } || { echo "away-guard: only on takes an end time, and nothing after it" >&2; exit 2; }
 case "$end" in ""|[01][0-9]:[0-5][0-9]|2[0-3]:[0-5][0-9]) ;; *) echo "away-guard: end time must be HH:MM (00:00–23:59)" >&2; exit 2 ;; esac
 case "/$local_dir/" in */../*) echo "away-guard: local folder must not contain .." >&2; exit 2 ;; esac
-# The project root: the hooks get CLAUDE_PROJECT_DIR (where the session started); the Bash tool may not,
-# and may sit in a subfolder: then the nearest folder up that holds <local>/index.md. None: refuse.
-root="${CLAUDE_PROJECT_DIR:-}"
-if [ -z "$root" ]; then
-  d="$(pwd -P)"
-  while [ -n "$d" ] && [ ! -f "$d/$local_dir/index.md" ]; do [ "$d" = / ] && d="" || d="$(dirname "$d")"; done
-  root="$d"
-fi
-case "$local_dir" in
-  /*) dir="$local_dir/away" ;;
-  *) [ -n "$root" ] || { echo "✗ away-guard: no $local_dir/index.md here or above $(pwd -P), and no CLAUDE_PROJECT_DIR" >&2; exit 1; }
-     dir="$root/$local_dir/away" ;;
-esac
+here="$(dirname "$0")"
+# Projects whose settings still name this script for SessionStart keep every job of the session start
+[ "$cmd" = session-start ] && exec sh "$here/session-start.sh" "$local_dir"
+. "$here/common.sh"
+find_local "$local_dir" || { echo "✗ away-guard: no $local_dir/index.md here or above $(pwd -P), and no CLAUDE_PROJECT_DIR" >&2; exit 1; }
+dir="$local_path/away"
 marker="$dir/.away-active"
 
 # Hooks get their input on stdin, and its session id decides; on and off use the environment's.
 input=""
-case "$cmd" in permission|elicitation|pre-bash|session-start) input="$(cat)" ;; esac
-# First occurrence of a string field: the top-level ones come before tool_input.
-field() { printf '%s' "$input" | tr '\n' ' ' | grep -o "\"$1\" *: *\"[^\"]*\"" | head -n 1 | sed 's/.*: *"\(.*\)"$/\1/'; }
+case "$cmd" in permission|elicitation|pre-bash|session-reset) input="$(cat)" ;; esac
 session="$(field session_id)"; session="${session:-$CLAUDE_CODE_SESSION_ID}"
 owner() { [ -n "$session" ] && [ -f "$marker" ] && [ "$(head -n 1 "$marker")" = "$session" ]; }
 # Expired only when the second line is a number in the past; anything else keeps the guard on (fail safe).
@@ -114,14 +105,8 @@ EOF
 }
 EOF
     ;;
-  session-start)
-    [ "$(field source)" = compact ] && exit 0
-    mine && rm -f "$marker"
-    # The SessionStart hook projects already have, so the kit-version reminder reaches them without a settings
-    # change: one line of context when the project and the installed kit differ (nothing otherwise). Only when a
-    # stretch of work starts (not after /clear), and never in a cloud session, which must not change the kit's files.
-    case "$(field source)" in startup|resume) ;; *) exit 0 ;; esac
-    [ "${CLAUDE_CODE_REMOTE:-}" = true ] && exit 0
-    sh "$(dirname "$0")/kit-version.sh" project "${dir%/away}/index.md" 2>/dev/null ;;
+  session-reset)
+    # Compaction continues the same stretch of work: Away stays on
+    [ "$(field source)" = compact ] || { mine && rm -f "$marker"; } ;;
 esac
 exit 0

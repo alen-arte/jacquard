@@ -51,8 +51,8 @@ mkdir -p "$HOME/.claude" "$HOME/repos/jacquard-personal"
 for x in "/$l" /.cloud-kit/local/away/.away-active; do   # the link, and the Away guard's marker of a block run here
   grep -qx "$x" "$root/.git/info/exclude" 2>/dev/null || echo "$x" >> "$root/.git/info/exclude"
 done
-# then the Away guard's own session start (a resumed Away session starts in Present), as on the computer
-exec sh "$HOME/.claude/jacquard/scripts/away-guard.sh" session-start "$l"
+# then the session start's jobs, as on the computer (session-start.sh skips the ones a cloud session must not run)
+exec sh "$HOME/.claude/jacquard/scripts/session-start.sh" "$l"
 EOF
   chmod +x "$k/bootstrap.sh" "$k/jacquard/scripts/"*.sh
   cat > "$wt/CLAUDE.local.md" <<EOF
