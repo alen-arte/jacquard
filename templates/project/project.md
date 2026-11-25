@@ -58,6 +58,14 @@ Verified in official documentation on {{DATE}}; recheck when upgrading.
 
 The kit's `structure-check.sh` reads this section: the file warning and cap numbers, each raised cap, and the values in backticks on the configuration, exempt, repeated-names and separate-folders lines. Function size is not measured by it.
 
+## Code map
+
+Optional, for projects with code: where to go to change something, so a task opens the right files without searching. One row per responsibility, not per folder; 15 rows at most. If the repo already maps its code (`CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`), this section is one line that points there, never a copy. A task that moves, renames or splits a file named here updates its row; `structure-check.sh` warns about a path here that no longer exists (only the Files column, and plain paths, are checked).
+
+| To change | Files | Check |
+|---|---|---|
+{{CODE_MAP_ROWS, one row each, e.g. "| The board filter | `src/board/filter.ts`, `src/board/FilterBar.tsx` | `npm run test -- filter` |"; or the table replaced by one line "See `CLAUDE.md` › Architecture"; the section deleted for a project without code}}
+
 ## Environments
 
 {{ENVIRONMENTS, default "none yet"}} (production changes always need the user's explicit OK)

@@ -16,6 +16,7 @@ description: "Map of this project for Claude: where things are, who acts when, w
 | File | Read when |
 |---|---|
 | `project.md` | Stack, commands, environments, collaborators and boundaries, irreversibles |
+| `project.md` › Code map | Starting a code task: which files to open, before searching |
 | `roles/<role>.md` | That role acts |
 | `away-profile.md` | `/away`, `/back`, `/away-resume` |
 | `docs/roadmap.md` | Choosing what next, Away briefs (read by ID) |

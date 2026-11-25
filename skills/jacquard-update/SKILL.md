@@ -30,4 +30,5 @@ Update this project to the installed Jacquard version (`~/.claude/jacquard`, pin
    - add the Away guard's `PreToolUse` hook (`pre-bash`): allowed pushes and fetches never prompt, so only it keeps Away from pushing;
    - remove any allow rule that pushes the personal layer or another repo's `main` by hand (e.g. `git push docs HEAD`): `personal-sync.sh` replaces it;
    - in the personal preferences, a rule that tells Claude to commit and push the personal layer itself now calls `personal-sync.sh`: show both texts and let the user decide (core standards › Conflicts between rules).
-11. Update the kit version in `index.md`. Report blocks.
+11. If the project came from a version before 0.2.16 and has code, offer once the `Code map` section of `templates/project/project.md` and its row in `index.md`: rows filled from reading the repo, or one line pointing to the repo's own map when it has one (`CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`). The user decides.
+12. Update the kit version in `index.md`. Report blocks.

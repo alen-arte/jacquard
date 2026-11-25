@@ -17,8 +17,9 @@
 # ⚠ (warning): a file that crossed the warning, grew past it, or is new past it; an existing cycle through a touched
 #   file; a top-level function name this change added in a second file of one language (never across folders
 #   that run separately, such as edge functions); colour literals it added
-#   outside the token files. Touched debt it did not make worse is one "Touched, not made worse" line, not flagged.
-# Exit 0: no ✗ · 1: at least one ✗ · 2: usage or git error. The last line is "✓ no findings" or "Flagged: <files>",
+#   outside the token files; a path project.md › Code map names that is not in the repo (it flags no file).
+#   Touched debt it did not make worse is one "Touched, not made worse" line, not flagged.
+# Exit 0: no ✗ · 1: at least one ✗ · 2: usage or git error. The last line is "✓ no findings" or "Flagged: <files|none>",
 # the files a reviewer reads whole (only this change's files, except a new cycle); paths with spaces are not supported there.
 # Before it, "Flagged past the cap: <files>" names the flagged files past the cap, whatever flagged them.
 set -f
@@ -47,7 +48,7 @@ while [ $# -gt 0 ]; do
     *) usage ;;
   esac
 done
-for p in edges cycles duplicates colours; do [ -f "$here/$p.awk" ] || die "nothing was checked: structure-check/$p.awk is missing"; done
+for p in edges cycles duplicates colours codemap; do [ -f "$here/$p.awk" ] || die "nothing was checked: structure-check/$p.awk is missing"; done
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not inside a git repository"
 cd "$root" || die "cannot enter $root"
 [ -n "$project" ] || project="$root/.jacquard/project.md"
@@ -249,6 +250,15 @@ while IFS="$tab" read -r f n at; do
   else report "⚠" colour "$f: $n colour literals outside the tokens (was $b; lines $at)"; fi
 done < "$tmp/colours"
 
+# Code map: a path project.md › Code map names that is not in the repo (a warning; no file to read whole)
+if [ -f "$project" ]; then
+  awk -f "$here/codemap.awk" "$project" > "$tmp/codemap" || failed "code map"
+  while IFS= read -r p; do
+    inside "$p" || continue
+    [ -e "$p" ] || report "⚠" code-map "$p: named in project.md › Code map, not in the repo (update its row)"
+  done < "$tmp/codemap"
+fi
+
 # Debt this change touched without making it worse: one line, not flagged
 pre=""
 [ "$pre_cap" = 0 ] || pre="$pre, $pre_cap past the cap (log an RF if there is none)"
@@ -260,9 +270,9 @@ pre=""
 if [ $((block + warns)) = 0 ]; then echo "✓ no findings"; exit 0; fi
 echo "$block blocking · $warns warnings"
 # A reviewer reads a file past the cap whole only once (core/review.md), so those are named whatever flagged them
-printf '%s\n' $flagged > "$tmp/flagged"
+: > "$tmp/flagged"; [ -z "$flagged" ] || printf '%s\n' $flagged > "$tmp/flagged"
 big="$(count_lines "$tmp/flagged" | awk -F "$tab" -v cap="$cap" -v raised="$tmp/raised" 'BEGIN { while ((getline l < raised) > 0) { split(l, r, "\t"); own[r[2]] = r[1] } }
   $1 > ($2 in own ? own[$2] : cap) { printf "%s%s", (n++ ? " " : ""), $2 }')"
 [ -z "$big" ] || echo "Flagged past the cap: $big"
-echo "Flagged: $flagged"
+echo "Flagged: ${flagged:-none}"
 [ "$block" = 0 ]
