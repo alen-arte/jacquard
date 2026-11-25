@@ -179,19 +179,11 @@ printf '%s\n' "$spelled" | while IFS= read -r c; do
   grep -qF "\"$rule\"" "$template" || echo "✗ C26 no allow rule for: $c"
 done | grep . && fails=$((fails + 1))
 
-# Before a Bash command (PreToolUse): while this session is in Away, a push or fetch is denied even when an allow rule
-# would let it run without a prompt; anything else, another session, or no Away: nothing printed
+# active: exit 0 only while this session's guard is on (bash-guard.sh asks it)
 run s1 on
-for c in 'git push origin r1' 'git fetch origin' 'cd x && git  push -u origin r1' 'git status; git fetch'; do
-  run s1 pre-bash "{\"session_id\":\"s1\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"$c\"}}"
-  case "$out" in *'"hookEventName": "PreToolUse"'*'"permissionDecision": "deny"'*park*) is_json "$out" || fail "C28 not valid JSON";; *) fail "C28 Away: '$c' must be denied (got: $out)";; esac
-done
-run s1 pre-bash '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"git commit -m \"R1: push button\""}}'
-[ -z "$out" ] || fail "C28b Away: a command that does not push or fetch runs (got: $out)"
-run s2 pre-bash '{"session_id":"s2","tool_name":"Bash","tool_input":{"command":"git push origin r1"}}'
-[ -z "$out" ] || fail "C28c another session is not stopped (got: $out)"
+run s1 active '{"session_id":"s1"}'; [ "$st" = 0 ] || fail "C28 active: this session's guard is on"
+run s2 active '{"session_id":"s2"}'; [ "$st" = 1 ] || fail "C28b active: another session's guard does not count"
 run s1 off
-run s1 pre-bash '{"session_id":"s1","tool_name":"Bash","tool_input":{"command":"git push origin r1"}}'
-[ -z "$out" ] || fail "C28d in Present a push is left to the permission rules (got: $out)"
+run s1 active '{"session_id":"s1"}'; [ "$st" = 1 ] || fail "C28c active: off"
 
 finish "away-guard"

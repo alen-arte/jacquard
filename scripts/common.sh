@@ -42,6 +42,17 @@ find_local() {
 # before tool_input, so a value quoted inside a command never counts.
 field() { printf '%s' "$input" | tr '\n' ' ' | grep -o "\"$1\" *: *\"[^\"]*\"" | head -n 1 | sed 's/.*: *"\(.*\)"$/\1/'; }
 
+# The full ref a protected push names (protected-push.sh, push-guard/hook.sh): a branch name, or refs/tags/<tag>.
+# Prints it; fails on anything else (another refs/ path, an option, a refspec, characters outside the list).
+dest_ref() {
+  case "$1" in ""|-*|*[!A-Za-z0-9._/-]*) return 1 ;; esac
+  case "$1" in
+    refs/tags/?*) git check-ref-format "$1" || return 1; printf '%s\n' "$1" ;;
+    refs/*) return 1 ;;
+    *) git check-ref-format --branch "$1" >/dev/null 2>&1 || return 1; printf 'refs/heads/%s\n' "$1" ;;
+  esac
+}
+
 # An Away block is running in the project whose local folder is $1: its marker exists and has not expired (the
 # second line, epoch seconds, as away-guard.sh writes it; anything but a past number keeps it on, fail safe).
 away_active() {

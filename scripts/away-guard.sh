@@ -9,10 +9,10 @@
 #   off            run by /back and the end of the block
 #   permission     PermissionRequest hook: deny with a park message
 #   elicitation    Elicitation hook: decline
-#   pre-bash       PreToolUse hook on Bash: deny a git push or fetch, which allow rules let run without a prompt
-#                  (so the permission hook never sees them); Away never pushes or fetches
+#   active         exit 0 when this session's Away guard is on (bash-guard.sh asks; the hook input on stdin)
 #   session-reset  run by session-start.sh: a resumed, cleared or forked Away session starts in Present
-#   session-start  the SessionStart entry of settings made before session-start.sh existed: hands over to it
+#   pre-bash, session-start  the PreToolUse and SessionStart entries of settings made before bash-guard.sh and
+#                  session-start.sh existed: they hand over to those scripts
 # The marker <project>/<local folder>/away/.away-active holds the Away session's id and, on its
 # second line, when the guard expires (epoch seconds): the end time plus a margin, or a default
 # when the block has no end time, so a user who comes back without /back is not left with a guard
@@ -20,15 +20,16 @@
 margin=10800           # after the end time: room for the closing reviews, which run after it
 no_end_time=43200      # a block with no end time: 12 h from on
 cmd="$1"; local_dir="$2"; end="$3"
-case "$cmd" in on|off|permission|elicitation|pre-bash|session-reset|session-start) ;; *)
-  echo "usage: away-guard.sh <on|off|permission|elicitation|pre-bash|session-reset|session-start> <local folder> [HH:MM]" >&2; exit 2 ;; esac
+case "$cmd" in on|off|permission|elicitation|active|session-reset|pre-bash|session-start) ;; *)
+  echo "usage: away-guard.sh <on|off|permission|elicitation|active|session-reset|pre-bash|session-start> <local folder> [HH:MM]" >&2; exit 2 ;; esac
 [ -n "$local_dir" ] || { echo "away-guard: missing local folder" >&2; exit 2; }
 [ $# -le 3 ] && { [ -z "$end" ] || [ "$cmd" = on ]; } || { echo "away-guard: only on takes an end time, and nothing after it" >&2; exit 2; }
 case "$end" in ""|[01][0-9]:[0-5][0-9]|2[0-3]:[0-5][0-9]) ;; *) echo "away-guard: end time must be HH:MM (00:00–23:59)" >&2; exit 2 ;; esac
 case "/$local_dir/" in */../*) echo "away-guard: local folder must not contain .." >&2; exit 2 ;; esac
 here="$(dirname "$0")"
-# Projects whose settings still name this script for SessionStart keep every job of the session start
+# Projects whose settings still name this script for SessionStart or PreToolUse keep every job of those hooks
 [ "$cmd" = session-start ] && exec sh "$here/session-start.sh" "$local_dir"
+[ "$cmd" = pre-bash ] && exec sh "$here/bash-guard.sh" "$local_dir"
 . "$here/common.sh"
 find_local "$local_dir" || { echo "✗ away-guard: no $local_dir/index.md here or above $(pwd -P), and no CLAUDE_PROJECT_DIR" >&2; exit 1; }
 dir="$local_path/away"
@@ -36,7 +37,7 @@ marker="$dir/.away-active"
 
 # Hooks get their input on stdin, and its session id decides; on and off use the environment's.
 input=""
-case "$cmd" in permission|elicitation|pre-bash|session-reset) input="$(cat)" ;; esac
+case "$cmd" in permission|elicitation|active|session-reset) input="$(cat)" ;; esac
 session="$(field session_id)"; session="${session:-$CLAUDE_CODE_SESSION_ID}"
 owner() { [ -n "$session" ] && [ -f "$marker" ] && [ "$(head -n 1 "$marker")" = "$session" ]; }
 # Expired only when the second line is a number in the past; anything else keeps the guard on (fail safe).
@@ -82,19 +83,8 @@ case "$cmd" in
 }
 EOF
     ;;
-  pre-bash)
-    # Anywhere in the input, chained or spaced oddly: a false match only parks a step, a missed one would publish
-    printf '%s' "$input" | tr '\n' ' ' | grep -Eq 'git[[:space:]]+(push|fetch)' || exit 0
-    mine && cat <<'EOF'
-{
-  "hookSpecificOutput": {
-    "hookEventName": "PreToolUse",
-    "permissionDecision": "deny",
-    "permissionDecisionReason": "Away mode is on: Away never pushes or fetches (core/git.md › Push). Do not retry it: park the step in the Away journal and continue with other work. If the user is actually back, ask them to type /back."
-  }
-}
-EOF
-    ;;
+  active)
+    mine || exit 1 ;;
   elicitation)
     mine && cat <<'EOF'
 {

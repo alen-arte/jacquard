@@ -7,6 +7,8 @@ guard="$kit/scripts/away-guard.sh"
 [ -x "$start" ] || { echo "✗ $start missing or not executable"; exit 1; }
 
 export CLAUDE_PROJECT_DIR="$tmp"
+unset CLAUDECODE CLAUDE_CODE_ENTRYPOINT CLAUDE_CODE_REMOTE
+export JACQUARD_AGENT=1   # a session that marks itself as Claude, as the template's env does
 marker="$tmp/.local/away/.away-active"
 installed="$(awk '/^## [0-9]+\.[0-9]+\.[0-9]+/ { print $2; exit }' "$kit/CHANGELOG.md")"
 mkdir -p "$tmp/.local"
@@ -65,6 +67,17 @@ case "$out" in "$reminder"*) ;; *) fail "H5 the old entry must still give the re
 # H6 · Misuse: no local folder is a usage error that prints nothing as context
 out="$(printf '{}' | "$start" 2>/dev/null)"; st=$?
 [ "$st" = 2 ] && [ -z "$out" ] || fail "H6 no local folder must exit 2 and print nothing"
+
+# H8 · A session with none of the Claude markers gets one warning line first (the push guard relies on them); never in
+# a cloud session; any one marker is enough
+printf '%s\n' "- **Kit version:** $installed" > "$tmp/.local/index.md"
+go "$start" s9 startup JACQUARD_AGENT=
+case "$out" in "Jacquard: this session does not mark itself as Claude"*) ;; *) fail "H8 no Claude marker: one warning line (got: $out)";; esac
+go "$start" s9 startup JACQUARD_AGENT= CLAUDE_CODE_REMOTE=true
+[ -z "$out" ] || fail "H8 no warning in a cloud session (got: $out)"
+for v in CLAUDECODE=1 CLAUDE_CODE_ENTRYPOINT=cli; do
+  go "$start" s9 startup JACQUARD_AGENT= "$v"; [ -z "$out" ] || fail "H8 $v alone marks Claude (got: $out)"
+done
 
 # H7 · The permissions template runs this dispatcher on SessionStart, and nothing else there
 template="$kit/templates/project/claude-settings.local.template.json"
