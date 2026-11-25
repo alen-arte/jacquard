@@ -8,6 +8,7 @@
 set -f
 PATH=/usr/bin:/bin
 export PATH
+[ -r /proc/self/status ] || { echo "✗ protected-push.sh: this system has no /proc, so the push guard cannot see this script run the push: push it from your terminal" >&2; exit 1; }
 # Only by its real path: a link elsewhere would also load the common.sh beside the link
 real="$(readlink -f "$0" 2>/dev/null)"
 [ -n "$real" ] && [ "$0" = "$real" ] || { echo "✗ protected-push.sh: run it by its real path${real:+, $real}" >&2; exit 1; }
@@ -24,7 +25,6 @@ export HOME
 [ $# = 2 ] || { echo "usage: protected-push.sh <remote> <branch | refs/tags/<tag>>" >&2; exit 2; }
 remote="$1"; dest="$2"
 [ "${CLAUDE_CODE_REMOTE:-}" != true ] || die "this is a cloud session: protected pushes go from the computer"
-[ -r /proc/self/status ] || die "this system has no /proc, so the push guard cannot see this script run the push: push it from your terminal"
 top="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not in a git repo"
 cd "$top" || die "cannot enter $top"
 local_folder
