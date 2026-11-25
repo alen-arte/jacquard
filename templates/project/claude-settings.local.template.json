@@ -1,4 +1,5 @@
 {
+  "env": { "JACQUARD_AGENT": "1" },
   "permissions": {
     "additionalDirectories": ["{{PERSONAL_PROJECT_FOLDER}}"],
     "allow": [
@@ -22,6 +23,8 @@
       "Bash(~/.claude/jacquard/scripts/cloud.sh status)",
       "Bash(~/.claude/jacquard/scripts/personal-sync.sh)",
       "Bash(~/.claude/jacquard/scripts/personal-sync.sh *)",
+      "Bash(~/.claude/jacquard/scripts/push-guard.sh install)",
+      "Bash(~/.claude/jacquard/scripts/push-guard.sh check)",
       "Bash(git fetch)",
       "Bash(git fetch origin)",
       "Bash(git fetch origin *)",
@@ -53,6 +56,8 @@
       "Bash(rm -fr*)",
       "Bash(rm -R*)",
       "Bash(gh *)",
+      "Bash(~/.claude/jacquard/scripts/protected-push.sh *)",
+      "Edit(/.claude/**)",
       "{{PACKAGE_INSTALL_AS_BASH_RULES}}",
       "{{DEPLOY_CLI_AS_BASH_RULES}}"
     ],
@@ -140,7 +145,29 @@
       "Bash(git fetch *--u*)",
       "Bash(git fetch * +*)",
       "Bash(git fetch *:*)",
-      "{{PROJECT_DENY_RULES, e.g. a push to each branch only the user pushes, from project.md › Git: \"Bash(git push * production)\", \"Bash(git push * production *)\", \"Bash(git push *:production*)\"}}"
+      "Bash(git push *--no-v*)",
+      "Bash(git push *$*)",
+      "Bash(git push *`*)",
+      "Bash(git push *{*)",
+      "Bash(git *<(*)",
+      "Bash(git *>(*)",
+      "Bash(env -i*)",
+      "Bash(env - *)",
+      "Bash(*CLAUDECODE*)",
+      "Bash(*CLAUDE_CODE_ENTRYPOINT*)",
+      "Bash(*JACQUARD_AGENT*)",
+      "Bash(*HUSKY*)",
+      "Bash(*hooksPath*)",
+      "Bash(*GIT_CONFIG*)",
+      "Bash(*HOME=*)",
+      "Bash(*>*.git/*)",
+      "Bash(*>*gitconfig*)",
+      "Bash(*>*config/git*)",
+      "Edit(/.git/**)",
+      "Edit(/.husky/pre-push)",
+      "Edit(/.husky/_/**)",
+      "Edit(/{{LOCAL_FOLDER}}/away/.away-active)",
+      "{{PROJECT_DENY_RULES, e.g. a push to each branch only the user pushes, from project.md › Git: \"Bash(git push * production)\", \"Bash(git push * production *)\", \"Bash(git push *:production*)\", \"Bash(git push *heads/production*)\"}}"
     ]
   },
   "hooks": {
@@ -148,7 +175,7 @@
       { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" permission \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
     ],
     "PreToolUse": [
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" pre-bash \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/bash-guard.sh\" \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }
     ],
     "Elicitation": [
       { "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" elicitation \"{{LOCAL_FOLDER}}\"", "timeout": 10 }] }

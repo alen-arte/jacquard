@@ -59,7 +59,9 @@ printf '%s\n' "$allow" | grep '\.claude/jacquard/' | grep -vxF \
   -e 'Bash(~/.claude/jacquard/scripts/structure-check.sh *)' \
   -e 'Bash(~/.claude/jacquard/scripts/cloud.sh status)' \
   -e 'Bash(~/.claude/jacquard/scripts/personal-sync.sh)' \
-  -e "Bash(~/.claude/jacquard/scripts/personal-sync.sh *)" | grep -q . && fail "S4f an allow rule for a kit script outside the exact list"
+  -e "Bash(~/.claude/jacquard/scripts/personal-sync.sh *)" \
+  -e 'Bash(~/.claude/jacquard/scripts/push-guard.sh install)' \
+  -e 'Bash(~/.claude/jacquard/scripts/push-guard.sh check)' | grep -q . && fail "S4f an allow rule for a kit script outside the exact list"
 
 # S4h · personal-sync.sh is the one allowed way to back up the personal layer: bare or with its message, no looser
 # spelling (personal-sync.sh* would match any file whose name starts the same); core spells it the same way
@@ -114,8 +116,30 @@ done
 # after the remote no option at all goes through; -u before the remote stays allowed
 printf '%s\n' "$allow" | grep -q '^{{PUSH_ALLOW_RULES[^}]*private' || fail "S8b the push placeholder must say the origin is the user's own and private"
 
-# S9 · Allowed pushes and fetches never prompt, so the PermissionRequest hook never sees them: the Away guard also
-# runs before every Bash command, to deny them while Away is on
-grep -qF '"matcher": "Bash", "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/away-guard.sh\" pre-bash \"{{LOCAL_FOLDER}}\""' "$template" || fail "S9 no PreToolUse Bash hook running away-guard.sh pre-bash"
+# S9 · Allowed pushes and fetches never prompt, so the PermissionRequest hook never sees them: bash-guard.sh runs before
+# every Bash command, in Present and in Away
+grep -qF '"matcher": "Bash", "hooks": [{ "type": "command", "command": "\"$HOME/.claude/jacquard/scripts/bash-guard.sh\" \"{{LOCAL_FOLDER}}\""' "$template" || fail "S9 no PreToolUse Bash hook running bash-guard.sh"
+
+# S10 · The push guard: Claude's commands carry JACQUARD_AGENT (the stub tells Claude's pushes from the user's by it);
+# installing the stub is one exact allowed command; protected pushes go only through protected-push.sh, which always asks
+python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1])).get("env", {}).get("JACQUARD_AGENT") == "1" else 1)' "$template" 2>/dev/null ||
+  fail "S10 env must set JACQUARD_AGENT to 1"
+for r in 'Bash(~/.claude/jacquard/scripts/push-guard.sh install)' 'Bash(~/.claude/jacquard/scripts/push-guard.sh check)'; do
+  printf '%s\n' "$allow" | grep -qxF "$r" || fail "S10 no exact allow rule $r"
+done
+[ "$(printf '%s\n' "$allow" | grep -c 'push-guard')" = 2 ] || fail "S10 push-guard.sh must have exactly the two allow rules (install, check)"
+printf '%s\n' "$ask" | grep -qxF 'Bash(~/.claude/jacquard/scripts/protected-push.sh *)' || fail "S10 no ask rule for protected-push.sh"
+printf '%s\n' "$allow" | grep -q 'protected-push' && fail "S10 no allow rule may cover protected-push.sh"
+grep -qF '`~/.claude/jacquard/scripts/protected-push.sh' "$kit/core/git.md" || fail "S10 core/git.md does not spell protected-push.sh as the ask rule does"
+
+# S11 · What would turn the guard off is denied: its markers, husky's switch, other git settings, redirects into git's
+# files, the hook files themselves and the Away marker; editing Claude Code's settings asks
+for r in 'Bash(git push *--no-v*)' 'Bash(git push *$*)' 'Bash(git push *`*)' 'Bash(git push *{*)' 'Bash(git *<(*)' 'Bash(git *>(*)' \
+  'Bash(env -i*)' 'Bash(env - *)' 'Bash(*CLAUDECODE*)' 'Bash(*CLAUDE_CODE_ENTRYPOINT*)' 'Bash(*JACQUARD_AGENT*)' 'Bash(*HUSKY*)' \
+  'Bash(*hooksPath*)' 'Bash(*GIT_CONFIG*)' 'Bash(*HOME=*)' 'Bash(*>*.git/*)' 'Bash(*>*gitconfig*)' 'Bash(*>*config/git*)' \
+  'Edit(/.git/**)' 'Edit(/.husky/pre-push)' 'Edit(/.husky/_/**)' 'Edit(/{{LOCAL_FOLDER}}/away/.away-active)'; do
+  printf '%s\n' "$deny" | grep -qxF "$r" || fail "S11 no deny rule $r"
+done
+printf '%s\n' "$ask" | grep -qxF 'Edit(/.claude/**)' || fail "S11 editing .claude/ must ask"
 
 finish "settings-template"

@@ -72,8 +72,10 @@ The kit's `structure-check.sh` reads this section: the file warning and cap numb
 
 ## Git
 
-- **Main branch:** {{MAIN}} (Claude never pushes it: after the user's OK it gives them the exact command) · **origin:** {{OWN_PRIVATE | OWN_PUBLIC | SHARED_WITH_OTHERS}} (decides whether pushing a work branch asks; `/kickoff` checks it)
-- **Branches only the user pushes, besides main** (production, releases): {{USER_ONLY_BRANCHES, in backticks, default "none"}}. Claude pushes work, test and dev branches (e.g. `dev`, `demo`); never these.
+- **Main branch:** {{MAIN}} (protected: Claude pushes it only through `protected-push.sh`, which asks every time) · **origin:** {{OWN_PRIVATE | OWN_PUBLIC | SHARED_WITH_OTHERS}} (decides whether pushing a work branch asks; `/kickoff` checks it)
+- **Free branches** (Claude pushes them without asking, like its work branches; every other branch and every tag is protected): {{FREE_BRANCHES, test or dev branches in backticks such as `dev` or `demo`, never the main branch, a production or a release branch; default "none"}}
+- **Branches that publish or deploy** (production, releases; also denied as text, which is what holds in a cloud session): {{USER_ONLY_BRANCHES, in backticks, default "none"}}
+- **Push guard:** {{PUSH_GUARD, "installed" (`push-guard.sh install`), or "not installed: <the hook in its place>, so every push asks"; in a husky repo, a team-tracked `.husky/pre-push` would replace it}}
 - **Branch convention from collaborators, if any:** {{BRANCH_CONVENTION, default none}}
 - **Cloud remote** (only with `cloud_sync: on`, `core/git.md` › Cloud sync): {{CLOUD_REMOTE, default "`origin`"; a separate private remote only when origin is shared with other people, also set in the repo's local git config `jacquard.cloudRemote`}}
 

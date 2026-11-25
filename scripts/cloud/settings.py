@@ -17,11 +17,13 @@ kit_files = ("~/.claude/jacquard/**", "**/.cloud-kit/jacquard/**", "**/.cloud-ki
              "**/.cloud-kit/local-folder", "**/.claude/settings.json", "**/CLAUDE.local.md")
 no_main = [f"Bash(git push {p})" for b in ("main", "master") for p in (f"* {b}", f"* {b}:*", f"*:{b}", f"*refs/heads/{b}")] \
           + ["Bash(git push *--all*)"]          # a bare `git push` from a local main stays instruction-only (CLAUDE.local.md)
-deny = mapped(perms.get("deny", [])) + [f"Edit({p})" for p in kit_files] + no_main
+# protected pushes go from the computer, where the pre-push guard runs; the cloud has no hooks, so no protected path
+protected = "protected-push.sh"
+deny = mapped(perms.get("deny", [])) + [f"Edit({p})" for p in kit_files] + no_main + [f"Bash(*{protected}*)"]
 guard = lambda event: [{"hooks": [{"type": "command", "timeout": 10,
     "command": '[ "$CLAUDE_CODE_REMOTE" = true ] || exit 0; sh "$HOME/.claude/jacquard/scripts/away-guard.sh" %s %s' % (event, shlex.quote(local_folder))}]}]
 json.dump({
-    "permissions": {"deny": list(dict.fromkeys(deny)), "ask": mapped(perms.get("ask", []))},
+    "permissions": {"deny": list(dict.fromkeys(deny)), "ask": [r for r in mapped(perms.get("ask", [])) if protected not in r]},
     "hooks": {
         "SessionStart": [{"hooks": [{"type": "command", "timeout": 20, "command": 'sh "$CLAUDE_PROJECT_DIR/.cloud-kit/bootstrap.sh"'}]}],
         "PermissionRequest": guard("permission"),

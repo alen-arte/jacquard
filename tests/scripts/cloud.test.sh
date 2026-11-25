@@ -228,6 +228,7 @@ env JACQUARD_KIT="$tmp/kitcopy" sh "$cloud" prepare >/dev/null 2>&1 || fail "C49
 at .cloud-kit/jacquard/core/leftover.txt >/dev/null && fail "C49b an untracked file in the installed kit never travels"
 grep -q '"Edit(\*\*/.cloud-kit/bootstrap.sh)"' "$(git --git-dir="$r" show cloud/feat:.claude/settings.json > "$tmp/s.json"; echo "$tmp/s.json")" \
   || fail "C50 the cloud's settings deny edits to the bootstrap"
+grep -q '"Bash(\*protected-push.sh\*)"' "$tmp/s.json" || fail "C50b the cloud has no protected-push path: denied"
 
 # a cloud branch from the older format (kit in CLAUDE.md): its CLAUDE.md is never landed as the project's
 cd "$c" || exit 1

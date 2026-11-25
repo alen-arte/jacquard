@@ -92,7 +92,7 @@ Let commands read the kit and your preferences without asking each time. Add to 
 
 Each project's own rules (writes to its local folder, git safety net) come from kickoff.
 
-**The installed kit is a trust boundary.** Its scripts run from hooks (on permission prompts, MCP questions and session start) and from allow rules without asking, so a change to them could run anything. Change `~/.claude/jacquard` only by installing a release tag yourself, in a terminal (step 1, or "Updating the installed kit" below), never by editing it. Each project's permissions deny edits there; add the same rule to your user settings to cover every project, including those set up before 0.2.8:
+**The installed kit is a trust boundary.** Its scripts run from hooks (on permission prompts, MCP questions, session start, before each command and before each push) and from allow rules without asking, so a change to them could run anything. Change `~/.claude/jacquard` only by installing a release tag yourself, in a terminal (step 1, or "Updating the installed kit" below), never by editing it. Each project's permissions deny edits there; add the same rule to your user settings to cover every project, including those set up before 0.2.8:
 
 ```json
 "permissions": { "deny": ["Edit(~/.claude/jacquard/**)"] }
@@ -138,13 +138,14 @@ Then step 4 (permissions), the hooks in "Publishing changes to the kit" (they re
 
 ## Publishing changes to the kit
 
-Install the privacy hooks in your clone of the kit. The pre-commit hook checks what each commit records; the pre-push hook checks every commit and tag the push would publish to that remote (content, paths, messages, author), not just the current files. The pre-push hook asks the remote what it already has (`git ls-remote`), a second connection: an SSH key without an agent asks for its passphrase twice. They are small stubs that run the installed kit's copy, so a branch without the scripts, or with changed ones, cannot skip or alter the check:
+Install the privacy hooks in your clone of the kit. The pre-commit hook checks what each commit records; the pre-push hook checks every commit and tag the push would publish to that remote (content, paths, messages, author), not just the current files. The pre-push hook asks the remote what it already has (`git ls-remote`), a second connection: an SSH key without an agent asks for its passphrase twice. They are small stubs that run the installed kit's copy by its full path, so a branch without the scripts, or with changed ones, cannot skip or alter the check, and neither can a command that changes `HOME` for one run. The pre-push stub is the push guard's (`core/git.md` › Push), which runs the privacy check after its own:
 
 ```bash
-for h in pre-commit pre-push; do
-  printf '#!/bin/sh\nexec "$HOME/.claude/jacquard/scripts/hooks/%s" "$@"\n' "$h" > ~/repos/jacquard/.git/hooks/$h
-  chmod +x ~/repos/jacquard/.git/hooks/$h
-done
+printf '#!/bin/sh\nexec "%s/.claude/jacquard/scripts/hooks/pre-commit" "$@"\n' "$HOME" > ~/repos/jacquard/.git/hooks/pre-commit
+chmod 555 ~/repos/jacquard/.git/hooks/pre-commit
+cd ~/repos/jacquard && ~/.claude/jacquard/scripts/push-guard.sh install --privacy
 ```
+
+An older pre-push stub (`exec "$HOME/…/hooks/pre-push"`) is replaced the same way: `push-guard.sh install` recognises it and keeps the privacy check.
 
 Both fail closed: without the installed kit, `iconv`, or your terms file, nothing is committed or published. Your commit identity is checked too; to keep your email private, use your host's no-reply address in this repo, and list it as allowed in `privacy-terms.txt` with a leading `!`. To publish an image you reviewed (metadata removed), allow that exact file with a line `=<id> <path>` (from 0.2.8 of the installed kit; the refusal explains how).
