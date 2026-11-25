@@ -26,7 +26,8 @@ expect none B1 'git commit -m \"R64: push guard\"'
 expect none B1 'npm run test'
 expect none B1 'git commit -m \"$(cat <<'"'"'EOF'"'"'\nR64: push guard (fix; tests)\n\nCo-Authored-By: x\nEOF\n)\"'
 expect none B1 'git commit -m \"R64: guard (push; fix)\"'
-expect none B1 "rg 'push|fetch' scripts"
+expect none B1 "grep -E 'push|fetch' scripts"
+expect ask B1 "rg --pre 'git push --no-verify origin main' x ."
 expect none B1 'git add src/push-notifications.ts'
 expect none B1 "~/.claude/jacquard/scripts/personal-sync.sh 'R64: push guard'"
 expect none B1 '~/.claude/jacquard/scripts/push-guard.sh install'

@@ -4,7 +4,7 @@
 # Away answers "no" where Present asks.
 # Usage: bash-guard.sh <local folder>   (the hook input on stdin; prints a decision, or nothing to leave it to the rules)
 # On the command as the shell will see it (JSON escapes decoded):
-#   - plain commands (no shell operators outside literal quotes, one line) that cannot push: grep, rg, git log, diff,
+#   - plain commands (no shell operators outside literal quotes, one line) that cannot push: grep (not rg: --pre runs a program), git log, diff,
 #     show, status, `git commit -m`/`-F`, and the kit's own scripts but protected-push.sh: nothing. So is a commit whose
 #     message is a quoted heredoc (`git commit -m "$(cat <<'EOF' … EOF )"`, literal inside)
 #   - `git push [-u] origin <branch>`, alone: Away denies; Present runs push-guard.sh check in the command's folder:
@@ -43,7 +43,7 @@ lit="$(printf '%s' "$cmd" | sed "s/'[^']*'//g; s/\"[^\"\$\`\\\\]*\"//g")"
 case "$lit" in *"$nl"*|*'\'*|*[';&|$`<>()']*|*["$ctl"]*) plain=0 ;; *) plain=1 ;; esac
 if [ "$plain" = 1 ]; then
   case "$cmd" in
-    grep\ *|rg\ *|"git log"|"git log "*|"git diff"|"git diff "*|"git show"|"git show "*|"git status"|"git status "*|\
+    grep\ *|"git log"|"git log "*|"git diff"|"git diff "*|"git show"|"git show "*|"git status"|"git status "*|\
     "git commit -m "*|"git commit -F "*) exit 0 ;;
   esac
   printf '%s\n' "$cmd" | grep -Eq '^~/\.claude/jacquard/scripts/[A-Za-z0-9_-]+\.sh( |$)' &&
