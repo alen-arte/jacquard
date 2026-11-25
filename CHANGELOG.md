@@ -3,6 +3,7 @@
 ## Unreleased
 - **Closing data on every closed item** (`core/docs-system.md` › Closing an item): the commit that marks an item 🚀 or ✅ writes `level · reviews · findings B/M/m · rounds · rework`, exact counts, "not recorded" when unknown; items closed together each get their own line, marked `(batch)`. One severity scale for every review (`core/review.md` › Running a review: Blocker, Major, Minor; Suggestions uncounted). Fix commits start `R12 fix:` (`core/git.md` › Commits). The Away report's summary names what was parked (`Parked: R#…`). New decision rows name their batch or release next to the date.
 - **`/retro` scope without arguments:** the last milestone is the last complete group of the roadmap (the archiving's definition); a roadmap with no groups that close (iterations and PRs) starts after the last pull request merged into the main branch. It says which scope it took.
+- **When end-to-end tests run** (`core/review.md` › Intensity): affected flows are chosen by hand, spec by spec (a runner's "only changed" mode cannot see which app code a spec exercises); the full suite runs in CI where the project has it, locally only without CI; never while review subagents run; a failure seen only under load is rerun alone before it counts. A project instruction asking for the full suite more often is a rule conflict to show the user.
 - **"I need your OK"** names each open `🔑` item on its own line with the permission it needs, even when the gate already covered it.
 
 ## 0.2.15
