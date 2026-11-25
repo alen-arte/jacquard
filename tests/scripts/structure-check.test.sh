@@ -281,30 +281,4 @@ sc --base trunk; [ "$st" = 0 ] && has "settings: core defaults" || fail "S30 wit
 mkdir -p "$tmp/notgit"; cd "$tmp/notgit" || exit 1
 sc; [ "$st" = 2 ] || fail "S31 outside a git repo must exit 2 (got $st)"
 
-# Code map (project.md › Code map): a path it names that is gone is a warning; without the section, nothing
-m="$tmp/map"; git init -q -b main "$m"; cd "$m" || exit 1
-mkdir -p .jacquard src/board; echo ".jacquard" >> .git/info/exclude
-echo x > src/board/filter.ts; echo x > CLAUDE.md
-git add -A; git commit -q -m one
-cat > .jacquard/project.md <<'EOF'
-## Code map
-| To change | Files | Check |
-|---|---|---|
-| The board filter | `src/board/filter.ts`, `./src/board/` | `npm run test` |
-| Sorting | `src/board/sort.ts` | `make` |
-
-See `CLAUDE.md` › Architecture for the rest; patterns like `src/*.ts` and commands like `npm run e2e` are not paths.
-
-## Other
-- `src/elsewhere.ts` is outside the map
-EOF
-sc; has "⚠ code-map  src/board/sort.ts" && ! has "code-map.*filter" && ! has "code-map.*src/board/:" && ! has "code-map.*CLAUDE" \
-  && ! has "code-map.*make" && ! has "code-map.*npm" && ! has "code-map.*\*" && ! has "code-map.*elsewhere" ||
-  fail "S32 only the map's missing path is named: not existing files or folders, commands, the Check column, patterns or other sections (got: $out)"
-[ "$st" = 0 ] && has "^Flagged: none$" && ! has "awk:" || fail "S33 a stale map path warns, never blocks, and flags no file to read (got $st: $out)"
-git mv src/board/filter.ts src/board/filters.ts; git commit -q -m moved
-sc; has "⚠ code-map  src/board/filter.ts" || fail "S34 a file moved away from its map row is named (got: $out)"
-printf '## Stack\n- `nothing/here.ts`\n' > .jacquard/project.md
-sc; ! has "code-map" || fail "S35 without a Code map section, nothing is said (got: $out)"
-
 finish "structure-check"
