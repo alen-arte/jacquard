@@ -30,7 +30,7 @@
 - 🚀 **R4 · {{Short title}}:** {{…}}
   `origin: user · added: YYYY-MM-DD · branch: r4-short-name · commit: def5678 · level: 1`
 - ✅ **R5 · {{Short title}}:** {{…}}
-  `origin: user · added: YYYY-MM-DD · done: YYYY-MM-DD · level: 1 · reviews: QA · findings: 0/1/2 · rounds: 1 · rework: 1`
+  `origin: user · added: YYYY-MM-DD · done: YYYY-MM-DD · level: 1 · reviews: QA · findings: 0/0/2 · rounds: 1 · rework: 1`
 
 ---
 
