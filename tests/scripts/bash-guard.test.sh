@@ -97,10 +97,22 @@ cwd="$tmp/b2" expect ask B3 'git push origin r1-x'
 case "$out" in *"No push guard"*) ;; *) fail "B3 the check runs in the command's folder (b2, no stub), not the project's (b1): $out";; esac
 unset cwd
 
+# B6 · An own remote (project.md › Git › Own remotes) takes the plain form too, and so does <branch>:<branch>
+git init -q --bare "$tmp/b1-personal.git"; git remote add personal "$tmp/b1-personal.git"
+printf -- '- **Own remotes** (x): `personal`\n' >> .jacquard/project.md; sc install
+for c in 'git push personal demo' 'git push -u personal ux/a' 'git push personal demo:demo' 'git push origin r1-x:r1-x'; do
+  expect none B6 "$c"
+done
+for c in 'git push personal demo:main' 'git push personal demo:other' 'git push personal demo:' 'git push -u -personal x'; do
+  expect ask B6 "$c"
+done
+expect ask B6 'git push stranger demo'
+case "$out" in *"Own remotes"*) ;; *) fail "B6 a remote off the list asks, naming project.md › Git › Own remotes: $out";; esac
+
 # B4 · Away (this session): every push and fetch is denied with a park message; read-only work and commits pass
 CLAUDE_PROJECT_DIR="$r" CLAUDE_CODE_SESSION_ID=s1 "$guard" on .jacquard >/dev/null 2>&1
 for c in 'git push origin r1-x' 'git fetch origin' 'cd x && git  push -u origin r1' 'g\\it push origin main' 'env git push origin r1' \
-         '~/.claude/jacquard/scripts/protected-push.sh origin main' 'git status; git fetch'; do
+         '~/.claude/jacquard/scripts/protected-push.sh origin main' 'git status; git fetch' 'git push personal demo:demo'; do
   expect deny B4 "$c"
   case "$out" in *park*) ;; *) fail "B4 the denial says to park the step: $out";; esac
 done
