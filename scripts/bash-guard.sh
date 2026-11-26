@@ -10,10 +10,14 @@
 #   - `git push [-u] origin <branch>`, alone: Away denies; Present runs push-guard.sh check in the command's folder:
 #     no guard there (none installed, or someone else's hook) asks, a guard out of date or worked around denies
 #   - protected-push.sh: Away denies; Present asks, naming the destination (its ask rule does too)
-#   - any other command with a word "push" once quotes and backslashes are gone, or with $ or a backtick and a word
-#     "git": Away denies, Present asks
+#   - any other command with a word "push" (or send-pack, http-push) once quotes, backslashes and backslash-newlines
+#     are gone, or with $ or a backtick and a word "git": Away denies, Present asks
 #   - a git fetch: Away denies
 #   - hook input past max_input, or a command it cannot read: Away denies, Present asks (a timed-out hook decides nothing)
+# Reach: it reads the command's text and its shell syntax; it runs nothing. A program that builds the command
+# (| sh, sh -c, eval, python -c, xargs, a script) is out of its reach: what stops that is that no allow rule lets an
+# interpreter run without a prompt (Away: away-guard.sh permission says no). The git pre-push hook does not stop a
+# hidden --no-verify; only a branch protection on the host would.
 here="$(cd "$(dirname "$0")" && pwd)"
 [ $# = 1 ] && [ -n "$1" ] || { echo "usage: bash-guard.sh <local folder>" >&2; exit 2; }
 local_dir="$1"
@@ -102,11 +106,17 @@ case "$cmd" in *"$nl"*) ;; *)
   fi ;;
 esac
 
-# Words: runs of letters, digits and . _ / ~ -, once quotes and backslashes are gone (pu\sh and pu''sh are push)
-words="$(printf '%s' "$cmd" | tr -d "\\\\'\"" | tr -c 'A-Za-z0-9._/~-' '\n')"
+# Words: runs of letters, digits and . _ / ~ -, once quotes and backslashes are gone (pu\sh and pu''sh are push),
+# read as written and with every backslash-newline gone, as the shell joins those lines (pu\⏎sh is push)
+joined="$(printf '%s' "$cmd" | awk 'BEGIN { RS = "\001" } { gsub(/\\\n/, ""); printf "%s", $0 }')"
+words="$(printf '%s\n%s' "$cmd" "$joined" | tr -d "\\\\'\"" | tr -c 'A-Za-z0-9._/~-' '\n')"
 has() { printf '%s\n' "$words" | grep -qix "$1"; }
+# $ or a backtick next to git: on one line, outside literal quotes; on several, anywhere (a quote after a # or in an
+# unquoted heredoc is no quote to the shell, so lit cannot tell what is literal there)
+case "$cmd" in *"$nl"*) dyn="$cmd" ;; *) dyn="$lit" ;; esac
 has fetch && has git && away && decide deny "$park"
-if has push || printf '%s\n' "$words" | grep -q 'protected-push' || { has git && printf '%s' "$lit" | grep -q '[$`]'; }; then
+if has push || has send-pack || has http-push || printf '%s\n' "$words" | grep -q 'protected-push' ||
+   { has git && printf '%s' "$dyn" | grep -q '[$`]'; }; then
   away && decide deny "$park"
   decide ask "This command could push, but it is not the plain form git push origin <branch>: protected destinations go only through ~/.claude/jacquard/scripts/protected-push.sh. Approve only a push the user asked for."
 fi

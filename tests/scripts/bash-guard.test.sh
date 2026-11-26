@@ -68,6 +68,18 @@ expect ask B2 "grep 'x; git push origin r1-x"
 expect ask B2 "grep \\\\' x; git push origin r1-x; echo \\\\'"
 expect ask B2 "grep \\\"\\\"'' x; git push origin r1-x"
 expect none B2 "grep \\\"\\\"'' x"
+# $ or a backtick next to git counts on every line: a quote after a # or in an unquoted heredoc hides nothing
+expect ask B2 "true #'\\ngit \$(printf pu)sh --no-verify origin main\\n#'"
+expect ask B2 "cat <<EOF\\nit's\\nEOF\\ngit \$(printf pu)sh origin r1-x\\n#'"
+# A backslash before a line break joins the lines, as the shell does: pu\⏎sh is push
+expect ask B2 'git pu\\\nsh --no-verify origin main'
+expect ask B2 "git status #'\\ngit pu\\\\\\nsh --no-verify origin main\\n#'"
+expect ask B2 'g\\\nit pu\\\nsh origin r1-x'
+# Git's lower-level pushes count as push
+expect ask B2 'git send-pack https://example.com/r.git main'
+expect ask B2 'git http-push https://example.com/r.git main'
+expect none B2 "grep \\\"pattern\$\\\" f"
+expect none B2 "git log --grep='fix\$'"
 # A command too long to read in time, or one the guard cannot read, is never left to the rules
 expect ask B2 "git log $(awk 'BEGIN { while (n++ < 12000) printf "x x x x x " }')"
 case "$out" in *"too long"*) ;; *) fail "B2 a command past the length cap asks, saying it is too long: $out";; esac
@@ -95,6 +107,9 @@ done
 expect deny B4 "git commit -m \\\"it's done\\\"; git push origin r1-x; echo 'ok'"
 expect deny B4 "grep \\\"'\\\" x ; git push origin feature-x ; echo \\\"'\\\""
 expect deny B4 "git log #'\\ngit push origin r1-x\\n#'"
+expect deny B4 "true #'\\ngit \$(printf pu)sh --no-verify origin main\\n#'"
+expect deny B4 'git pu\\\nsh --no-verify origin main'
+expect deny B4 'git send-pack https://example.com/r.git main'
 expect deny B4 "git log $(awk 'BEGIN { while (n++ < 12000) printf "x x x x x " }')"
 case "$out" in *park*) ;; *) fail "B4 a command past the length cap is denied with the park message: $out";; esac
 expect none B4 'grep -rn \"git push\" scripts'
