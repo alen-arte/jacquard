@@ -34,10 +34,10 @@ Your working copy, and an installed copy pinned to a release, so editing the kit
 
 ```bash
 git clone https://github.com/<you>/jacquard ~/repos/jacquard
-git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.2.16   # the latest release tag
+git -C ~/repos/jacquard worktree add --detach ~/.claude/jacquard v0.2.17   # the latest release tag
 ```
 
-Only using the kit, never editing it: `git clone --branch v0.2.16 https://github.com/<you>/jacquard ~/.claude/jacquard` is enough.
+Only using the kit, never editing it: `git clone --branch v0.2.17 https://github.com/<you>/jacquard ~/.claude/jacquard` is enough.
 
 ## 2. Commands
 
@@ -116,7 +116,7 @@ When a new release is tagged, and no Away block is running in any project:
 
 ```bash
 git -C ~/.claude/jacquard fetch --tags      # skip if you tagged it in your working clone
-git -C ~/.claude/jacquard checkout --detach v0.2.16
+git -C ~/.claude/jacquard checkout --detach v0.2.17
 ```
 
 New sessions use it. Run step 2 again (it links new commands and skips existing ones), then `/jacquard-update` in each project to bring its files up to date, piece by piece. Where a project has the push guard, Claude's pushes stop after every kit update until `/jacquard-update` writes the stub again (it pins the kit's files); from 0.2.16 until a project is updated, its plain pushes ask, since it has no stub yet.

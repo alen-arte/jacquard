@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.17
 - **Each project's own push rules** (R75, `core/git.md` › Push): nothing about a project is written in the kit; each repo declares its rules in `project.md` › Git, and the push guard reads, validates and pins them.
   - Free branches take patterns, `<prefix>/*` (every branch under it, at any depth), such as `ux/*`. One `*`, last, after a `/`; never one that overlaps the main branch, `master` or a branch that publishes, in either direction and in any case. Publish entries follow the same grammar, and never take a work branch's form (`away/…`, `cloud/…`, `r12-…`), which Claude pushes without asking.
   - **Own remotes** (new line, such as `personal`), plus the cloud remote (the repo's own `git config --local jacquard.cloudRemote`, as `cloud.sh` reads it): the stub pins each with its URL, and free and work branches go without asking only to origin and those, at that URL. To any other remote or a URL, or after a `pushurl` or `insteadOf` added later, every branch is protected. Before, the guard looked only at the branch.
