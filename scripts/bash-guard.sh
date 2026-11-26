@@ -11,7 +11,8 @@
 #     no guard there (none installed, or someone else's hook) asks, a guard out of date or worked around denies
 #   - protected-push.sh: Away denies; Present asks, naming the destination (its ask rule does too)
 #   - any other command with a word "push" (or send-pack, http-push) once quotes, backslashes and backslash-newlines
-#     are gone, or with $ or a backtick and a word "git": Away denies, Present asks
+#     are gone, or one the shell computes (an expansion, a brace list, a glob that could name git or push): Away
+#     denies, Present asks
 #   - a git fetch: Away denies
 #   - hook input past max_input, or a command it cannot read: Away denies, Present asks (a timed-out hook decides nothing)
 # Reach: it reads the command's text and its shell syntax; it runs nothing. A program that builds the command
@@ -59,6 +60,7 @@ fi
 lit="$(printf '%s' "$cmd" | awk -v q="'" 'BEGIN { RS = "\001" } { s = $0; n = length(s); o = ""; i = 1
   while (i <= n) { c = substr(s, i, 1)
     if (c == "\\") { o = o substr(s, i, 2); i += 2; continue }
+    if (c == "$" && (substr(s, i + 1, 1) == q || substr(s, i + 1, 1) == "\"")) { o = o "$Q"; i++; continue }
     if (c == q) { j = index(substr(s, i + 1), q); if (!j) { o = o "\033" substr(s, i); break } i += j + 1; continue }
     if (c != "\"") { o = o c; i++; continue }
     t = c; lit = 1; i++
@@ -111,13 +113,30 @@ esac
 joined="$(printf '%s' "$cmd" | awk 'BEGIN { RS = "\001" } { gsub(/\\\n/, ""); printf "%s", $0 }')"
 words="$(printf '%s\n%s' "$cmd" "$joined" | tr -d "\\\\'\"" | tr -c 'A-Za-z0-9._/~-' '\n')"
 has() { printf '%s\n' "$words" | grep -qix "$1"; }
-# $ or a backtick next to git: on one line, outside literal quotes; on several, anywhere (a quote after a # or in an
-# unquoted heredoc is no quote to the shell, so lit cannot tell what is literal there)
-case "$cmd" in *"$nl"*) dyn="$cmd" ;; *) dyn="$lit" ;; esac
 has fetch && has git && away && decide deny "$park"
-if has push || has send-pack || has http-push || printf '%s\n' "$words" | grep -q 'protected-push' ||
-   { has git && printf '%s' "$dyn" | grep -q '[$`]'; }; then
+if has push || has send-pack || has http-push || printf '%s\n' "$words" | grep -q 'protected-push'; then
   away && decide deny "$park"
   decide ask "This command could push, but it is not the plain form git push origin <branch>: protected destinations go only through ~/.claude/jacquard/scripts/protected-push.sh. Approve only a push the user asked for."
+fi
+# Computed: the shell builds part of what runs, so no word rule can read it (g$()it, ${x:-gi}t, $'\x67', {pu,x}sh,
+# /usr/bin/gi[t]). Looked for on one line outside literal quotes (lit; $'…' and $"…" left as $Q), on several lines
+# anywhere (a quote after a # or in an unquoted heredoc is no quote to the shell): a backtick; a $ before anything but
+# a space (on one line, but a closing "); a brace list; a [ or ? in a word ([ and [[ alone are the test command); a *
+# in a word whose last part could then be git, push, fetch, send-pack or http-push
+case "$cmd" in *"$nl"*) dyn="$cmd"; dollar='\$[^[:space:]]' ;; *) dyn="$lit"; dollar='\$[^[:space:]"]' ;; esac
+computed() {
+  printf '%s' "$dyn" | grep -Eq -e '`' -e "$dollar" -e '\{[^{}[:space:]]*(,|\.\.)[^{}[:space:]]*\}' && return 0
+  printf '%s' "$dyn" | awk 'BEGIN { RS = "\001" } { n = split($0, w, /[[:space:];&|()<>]+/)
+    for (k = 1; k <= n; k++) { t = w[k]
+      if (t ~ /[[?]/ && t !~ /^(\[\[?|\]\]?)$/) exit 0
+      if (t !~ /\*/) continue
+      sub(/.*\//, "", t); if (t !~ /^[A-Za-z*-]+$/ || t !~ /[A-Za-z]/) continue
+      gsub(/\*/, ".*", t); r = "^(" t ")$"
+      if ("git" ~ r || "push" ~ r || "fetch" ~ r || "send-pack" ~ r || "http-push" ~ r) exit 0 }
+    exit 1 }'
+}
+if computed; then
+  away && decide deny "Away mode is on, and the shell computes part of this command ($, a backtick, a brace list or a glob), so the push check cannot read it. Write it in a plain form, or park the step in the Away journal and continue."
+  decide ask "The shell computes part of this command ($, a backtick, a brace list or a glob), so the push check cannot read what it runs. Approve only if it does what the user asked."
 fi
 exit 0

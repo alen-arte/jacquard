@@ -78,8 +78,31 @@ expect ask B2 'g\\\nit pu\\\nsh origin r1-x'
 # Git's lower-level pushes count as push
 expect ask B2 'git send-pack https://example.com/r.git main'
 expect ask B2 'git http-push https://example.com/r.git main'
+# What the shell computes (an expansion, a brace list, a glob that could name git or push) cannot be read: it asks
+expect ask B2 'g$()it pu$()sh --no-verify origin main'
+expect ask B2 'g``it pu``sh origin main'
+expect ask B2 'g${x}it pu${x}sh origin main'
+expect ask B2 '$(printf gi)t $(printf pu)sh origin main'
+expect ask B2 '${x:-gi}t ${x:-pu}sh --no-verify origin main'
+expect ask B2 'a=gi b=pu; ${a}t ${b}sh --no-verify origin main'
+expect ask B2 '$(printf %s%s gi t) $(printf %s%s pu sh) --no-verify origin main'
+expect ask B2 "\$'\\\\x67\\\\x69\\\\x74' \$'\\\\x70\\\\x75\\\\x73\\\\x68' --no-verify origin main"
+expect ask B2 'g$\"i\"t pu$\"s\"h origin main'
+expect ask B2 'git {pu,--repo=}sh --no-verify origin main'
+expect ask B2 '/usr/bin/gi[t] {pu,--repo=}sh --no-verify origin main'
+expect ask B2 '/usr/bin/gi[t] p[u]sh origin main'
+expect ask B2 '/usr/bin/g* p?sh origin main'
+expect ask B2 'npm run x -- $V'
+case "$out" in *computes*) ;; *) fail "B2 the prompt says the shell computes part of the command: $out";; esac
+expect ask B2 'echo a\necho $(date)'
 expect none B2 "grep \\\"pattern\$\\\" f"
 expect none B2 "git log --grep='fix\$'"
+expect none B2 "awk '{ print \$1 }' f"
+expect none B2 'cat src/*.ts'
+expect none B2 'git add docs/*'
+expect none B2 'npm test -- --include=*.md'
+expect none B2 'test -f x && [ -d y ]'
+expect none B2 'find . -name x -exec wc -l {} +'
 # A command too long to read in time, or one the guard cannot read, is never left to the rules
 expect ask B2 "git log $(awk 'BEGIN { while (n++ < 12000) printf "x x x x x " }')"
 case "$out" in *"too long"*) ;; *) fail "B2 a command past the length cap asks, saying it is too long: $out";; esac
@@ -110,6 +133,11 @@ expect deny B4 "git log #'\\ngit push origin r1-x\\n#'"
 expect deny B4 "true #'\\ngit \$(printf pu)sh --no-verify origin main\\n#'"
 expect deny B4 'git pu\\\nsh --no-verify origin main'
 expect deny B4 'git send-pack https://example.com/r.git main'
+for c in '${x:-gi}t ${x:-pu}sh --no-verify origin main' 'git {pu,--repo=}sh --no-verify origin main' \
+         '/usr/bin/gi[t] p[u]sh origin main' 'echo $(date)'; do
+  expect deny B4 "$c"
+  case "$out" in *park*) ;; *) fail "B4 the denial says to rewrite it or park the step: $out";; esac
+done
 expect deny B4 "git log $(awk 'BEGIN { while (n++ < 12000) printf "x x x x x " }')"
 case "$out" in *park*) ;; *) fail "B4 a command past the length cap is denied with the park message: $out";; esac
 expect none B4 'grep -rn \"git push\" scripts'
