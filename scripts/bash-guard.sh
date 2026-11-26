@@ -93,15 +93,17 @@ printf '%s\n' "$cmd" | awk -v q="'" 'NR == 1 { ok = ($0 == "git commit -m \"$(ca
 
 case "$cmd" in *"$nl"*) ;; *)
   # The plain push: git push [-u] <remote> <branch>, or <branch>:<branch> with the same name on both sides
-  rm=""
-  if printf '%s\n' "$cmd" | grep -Eqx 'git push( -u)? [A-Za-z0-9][A-Za-z0-9._-]* [A-Za-z0-9._/-]+(:[A-Za-z0-9._/-]+)?'; then
+  # (remote_ok, branch_ok: common.sh; an option such as --no-verify is neither)
+  remote=""
+  if printf '%s\n' "$cmd" | grep -Eqx 'git push( -u)? [^[:space:]]+ [^[:space:]]+'; then
     set -f; set -- $cmd; shift 2; [ "$1" = -u ] && shift
-    case "$2" in *:*) [ "${2%%:*}" = "${2#*:}" ] && rm="$1" ;; *) rm="$1" ;; esac
+    b="$2"; case "$b" in *:*) [ "${b%%:*}" = "${b#*:}" ] && b="${b%%:*}" || b="" ;; esac
+    remote_ok "$1" && branch_ok "$b" && remote="$1"
   fi
-  if [ -n "$rm" ]; then
+  if [ -n "$remote" ]; then
     away && decide deny "$park"
     dir="$(field cwd)"; [ -d "$dir" ] || dir="${CLAUDE_PROJECT_DIR:-.}"
-    why="$(cd "$dir" && sh "$here/push-guard.sh" check "$rm" 2>&1)"; st=$?
+    why="$(cd "$dir" && sh "$here/push-guard.sh" check "$remote" 2>&1)"; st=$?
     case "$st" in
       0) exit 0 ;;
       4) decide ask "No push guard in this repo ($why): nothing stops this push from reaching a protected branch, so it asks. Approve only a push you asked for." ;;

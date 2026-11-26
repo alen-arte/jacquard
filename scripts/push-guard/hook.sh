@@ -9,6 +9,7 @@
 # that started `git push` is that script, run as itself, for this remote and this one destination (read in /proc;
 # without /proc, never). Refused always: deleting, a push that is not a fast-forward, any push while Away is on.
 set -f
+export LC_ALL=C   # bytes, not characters: names are ASCII, so an accented letter never passes a [A-Za-z] test
 here="$(cd "$(dirname "$0")" && pwd -P)"
 . "$here/../common.sh"
 refuse() { echo "✗ Jacquard push guard: $1 Push refused." >&2; exit 1; }
@@ -16,16 +17,13 @@ remote="$1"
 away_active "$JQ_LOCAL" && refuse "Away is on: Away never pushes."
 # known: this push goes to one of the project's remotes, by its name, at the URL git will really push to
 known=0
-case " $JQ_URLS " in *" $remote=$(printf '%s' "$2" | $JQ_SUM | cut -d' ' -f1) "*) known=1 ;; esac
+case " $JQ_URLS " in *" $remote=$(str_sum "$2" $JQ_SUM) "*) known=1 ;; esac
 
 # free <branch>: pushed without asking. Never main, master or the main branch, whatever the case.
 free() {
-  lc="$(printf '%s' "$1" | tr 'A-Z' 'a-z')"
-  case "$lc" in main|master|"$(printf '%s' "$JQ_MAIN" | tr 'A-Z' 'a-z')") return 1 ;; esac
-  for f in $JQ_FREE; do
-    case "$f" in */\*) case "$1" in "${f%\*}"?*) return 0 ;; esac ;; *) [ "$1" = "$f" ] && return 0 ;; esac
-  done
-  printf '%s\n' "$1" | grep -Eqx '(away|cloud)/[A-Za-z0-9._/-]+|(r|rf|p)[0-9]+(-[A-Za-z0-9._-]+)?'
+  case "$(lower "$1")" in main|master|"$(lower "$JQ_MAIN")") return 1 ;; esac
+  for f in $JQ_FREE; do entry_matches "$1" "$f" && return 0; done
+  work_branch "$1"
 }
 
 # ppid <pid>, argv <pid> (one argument per line)
@@ -71,8 +69,8 @@ $lines
 EOF
 [ -n "$protected" ] || exit 0
 why="$protected is protected"
-[ "$known" = 1 ] || why="$why here: this remote or URL is not one of the project's (origin, project.md › Git › Own remotes, the cloud remote, at the URL pinned at install)"
+[ "$known" = 1 ] || why="$why here (this remote or URL is not one of the project's: core/git.md › Push)"
 [ "$count" = 1 ] || refuse "$why, and goes alone, through protected-push.sh."
 authorized "$remote" "$protected" ||
-  refuse "$why: only ~/.claude/jacquard/scripts/protected-push.sh <remote> <branch> pushes it, and it asks first. Or run the push in your terminal (not with ! inside Claude)."
+  refuse "$why. Only ~/.claude/jacquard/scripts/protected-push.sh <remote> <branch> pushes it, and it asks first. Or run the push in your terminal (not with ! inside Claude)."
 exit 0

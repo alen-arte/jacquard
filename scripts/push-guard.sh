@@ -18,15 +18,16 @@
 # Exit 0; 1 on a refusal or a failed check (the reason on stderr); 4 from check when no Jacquard stub is there (none,
 # or someone else's hook); 5 from check <remote> when that remote is not the project's; 2 on a usage error.
 set -f
+export LC_ALL=C   # bytes, not characters: names are ASCII, so an accented letter never passes a [A-Za-z] test
 here="$(cd "$(dirname "$0")" && pwd -P)"
 kit="$(cd "$here/.." && pwd -P)"
 . "$here/common.sh"
 . "$here/push-guard/stub.sh"
 . "$here/push-guard/state.sh"
-cmd="$1"; privacy=0; widen=0; rm=""
+cmd="$1"; privacy=0; widen=0; remote=""
 usage() { echo "usage: push-guard.sh install [--privacy | --widen] | check [<remote>]" >&2; exit 2; }
 case "$cmd:$*" in "install:install"|"check:check") ;; "install:install --privacy") privacy=1 ;; "install:install --widen") widen=1 ;;
-  "check:check "*) [ $# = 2 ] && remote_ok "$2" || usage; rm="$2" ;;
+  "check:check "*) [ $# = 2 ] && remote_ok "$2" || usage; remote="$2" ;;
   *) usage ;; esac
 
 top="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not in a git repo"
@@ -64,9 +65,9 @@ case "$cmd" in
     config_redirects
     husky_state
     [ "$bad" = 0 ] || exit 1
-    if [ -n "$rm" ]; then
-      case " $(stub_value JQ_URLS) " in *" $rm="*) ;; *)
-        echo "$rm is not one of this project's remotes (origin, project.md › Git › Own remotes, the cloud remote)" >&2; exit 5 ;; esac
+    if [ -n "$remote" ]; then
+      case " $(stub_value JQ_URLS) " in *" $remote="*) ;; *)
+        echo "$remote is not one of this project's remotes (origin, project.md › Git › Own remotes, the cloud remote)" >&2; exit 5 ;; esac
     fi
     ;;
 esac

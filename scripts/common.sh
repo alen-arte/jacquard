@@ -1,5 +1,5 @@
-# Jacquard: helpers shared by the scripts that run from a project repo (cloud.sh, personal-sync.sh) and by its hooks
-# (away-guard.sh, session-start.sh). Sourced, never run.
+# Jacquard: helpers shared by the scripts that run from a project repo (cloud.sh, personal-sync.sh, the push guard)
+# and by its hooks (away-guard.sh, session-start.sh, bash-guard.sh). Sourced, never run.
 
 # git must act on the repos these scripts name, never on one an inherited environment points to
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES \
@@ -57,9 +57,28 @@ dest_ref() {
   case "$1" in
     refs/tags/?*) git check-ref-format "$1" || return 1; printf '%s\n' "$1" ;;
     refs/*) return 1 ;;
-    *) git check-ref-format --branch "$1" >/dev/null 2>&1 || return 1; printf 'refs/heads/%s\n' "$1" ;;
+    *) branch_ok "$1" || return 1; printf 'refs/heads/%s\n' "$1" ;;
   esac
 }
+# branch_ok <name>: a branch name safe to follow and to print inside a command: plain characters, never read as an
+# option, valid for git
+branch_ok() {
+  case "$1" in ""|-*|*[!A-Za-z0-9._/-]*) return 1 ;; esac
+  git check-ref-format --branch "$1" >/dev/null 2>&1
+}
+# remote_ok <name>: a remote's plain name (never an option, a path or a URL)
+remote_ok() { case "$1" in ""|[!A-Za-z0-9]*|*[!A-Za-z0-9._-]*) return 1 ;; esac; }
+# lower <text>: in lower case, to compare branch names as a case-insensitive file system would
+lower() { printf '%s' "$1" | tr 'A-Z' 'a-z'; }
+# entry_matches <branch> <entry>: an entry of project.md › Git's branch lines covers the branch: a name, the same; a
+# pattern <prefix>/*, any branch under the prefix, at any depth (compared literally, never globbed)
+entry_matches() { case "$2" in */\*) case "$1" in "${2%\*}"?*) return 0 ;; esac; return 1 ;; esac; [ "$1" = "$2" ]; }
+# work_branch <branch>: one of the kit's work branch forms (core/git.md › Branches), which Claude pushes without asking
+work_branch() { printf '%s\n' "$1" | grep -Eqx '(away|cloud)/[A-Za-z0-9._/-]+|(r|rf|p)[0-9]+(-[A-Za-z0-9._-]+)?'; }
+# str_sum <text> <sum tool…>: the text's sum, without the file name the tool adds
+str_sum() { _s="$1"; shift; printf '%s' "$_s" | "$@" | cut -d' ' -f1; }
+# cloud_remote: the cloud remote the user set in this repo's own git config (core/git.md › Cloud sync); empty if none
+cloud_remote() { git config --local --get jacquard.cloudRemote; }
 
 # An Away block is running in the project whose local folder is $1: its marker exists and has not expired (the
 # second line, epoch seconds, as away-guard.sh writes it; anything but a past number keeps it on, fail safe).

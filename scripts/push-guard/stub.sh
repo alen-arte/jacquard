@@ -8,35 +8,29 @@ pinned="scripts/push-guard/hook.sh scripts/protected-push.sh scripts/common.sh"
 # branches_on <label>: the names in backticks on project.md › Git's line that starts with "- **<label>"
 branches_on() { sed -n "s/^- \*\*$1[^:]*://p" "$local_dir/project.md" 2>/dev/null | head -n 1 | grep -o '`[^`]*`' | tr -d '`' | tr '\n' ' '; }
 
-# entry_ok <entry>: a branch name, or <prefix>/* (one *, last, after a /: every branch under the prefix, at any depth)
-entry_ok() {
-  e="$1"; case "$e" in */\*) e="${e%/\*}"; set -- "$e/x" ;; esac
-  case "$e" in ""|[!A-Za-z0-9]*|*[!A-Za-z0-9._/-]*|*//*|*/) return 1 ;; esac
-  git check-ref-format --branch "$1" >/dev/null 2>&1
-}
+# entry_ok <entry>: a branch name starting with a letter or digit, or <prefix>/* (one *, last, after a /: every
+# branch under the prefix, at any depth); one_of <entry>: a branch it covers (the entry itself, or one under the prefix)
+one_of() { case "$1" in */\*) printf '%sx' "${1%\*}" ;; *) printf '%s' "$1" ;; esac; }
+entry_ok() { e="$(one_of "$1")"; case "$e" in [!A-Za-z0-9]*) return 1 ;; esac; branch_ok "$e"; }
 # overlap <entry> <entry>: some branch matches both, case ignored (a case-insensitive file system mixes them up)
-overlap() {
-  ov1="$(printf '%s' "$1" | tr 'A-Z' 'a-z')"; ov2="$(printf '%s' "$2" | tr 'A-Z' 'a-z')"
-  [ "$ov1" = "$ov2" ] && return 0
-  case "$ov1" in */\*) case "$ov2" in "${ov1%\*}"*) return 0 ;; esac ;; esac
-  case "$ov2" in */\*) case "$ov1" in "${ov2%\*}"*) return 0 ;; esac ;; esac
-  return 1
-}
-# remote_ok <name>: a remote's plain name (never an option, a path or a URL)
-remote_ok() { case "$1" in ""|[!A-Za-z0-9]*|*[!A-Za-z0-9._-]*) return 1 ;; esac; }
+overlap() { ov1="$(lower "$1")"; ov2="$(lower "$2")"; entry_matches "$ov1" "$ov2" || entry_matches "$ov2" "$ov1"; }
 
 # read_values: from <local>/project.md › Git, the main branch, the free branches and the own remotes; and the cloud
-# remote (git config jacquard.cloudRemote, which only the user sets). Sets main, free, trusted (the remotes Claude's
+# remote (cloud_remote: the repo's own git config, which only the user sets). Sets main, free, trusted (the remotes Claude's
 # free and work branches may go to: origin, the own remotes, the cloud remote, each one this repo has).
 # No main branch named: main (everything not free is protected anyway). No free entry may match the main branch,
-# master or a branch that publishes; publish entries follow the same grammar.
+# master or a branch that publishes; publish entries follow the same grammar, and never take a work branch's form.
 read_values() {
   main="$(sed -nE 's/^- \*\*(Shared m|M)ain branch:\*\* *`?([A-Za-z0-9._\/-]+).*/\2/p' "$local_dir/project.md" 2>/dev/null | head -n 1)"
   main="${main:-main}"
   free="$(branches_on 'Free branches\*\*')"; free="${free% }"
   publish="$(branches_on 'Branches that publish or deploy\*\*')$(branches_on 'Branches only the user pushes')"
   git check-ref-format --branch "$main" >/dev/null 2>&1 || die "project.md › Git names an unusual main branch: $(printf '%s' "$main" | plain)"
-  for p in $publish; do entry_ok "$p" || die "project.md › Git: unusual branch that publishes $(printf '%s' "$p" | plain)"; done
+  for p in $publish; do
+    entry_ok "$p" || die "project.md › Git: unusual branch that publishes $(printf '%s' "$p" | plain)"
+    work_branch "$(lower "$(one_of "$p")")" &&
+      die "project.md › Git: $p, a branch that publishes, has a work branch's form (core/git.md › Branches), which Claude pushes without asking: rename it; nothing installed"
+  done
   for b in $free; do
     entry_ok "$b" || die "project.md › Git: unusual free branch $(printf '%s' "$b" | plain) (a name, or <prefix>/*)"
     for m in main master "$main"; do
@@ -53,7 +47,7 @@ read_values() {
     [ -n "$(git config --get "remote.$x.url")" ] || die "project.md › Git › Own remotes names $x, a remote this repo does not have"
     trusted="$trusted $x"
   done
-  x="$(git config --get jacquard.cloudRemote)"
+  x="$(cloud_remote)"
   if [ -n "$x" ] && [ "$x" != origin ]; then
     remote_ok "$x" || die "git config jacquard.cloudRemote is an unusual remote name: $(printf '%s' "$x" | plain)"
     case " $trusted " in *" $x "*) ;; *) trusted="$trusted $x" ;; esac
@@ -64,7 +58,7 @@ read_values() {
 urls_pinned() {
   for x in $trusted; do
     u="$(git remote get-url --push "$x" 2>/dev/null)" || continue
-    printf '%s=%s ' "$x" "$(printf '%s' "$u" | $tool | cut -d' ' -f1)"
+    printf '%s=%s ' "$x" "$(str_sum "$u" $tool)"
   done
 }
 # urls_shown: each trusted remote with its URL, credentials left out, for the user to judge a widening
@@ -112,6 +106,7 @@ widening() {
   [ "$(stub_value husky)" = "$(husky_sums)" ] && [ "$(stub_value remotes)" = "$(remotes_sum)" ] || return 0
   old=" $(stub_value JQ_FREE) "
   for b in $free; do case "$old" in *" $b "*) ;; *) return 0 ;; esac; done
+  grep -q " JQ_URLS='" "$target" || return 1   # a stub from before own remotes let free branches go anywhere
   old=" $(stub_value JQ_URLS) "
   for u in $(urls_pinned); do case "$old" in *" $u "*) ;; *) return 0 ;; esac; done
   return 1

@@ -25,11 +25,11 @@
 # Known limit: a cloud commit amended or squashed after it landed, then force-pushed, is not landed again.
 set -eu
 
-. "$(cd "$(dirname "$0")" && pwd)/common.sh"   # die, plain, capped, local_folder, away_active, private_remote; clears GIT_* paths
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"   # die, plain, capped, local_folder, away_active, private_remote, branch_ok, cloud_remote; clears GIT_* paths
 command -v iconv >/dev/null || die "iconv is missing: cannot check file names, nothing done"
 [ "${CLAUDE_CODE_REMOTE:-}" != true ] || die "cloud.sh runs on the computer only: in a cloud session, commit and push this same cloud/ branch"
 parts="$(cd "$(dirname "$0")" && pwd)/cloud"
-remote="$(git config --local --get jacquard.cloudRemote || echo origin)"  # private remote the cloud session is attached to
+remote="$(cloud_remote || echo origin)"  # private remote the cloud session is attached to
 kit="${JACQUARD_KIT:-$(cd "$(dirname "$0")/.." && pwd)}"                  # installed framework
 layer="${JACQUARD_PERSONAL:-$HOME/repos/jacquard-personal}"
 max_local_mb="${JACQUARD_CLOUD_MAX_MB:-25}"   # past this size, prepare and status say the local folder is heavy
@@ -79,12 +79,7 @@ followed() {
   o="$(sed -n 2p "$(rec)" 2>/dev/null || true)"
   [ -z "$o" ] || { echo "$o"; return; }
   o="$(git log -1 --format=%s "$(newest_marker)" 2>/dev/null | sed -n "s/^$marker: sync point from \([^ ]*\) .*/\1/p")"
-  if plain_branch "$o"; then echo "$o"; fi
-}
-# A branch name safe to follow and to print inside a command: plain characters, never read as an option, valid for git.
-plain_branch() {
-  case "$1" in ""|-*|*[!A-Za-z0-9._/-]*) return 1 ;; esac
-  git check-ref-format "refs/heads/$1"
+  if branch_ok "$o"; then echo "$o"; fi
 }
 # The cloud's commits a land would bring, named for the user before they say --take-over.
 pending() {
@@ -111,7 +106,7 @@ takeover_ok() {
     || { [ "$take" = 1 ] && return 0
          # its last tip: the newest sync commit made from it (0.2.10 format) has it as second parent, or as only one on a first sync
          last="$(git log --format='%H %P%x09%s' "$ref" | awk -F '\t' -v s="$marker: sync point from $o (its files" 'index($2, s) == 1 { split($1, a, " "); print substr(a[3] != "" ? a[3] : a[2], 1, 12); exit }')"
-         back=""; [ -z "$last" ] || ! plain_branch "$o" || back=" If it is wanted: git branch $o $last brings it back, then bring it into $branch."
+         back=""; [ -z "$last" ] || ! branch_ok "$o" || back=" If it is wanted: git branch $o $last brings it back, then bring it into $branch."
          die "$out was last synced from $o, which no longer exists here: ask the user whether its work is wanted.$back If it is not: cloud.sh land --take-over first if the cloud has work not landed (that later cloud work comes here), then cloud.sh prepare --take-over, which puts this branch's files in the cloud.$(pending)"; }
   die "$out was last synced from $o, not $branch: run cloud.sh there, or bring $o into $branch first"
 }

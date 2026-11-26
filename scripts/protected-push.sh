@@ -29,7 +29,7 @@ top="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not in a git repo"
 cd "$top" || die "cannot enter $top"
 local_folder
 ! away_active "$local_dir" || die "Away is on: Away never pushes"
-case "$remote" in ""|-*|*[!A-Za-z0-9._-]*) die "the remote must be a remote's name, not a URL: $(printf '%s' "$remote" | plain)" ;; esac
+remote_ok "$remote" || die "the remote must be a remote's name, not a URL: $(printf '%s' "$remote" | plain)"
 git remote | grep -qxF -e "$remote" || die "no remote called $remote"
 full="$(dest_ref "$dest")" || die "the destination must be a branch name or refs/tags/<tag>: $(printf '%s' "$dest" | plain)"
 git rev-parse -q --verify "$full" >/dev/null || die "there is no local $full to push"

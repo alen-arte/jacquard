@@ -98,12 +98,12 @@ sc check; [ "$st" != 0 ] || fail "I3 check must fail on an edited stub"
 sc install; chmod 755 "$stub"
 sc check; [ "$st" != 0 ] || fail "I3 check must fail on a writable stub"
 sc install
-sed 's/`demo`/`demo`, `staging`/' .jacquard/project.md > "$tmp/pm" && cp "$tmp/pm" .jacquard/project.md
+pm_edit 's/`demo`/`demo`, `staging`/'
 sc check; [ "$st" != 0 ] || fail "I3 check must fail when project.md's free list changed after install"
 sc install; sc check; [ "$st" = 0 ] || fail "I3 install again follows project.md"
 
 # W · Run by Claude, install only re-pins: widening asks (install --widen, its own ask rule)
-sed 's/`demo`, `staging`/`demo`, `staging`, `production`/' .jacquard/project.md > "$tmp/pm" && cp "$tmp/pm" .jacquard/project.md
+pm_edit 's/`demo`, `staging`/`demo`, `staging`, `production`/'
 out="$(agent "$script" install 2>&1)"; st=$?
 [ "$st" != 0 ] || fail "W1 Claude's install must refuse a new free branch"
 case "$out" in *"--widen"*) ;; *) fail "W1 the refusal names install --widen (got: $out)";; esac
@@ -116,7 +116,7 @@ agent "$script" install >/dev/null 2>&1 && fail "W4 Claude's install must refuse
 git remote set-url origin "$tmp/p1.git"; sc check; [ "$st" = 0 ] || fail "W4 the old URL passes again ($out)"
 printf -- '- **Branches that publish or deploy** (x): `production`\n' >> .jacquard/project.md
 sc install; [ "$st" != 0 ] || fail "W5 a branch both free and publishing must be refused"
-sed '/publish or deploy/d; s/, `production`//' .jacquard/project.md > "$tmp/pm" && cp "$tmp/pm" .jacquard/project.md; sc install
+pm_edit '/publish or deploy/d; s/, `production`//'; sc install
 new_project p7
 agent "$script" install >/dev/null 2>&1 && fail "W6 Claude's first install with free branches must ask (--widen)"
 new_project p8 'none'

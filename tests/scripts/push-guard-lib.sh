@@ -1,6 +1,6 @@
 # Shared setup for the push guard tests (push-guard.test.sh, bash-guard.test.sh). Sourced after lib.sh.
 # Gives: kc (a copy of the kit, so a test may change its files), r (the current project), new_project, commit_on,
-# agent, away_on, away_off, husky_init; sc runs the copy's push-guard.sh.
+# agent, away_on, away_off, husky_init, pm_edit; sc runs the copy's push-guard.sh.
 unset CLAUDECODE CLAUDE_CODE_ENTRYPOINT JACQUARD_AGENT CLAUDE_CODE_REMOTE CLAUDE_PROJECT_DIR CLAUDE_CODE_SESSION_ID
 export HOME="$tmp/home"; mkdir -p "$HOME"
 kc="$tmp/kit"; mkdir -p "$kc"; cp -R "$kit/scripts" "$kit/CHANGELOG.md" "$kc/"
@@ -22,6 +22,8 @@ commit_on() {
   git switch -q "$1" 2>/dev/null || git switch -q -c "$1" || return 1
   n=$((n + 1)); echo "$1 $n" >> f.txt; git add f.txt; git commit -qm "c$n"
 }
+# pm_edit <sed script>: edit the current project's project.md in place
+pm_edit() { sed "$1" .jacquard/project.md > "$tmp/pm" && cp "$tmp/pm" .jacquard/project.md; }
 # agent <command…>: run it as Claude does (Claude Code sets CLAUDECODE in its commands)
 agent() { CLAUDECODE=1 "$@"; }
 away_on() { mkdir -p "$r/.jacquard/away"; printf 's1\n%s\n' $(( $(date +%s) + 3600 )) > "$r/.jacquard/away/.away-active"; }
