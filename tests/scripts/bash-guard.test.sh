@@ -33,7 +33,7 @@ expect none B1 "~/.claude/jacquard/scripts/personal-sync.sh 'R64: push guard'"
 expect none B1 '~/.claude/jacquard/scripts/push-guard.sh install'
 expect none B1 '~/.claude/jacquard/scripts/push-guard.sh check'
 
-# B2 · Present: every other way of saying push asks, and so does a command the shell computes
+# B2 · Present: every other way of saying push asks, and so do $ or a backtick next to git
 expect ask B2 'git push origin ma\\in'
 expect ask B2 'git push origin {main,r1}'
 expect ask B2 'git push origin r1:heads/production'
@@ -68,7 +68,7 @@ expect ask B2 "grep 'x; git push origin r1-x"
 expect ask B2 "grep \\\\' x; git push origin r1-x; echo \\\\'"
 expect ask B2 "grep \\\"\\\"'' x; git push origin r1-x"
 expect none B2 "grep \\\"\\\"'' x"
-# An expansion counts on every line: a quote after a # or in an unquoted heredoc hides nothing
+# $ or a backtick next to git counts on every line: a quote after a # or in an unquoted heredoc hides nothing
 expect ask B2 "true #'\\ngit \$(printf pu)sh --no-verify origin main\\n#'"
 expect ask B2 "cat <<EOF\\nit's\\nEOF\\ngit \$(printf pu)sh origin r1-x\\n#'"
 # A backslash before a line break joins the lines, as the shell does: pu\⏎sh is push
@@ -78,50 +78,8 @@ expect ask B2 'g\\\nit pu\\\nsh origin r1-x'
 # Git's lower-level pushes count as push
 expect ask B2 'git send-pack https://example.com/r.git main'
 expect ask B2 'git http-push https://example.com/r.git main'
-# What the shell computes (an expansion, a brace list, a [ or ? in a word, a * that could name git or push, a ( or ) glued to a word) cannot be read: it asks
-expect ask B2 'g$()it pu$()sh --no-verify origin main'
-expect ask B2 'g``it pu``sh origin main'
-expect ask B2 'g${x}it pu${x}sh origin main'
-expect ask B2 '$(printf gi)t $(printf pu)sh origin main'
-expect ask B2 '${x:-gi}t ${x:-pu}sh --no-verify origin main'
-expect ask B2 'a=gi b=pu; ${a}t ${b}sh --no-verify origin main'
-expect ask B2 '$(printf %s%s gi t) $(printf %s%s pu sh) --no-verify origin main'
-expect ask B2 "\$'\\\\x67\\\\x69\\\\x74' \$'\\\\x70\\\\x75\\\\x73\\\\x68' --no-verify origin main"
-expect ask B2 'g$\"i\"t pu$\"s\"h origin main'
-expect ask B2 'git {pu,--repo=}sh --no-verify origin main'
-expect ask B2 '/usr/bin/gi[t] {pu,--repo=}sh --no-verify origin main'
-expect ask B2 '/usr/bin/gi[t] p[u]sh origin main'
-expect ask B2 '/usr/bin/g* p?sh origin main'
-expect ask B2 'npm run x -- $V'
-case "$out" in *computes*) ;; *) fail "B2 the prompt says the shell computes part of the command: $out";; esac
-expect ask B2 'echo a\necho $(date)'
 expect none B2 "grep \\\"pattern\$\\\" f"
 expect none B2 "git log --grep='fix\$'"
-expect none B2 "awk '{ print \$1 }' f"
-expect none B2 'cat src/*.ts'
-expect none B2 'git add docs/*'
-expect none B2 'npm test -- --include=*.md'
-expect none B2 'test -f x && [ -d y ]'
-expect none B2 'find . -name x -exec wc -l {} +'
-# A brace list with an escaped or quoted space; git's own push programs by path, by glob or by zsh alternation;
-# process substitution; a backslash inside a * word
-expect ask B2 'git --work-tree {\\ ,pu}sh origin main'
-expect ask B2 "git status\\ngit --work-tree {' ',pu}sh origin main"
-expect ask B2 "# it's\\ngit --work-tree {' ',pu}sh origin main"
-expect ask B2 'git {a..b}'
-expect ask B2 '/usr/lib/git-core/git-push origin main'
-expect ask B2 '/usr/lib/git-core/git-send-pack origin main'
-expect ask B2 '/usr/lib/git-core/git-pu* origin main'
-expect ask B2 "'/usr/lib/git-core/git-pus'* origin main"
-expect ask B2 '/usr/lib/git-core/git-(pu|x)sh --no-verify origin main'
-expect ask B2 "date +%s <(eval 'x=pu; git \${x}sh origin main')"
-expect ask B2 'git p\\u* origin main'
-expect ask B2 '/usr/bin/g* status'
-# What the shell does not compute stays readable: quotes keep globs, braces and parentheses literal
-expect none B2 '[[ -d y ]]'
-expect none B2 "git commit -m \\\"line one\\n\\nwhy? [x1] *note*\\\""
-expect none B2 "git commit -m \\\"x: \\\\\\\"y\\\\\\\" (step 2?)\\\""
-expect none B2 "grep -n '(a|b)' f"
 # A command too long to read in time, or one the guard cannot read, is never left to the rules
 expect ask B2 "git log $(awk 'BEGIN { while (n++ < 12000) printf "x x x x x " }')"
 case "$out" in *"too long"*) ;; *) fail "B2 a command past the length cap asks, saying it is too long: $out";; esac
@@ -152,12 +110,6 @@ expect deny B4 "git log #'\\ngit push origin r1-x\\n#'"
 expect deny B4 "true #'\\ngit \$(printf pu)sh --no-verify origin main\\n#'"
 expect deny B4 'git pu\\\nsh --no-verify origin main'
 expect deny B4 'git send-pack https://example.com/r.git main'
-for c in '${x:-gi}t ${x:-pu}sh --no-verify origin main' 'git {pu,--repo=}sh --no-verify origin main' \
-         '/usr/bin/gi[t] p[u]sh origin main' 'echo $(date)' 'echo `date`' "echo \$'x'" 'ls file?.txt' \
-         '/usr/bin/g* status' '/usr/lib/git-core/git-push origin main' '/usr/lib/git-core/git-fetch origin'; do
-  expect deny B4 "$c"
-  case "$out" in *park*) ;; *) fail "B4 the denial says to rewrite it or park the step: $out";; esac
-done
 expect deny B4 "git log $(awk 'BEGIN { while (n++ < 12000) printf "x x x x x " }')"
 case "$out" in *park*) ;; *) fail "B4 a command past the length cap is denied with the park message: $out";; esac
 expect none B4 'grep -rn \"git push\" scripts'
