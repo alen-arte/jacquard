@@ -1,8 +1,10 @@
 #!/bin/sh
 # Jacquard push guard: what the pre-push stub runs when Claude pushes. git passes the remote name and URL, and one line
 # per ref on stdin: <local ref> <local sha> <remote ref> <remote sha>. The stub sets JQ_MAIN, JQ_FREE (the free
-# branches), JQ_LOCAL (the local folder) and JQ_SH_EXE (the real /bin/sh), and has checked this file's sum.
-# Goes through: free branches and the kit's work branches, fast-forward only. Everything else (the main branch, any
+# branches: names and <prefix>/* patterns), JQ_URLS (<remote>=<sum of its URL> for the project's remotes), JQ_SUM
+# (the sum tool), JQ_LOCAL (the local folder) and JQ_SH_EXE (the real /bin/sh), and has checked this file's sum.
+# Goes through: free branches and the kit's work branches, fast-forward only, to one of the project's remotes at the URL
+# pinned for it (any other remote or URL: every ref there is protected). Everything else (the main branch, any
 # other branch, tags, anything outside refs/heads/) only when protected-push.sh itself runs this push: the process
 # that started `git push` is that script, run as itself, for this remote and this one destination (read in /proc;
 # without /proc, never). Refused always: deleting, a push that is not a fast-forward, any push while Away is on.
@@ -12,12 +14,17 @@ here="$(cd "$(dirname "$0")" && pwd -P)"
 refuse() { echo "✗ Jacquard push guard: $1 Push refused." >&2; exit 1; }
 remote="$1"
 away_active "$JQ_LOCAL" && refuse "Away is on: Away never pushes."
+# known: this push goes to one of the project's remotes, by its name, at the URL git will really push to
+known=0
+case " $JQ_URLS " in *" $remote=$(printf '%s' "$2" | $JQ_SUM | cut -d' ' -f1) "*) known=1 ;; esac
 
 # free <branch>: pushed without asking. Never main, master or the main branch, whatever the case.
 free() {
   lc="$(printf '%s' "$1" | tr 'A-Z' 'a-z')"
   case "$lc" in main|master|"$(printf '%s' "$JQ_MAIN" | tr 'A-Z' 'a-z')") return 1 ;; esac
-  for f in $JQ_FREE; do [ "$1" = "$f" ] && return 0; done
+  for f in $JQ_FREE; do
+    case "$f" in */\*) case "$1" in "${f%\*}"?*) return 0 ;; esac ;; *) [ "$1" = "$f" ] && return 0 ;; esac
+  done
   printf '%s\n' "$1" | grep -Eqx '(away|cloud)/[A-Za-z0-9._/-]+|(r|rf|p)[0-9]+(-[A-Za-z0-9._-]+)?'
 }
 
@@ -57,13 +64,15 @@ while read -r lref lsha rref rsha; do
     git cat-file -e "$rsha^{commit}" 2>/dev/null && git merge-base --is-ancestor "$rsha" "$lsha" 2>/dev/null ||
       refuse "$rref is not a fast-forward (the remote has commits this push would drop)." ;;
   esac
-  case "$rref" in refs/heads/*) free "${rref#refs/heads/}" && continue ;; esac
+  case "$rref" in refs/heads/*) [ "$known" = 1 ] && free "${rref#refs/heads/}" && continue ;; esac
   protected="$rref"
 done <<EOF
 $lines
 EOF
 [ -n "$protected" ] || exit 0
-[ "$count" = 1 ] || refuse "$protected is protected and goes alone, through protected-push.sh."
+why="$protected is protected"
+[ "$known" = 1 ] || why="$why here: this remote or URL is not one of the project's (origin, project.md › Git › Own remotes, the cloud remote, at the URL pinned at install)"
+[ "$count" = 1 ] || refuse "$why, and goes alone, through protected-push.sh."
 authorized "$remote" "$protected" ||
-  refuse "$protected is protected: only ~/.claude/jacquard/scripts/protected-push.sh $remote <branch> pushes it, and it asks first. Or run the push in your terminal (not with ! inside Claude)."
+  refuse "$why: only ~/.claude/jacquard/scripts/protected-push.sh <remote> <branch> pushes it, and it asks first. Or run the push in your terminal (not with ! inside Claude)."
 exit 0

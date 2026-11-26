@@ -7,21 +7,27 @@
 #                                       lets more through (a new free branch, another main branch, new remote URLs,
 #                                       changed husky files, a first install with free branches) is refused
 #   push-guard.sh install --widen       the same, widening allowed: its own `ask` rule, so the user says yes
-#   push-guard.sh check                 is the stub in place, current, and nothing working around it
+#   push-guard.sh check [<remote>]      is the stub in place, current, and nothing working around it; with a remote,
+#                                       also that it is one of the project's (origin, project.md › Git › Own remotes,
+#                                       the cloud remote): exit 5 when it is not
+# Free branches are names or <prefix>/* patterns (project.md › Git); free and work branches go without asking only to
+# the project's remotes, at the URL pinned for each.
 # The stub goes where git looks: the repo's shared hooks folder, or .husky/pre-push (excluded) where husky v9 runs the
 # hooks. Someone else's pre-push hook is left alone: install refuses, and every push there asks. --privacy (or an old
 # privacy stub found there, the kit's own repo) makes the stub run the kit's privacy check after the guard.
 # Exit 0; 1 on a refusal or a failed check (the reason on stderr); 4 from check when no Jacquard stub is there (none,
-# or someone else's hook); 2 on a usage error.
+# or someone else's hook); 5 from check <remote> when that remote is not the project's; 2 on a usage error.
 set -f
 here="$(cd "$(dirname "$0")" && pwd -P)"
 kit="$(cd "$here/.." && pwd -P)"
 . "$here/common.sh"
 . "$here/push-guard/stub.sh"
 . "$here/push-guard/state.sh"
-cmd="$1"; privacy=0; widen=0
+cmd="$1"; privacy=0; widen=0; rm=""
+usage() { echo "usage: push-guard.sh install [--privacy | --widen] | check [<remote>]" >&2; exit 2; }
 case "$cmd:$*" in "install:install"|"check:check") ;; "install:install --privacy") privacy=1 ;; "install:install --widen") widen=1 ;;
-  *) echo "usage: push-guard.sh install [--privacy | --widen] | check" >&2; exit 2 ;; esac
+  "check:check "*) [ $# = 2 ] && remote_ok "$2" || usage; rm="$2" ;;
+  *) usage ;; esac
 
 top="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not in a git repo"
 cd "$top" || die "cannot enter $top"
@@ -37,7 +43,7 @@ case "$cmd" in
     [ "$kind" != 2 ] || die "$target is someone else's pre-push hook: left as it is. Every push asks here; note it in project.md › Git."
     [ "$husky" = 0 ] || { [ -f .husky/_/h ] && [ -f .husky/_/pre-push ]; } || die "core.hooksPath is .husky/_ but husky's runner files are missing"
     if is_claude && [ "$widen" = 0 ] && widening; then
-      die "this install would let more through than the guard in place (free branches: ${free:-none}; or the main branch, the remotes or husky's files changed). Run ~/.claude/jacquard/scripts/push-guard.sh install --widen, which asks the user."
+      die "this install would let more through than the guard in place (free branches: ${free:-none}; remotes: $(urls_shown)or the main branch or husky's files changed). Show the user that list, then run ~/.claude/jacquard/scripts/push-guard.sh install --widen, which asks them."
     fi
     mkdir -p "$(dirname "$target")" || die "cannot create $(dirname "$target")"
     tmpf="$(mktemp "$(dirname "$target")/.pre-push.XXXXXX")" || die "cannot write in $(dirname "$target")"
@@ -58,6 +64,10 @@ case "$cmd" in
     config_redirects
     husky_state
     [ "$bad" = 0 ] || exit 1
+    if [ -n "$rm" ]; then
+      case " $(stub_value JQ_URLS) " in *" $rm="*) ;; *)
+        echo "$rm is not one of this project's remotes (origin, project.md › Git › Own remotes, the cloud remote)" >&2; exit 5 ;; esac
+    fi
     ;;
 esac
 exit 0

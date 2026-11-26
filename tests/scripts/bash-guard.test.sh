@@ -103,7 +103,7 @@ printf -- '- **Own remotes** (x): `personal`\n' >> .jacquard/project.md; sc inst
 for c in 'git push personal demo' 'git push -u personal ux/a' 'git push personal demo:demo' 'git push origin r1-x:r1-x'; do
   expect none B6 "$c"
 done
-for c in 'git push personal demo:main' 'git push personal demo:other' 'git push personal demo:' 'git push -u -personal x'; do
+for c in 'git push personal demo:main' 'git push personal demo:other' 'git push personal demo:' 'git push personal :demo' 'git push personal a:a:a' 'git push -u -personal x'; do
   expect ask B6 "$c"
 done
 expect ask B6 'git push stranger demo'

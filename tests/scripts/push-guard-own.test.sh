@@ -29,6 +29,12 @@ sc install; [ "$st" != 0 ] || fail "F3 a pattern over a branch that publishes mu
 new_project f4 '`deploy/*`'
 sed 's|\*\*Main branch:\*\* main|**Main branch:** deploy/live|' .jacquard/project.md > "$tmp/pm" && cp "$tmp/pm" .jacquard/project.md
 sc install; [ "$st" != 0 ] || fail "F3 a pattern over the main branch must be refused"
+i=0
+for fp in '`release/v2`|`release/*`' '`release/v2/*`|`release/*`' '`prod`|`Prod`' '`ux/*`|`ux/*`' '`demo`|`re*`'; do
+  i=$((i + 1)); new_project "f3-$i" "${fp%%|*}"
+  printf -- '- **Branches that publish or deploy** (x): %s\n' "${fp#*|}" >> .jacquard/project.md
+  sc install; [ "$st" != 0 ] || fail "F3 free ${fp%%|*} with publish ${fp#*|} must be refused"
+done
 
 # F4 · A new pattern lets more through: Claude's install asks (--widen); one fewer re-pins
 cd "$tmp/f1" && r="$tmp/f1"; git switch -q main
@@ -43,7 +49,7 @@ new_project o1
 for x in personal spare; do git init -q --bare "$tmp/o1-$x.git"; git remote add "$x" "$tmp/o1-$x.git"; done
 own '`personal`'
 sc install; [ "$st" = 0 ] || fail "O1 install with an own remote ($out)"
-grep -qx '# own-remotes: personal' "$r/.git/hooks/pre-push" || fail "O1 the stub pins the own remotes"
+grep -Eq "JQ_URLS='origin=[0-9a-f]{64} personal=[0-9a-f]{64} '" "$r/.git/hooks/pre-push" || fail "O1 the stub pins each own remote with its URL's sum, and no other"
 sc check personal; [ "$st" = 0 ] || fail "O1 check passes for a listed own remote ($out)"
 sc check origin; [ "$st" = 0 ] || fail "O1 origin always passes check ($out)"
 sc check spare; [ "$st" = 5 ] || fail "O1 a remote not on the list exits 5 (got $st: $out)"
@@ -61,6 +67,22 @@ agent "$script" install >/dev/null 2>&1 && fail "O2 Claude's install must refuse
 agent "$script" install --widen >/dev/null 2>&1 || fail "O2 install --widen adds it"
 sed 's|, `spare`||' .jacquard/project.md > "$tmp/pm" && cp "$tmp/pm" .jacquard/project.md
 agent "$script" install >/dev/null 2>&1 || fail "O2 dropping an own remote is not widening"
+
+# R1 · A free branch goes without asking only to a listed remote, at the URL pinned for it
+commit_on demo
+agent git push -q "$tmp/o1-spare.git" demo 2>/dev/null && fail "R1 a free branch to a URL must be refused"
+agent git push -q spare demo 2>/dev/null && fail "R1 a free branch to a remote off the list must be refused"
+agent git -c "remote.personal.pushurl=$tmp/o1-spare.git" push -q personal demo 2>/dev/null && fail "R1 a listed name pushing to another URL must be refused"
+git remote add person "$tmp/o1-spare.git"
+agent git push -q person demo 2>/dev/null && fail "R1 person is not personal"
+git remote remove person; sc install
+
+# R2 · The cloud remote (git config jacquard.cloudRemote) is the project's too; a new one widens
+git config jacquard.cloudRemote spare
+sc check; [ "$st" != 0 ] || fail "R2 check must fail when the cloud remote changed after install"
+agent "$script" install >/dev/null 2>&1 && fail "R2 Claude's install must refuse a new cloud remote"
+sc install; commit_on cloud/r1-x
+agent git push -q spare cloud/r1-x 2>/dev/null || fail "R2 the cloud remote takes the kit's branches"
 
 # O3 · An own remote is a remote this repo has, named plainly, and never origin
 i=0

@@ -7,8 +7,9 @@
 #   - plain commands (no shell operators outside literal quotes, one line) that cannot push: grep (not rg: --pre runs a program), git log, diff,
 #     show, status, `git commit -m`/`-F`, and the kit's own scripts but protected-push.sh: nothing. So is a commit whose
 #     message is a quoted heredoc (`git commit -m "$(cat <<'EOF' … EOF )"`, literal inside)
-#   - `git push [-u] origin <branch>`, alone: Away denies; Present runs push-guard.sh check in the command's folder:
-#     no guard there (none installed, or someone else's hook) asks, a guard out of date or worked around denies
+#   - `git push [-u] <remote> <branch>` (or `<branch>:<branch>`, the same name), alone: Away denies; Present runs
+#     push-guard.sh check <remote> in the command's folder: no guard there (none installed, or someone else's hook)
+#     asks, a remote that is not the project's asks, a guard out of date or worked around denies
 #   - protected-push.sh: Away denies; Present asks, naming the destination (its ask rule does too)
 #   - any other command with a word "push" (or send-pack, http-push) once quotes, backslashes and backslash-newlines
 #     are gone, or with $ or a backtick and a word "git": Away denies, Present asks
@@ -91,13 +92,20 @@ printf '%s\n' "$cmd" | awk -v q="'" 'NR == 1 { ok = ($0 == "git commit -m \"$(ca
   $0 == "EOF" { eof++; last = NR } { end = $0 } END { exit !(ok && eof == 1 && last == NR - 1 && end == ")\"") }' && exit 0
 
 case "$cmd" in *"$nl"*) ;; *)
-  if printf '%s\n' "$cmd" | grep -Eqx 'git push( -u)? origin [A-Za-z0-9._/-]+'; then
+  # The plain push: git push [-u] <remote> <branch>, or <branch>:<branch> with the same name on both sides
+  rm=""
+  if printf '%s\n' "$cmd" | grep -Eqx 'git push( -u)? [A-Za-z0-9][A-Za-z0-9._-]* [A-Za-z0-9._/-]+(:[A-Za-z0-9._/-]+)?'; then
+    set -f; set -- $cmd; shift 2; [ "$1" = -u ] && shift
+    case "$2" in *:*) [ "${2%%:*}" = "${2#*:}" ] && rm="$1" ;; *) rm="$1" ;; esac
+  fi
+  if [ -n "$rm" ]; then
     away && decide deny "$park"
     dir="$(field cwd)"; [ -d "$dir" ] || dir="${CLAUDE_PROJECT_DIR:-.}"
-    why="$(cd "$dir" && sh "$here/push-guard.sh" check 2>&1)"; st=$?
+    why="$(cd "$dir" && sh "$here/push-guard.sh" check "$rm" 2>&1)"; st=$?
     case "$st" in
       0) exit 0 ;;
       4) decide ask "No push guard in this repo ($why): nothing stops this push from reaching a protected branch, so it asks. Approve only a push you asked for." ;;
+      5) decide ask "$why, so it asks. Approve only a push the user asked for, to a repo of theirs." ;;
       *) decide deny "The push guard here is out of date or worked around: $why. Do not retry: say so to the user (the fix is /jacquard-update, which runs push-guard.sh install)." ;;
     esac
   fi
@@ -120,6 +128,6 @@ has fetch && has git && away && decide deny "$park"
 if has push || has send-pack || has http-push || printf '%s\n' "$words" | grep -q 'protected-push' ||
    { has git && printf '%s' "$dyn" | grep -q '[$`]'; }; then
   away && decide deny "$park"
-  decide ask "This command could push, but it is not the plain form git push origin <branch>: protected destinations go only through ~/.claude/jacquard/scripts/protected-push.sh. Approve only a push the user asked for."
+  decide ask "This command could push, but it is not the plain form git push <remote> <branch>: protected destinations go only through ~/.claude/jacquard/scripts/protected-push.sh. Approve only a push the user asked for."
 fi
 exit 0
