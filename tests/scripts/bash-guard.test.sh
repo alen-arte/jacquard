@@ -95,6 +95,8 @@ done
 expect deny B4 "git commit -m \\\"it's done\\\"; git push origin r1-x; echo 'ok'"
 expect deny B4 "grep \\\"'\\\" x ; git push origin feature-x ; echo \\\"'\\\""
 expect deny B4 "git log #'\\ngit push origin r1-x\\n#'"
+expect deny B4 "git log $(awk 'BEGIN { while (n++ < 12000) printf "x x x x x " }')"
+case "$out" in *park*) ;; *) fail "B4 a command past the length cap is denied with the park message: $out";; esac
 expect none B4 'grep -rn \"git push\" scripts'
 expect none B4 'git commit -m \"R1: push button\"'
 

@@ -48,7 +48,7 @@ sums_quoted() { for f in $pinned; do $tool "$kit/$f"; done | sed "s/.*/'&'/" | t
 # Pinned in the stub's comments, compared by check: husky's own runner files, and every remote's URL (a sum, so a URL
 # with a token in it is never written down)
 husky_sums() { [ "$husky" = 1 ] || return 0; $tool .husky/_/h .husky/_/pre-push | awk '{ printf "%s ", $1 }'; }
-remotes_sum() { git config --get-regexp '^remote\..*\.url$' | sort | $tool | cut -d' ' -f1; }
+remotes_sum() { git config --get-regexp '^remote\..*\.url$' | LC_ALL=C sort | $tool | cut -d' ' -f1; }
 
 # stub_kind: what the file at $target is. 0: a Jacquard stub (its privacy line sets privacy=1), 1: the kit repo's old
 # privacy stub (sets privacy=1), 2: someone else's hook.
