@@ -13,13 +13,17 @@
 #   - any other command with a word "push" once quotes and backslashes are gone, or with $ or a backtick and a word
 #     "git": Away denies, Present asks
 #   - a git fetch: Away denies
+#   - hook input past max_input, or a command it cannot read: Away denies, Present asks (a timed-out hook decides nothing)
 here="$(cd "$(dirname "$0")" && pwd)"
 [ $# = 1 ] && [ -n "$1" ] || { echo "usage: bash-guard.sh <local folder>" >&2; exit 2; }
 local_dir="$1"
 . "$here/common.sh"
+# Bytes, not characters: every character the rules look at is ASCII, and an invalid UTF-8 byte must not empty a match
+export LC_ALL=C
 input="$(cat)"
+max_input=100000   # bytes of hook input read in well under the hook's timeout; past it, nothing is left to the rules
 # JSON string escapes decoded; a \u escape or an unknown one becomes ESC, which no rule below treats as plain
-cmd="$(hook_command | awk 'BEGIN { RS = "\001" } { s = $0; o = ""
+cmd=""; [ "${#input}" -gt "$max_input" ] || cmd="$(hook_command | awk 'BEGIN { RS = "\001" } { s = $0; o = ""
   while ((i = index(s, "\\")) > 0) { o = o substr(s, 1, i - 1); c = substr(s, i + 1, 1); s = substr(s, i + 2)
     if (c == "n") o = o "\n"; else if (c == "\"" || c == "\\" || c == "/") o = o c
     else { o = o "\033"; if (c == "u") s = substr(s, 5) } }
@@ -37,10 +41,33 @@ nl='
 ctl="$(printf '\033\t\r')"
 kit='~/.claude/jacquard/scripts/'
 
+# A guard that times out leaves the command to the allow rules, so a command too long to read (never decoded), or
+# one it cannot read, gets a decision before anything slow runs
+if [ -z "$cmd" ]; then
+  away && decide deny "$park"
+  decide ask "This command is too long or unreadable for the push check, so it asks. Approve only if it does what the user asked."
+fi
+
 # Plain: what is left after dropping literal quotes ('…', and "…" without $, backtick or backslash) has no operator,
-# no backslash, no control character and no second line
-lit="$(printf '%s' "$cmd" | sed "s/'[^']*'//g; s/\"[^\"\$\`\\\\]*\"//g")"
-case "$lit" in *"$nl"*|*'\'*|*[';&|$`<>()']*|*["$ctl"]*) plain=0 ;; *) plain=1 ;; esac
+# no backslash, no #, no control character, and the command has no second line (inside quotes or not: a quote after
+# a # is no quote to the shell). Quotes are read in one pass, left to right, as the shell reads them: a quote inside
+# the other kind is a plain character; a backslash escapes the next one; an unclosed quote leaves ESC, never plain
+lit="$(printf '%s' "$cmd" | awk -v q="'" 'BEGIN { RS = "\001" } { s = $0; n = length(s); o = ""; i = 1
+  while (i <= n) { c = substr(s, i, 1)
+    if (c == "\\") { o = o substr(s, i, 2); i += 2; continue }
+    if (c == q) { j = index(substr(s, i + 1), q); if (!j) { o = o "\033" substr(s, i); break } i += j + 1; continue }
+    if (c != "\"") { o = o c; i++; continue }
+    t = c; lit = 1; i++
+    while (i <= n && (c = substr(s, i, 1)) != "\"") {
+      if (c == "\\") { t = t substr(s, i, 2); lit = 0; i += 2; continue }
+      if (c == "$" || c == "`") lit = 0
+      t = t c; i++ }
+    if (i > n) { o = o "\033" t; break }
+    if (!lit) o = o t "\""; i++ }
+  printf "%s", o }')"
+case "$cmd" in *"$nl"*) plain=0 ;; *)
+  case "$lit" in *'\'*|*[';&|$`<>()#']*|*["$ctl"]*) plain=0 ;; *) plain=1 ;; esac ;;
+esac
 if [ "$plain" = 1 ]; then
   case "$cmd" in
     grep\ *|"git log"|"git log "*|"git diff"|"git diff "*|"git show"|"git show "*|"git status"|"git status "*|\

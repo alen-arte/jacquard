@@ -53,6 +53,25 @@ expect ask B2 'git commit -m \"$(cat <<'"'"'EOF'"'"'\nx\nEOF\ngit push origin ma
 expect ask B2 'git commit -m \"$(git push origin main)\"'
 expect ask B2 '~/.claude/jacquard/scripts/push-guard.sh install --widen'
 expect ask B2 '/tmp/pp origin main; echo protected-push'
+# Quotes are read in one pass: an apostrophe inside "…" (or a quote inside '…') does not hide what follows
+expect ask B2 "git commit -m \\\"it's done\\\"; git push origin r1-x; echo 'ok'"
+expect ask B2 "grep \\\"'\\\" x ; git push origin feature-x ; echo \\\"'\\\""
+expect ask B2 "~/.claude/jacquard/scripts/personal-sync.sh \\\"it's\\\"; git push origin r1-x; echo 'ok'"
+expect ask B2 "grep '\\\"' x; git push origin r1-x; echo '\\\"'"
+expect ask B2 "git commit -m \\\"it's\\\" \\\"\$(git fetch)\\\" 'x'"
+expect none B2 "git commit -m \\\"it's done\\\""
+expect none B2 "grep -n \\\"don't push\\\" core/git.md"
+# A second line is never plain, even inside quotes or after a # comment; neither is an unclosed quote
+expect ask B2 "git log #'\\ngit push origin r1-x\\n#'"
+expect ask B2 "grep 'a\\ngit push origin r1-x\\n' x"
+expect ask B2 "grep 'x; git push origin r1-x"
+expect ask B2 "grep \\\\' x; git push origin r1-x; echo \\\\'"
+expect ask B2 "grep \\\"\\\"'' x; git push origin r1-x"
+expect none B2 "grep \\\"\\\"'' x"
+# A command too long to read in time, or one the guard cannot read, is never left to the rules
+expect ask B2 "git log $(awk 'BEGIN { while (n++ < 12000) printf "x x x x x " }')"
+case "$out" in *"too long"*) ;; *) fail "B2 a command past the length cap asks, saying it is too long: $out";; esac
+expect ask B2 "grep \\\"$(printf '\303')'\\\" x; git push origin r1-x"
 case "$(hook '~/.claude/jacquard/scripts/protected-push.sh origin main'; printf '%s' "$out")" in
   *"pushes main to origin"*) ;; *) fail "B2 the protected-push prompt names the destination and the remote: $out";; esac
 
@@ -73,6 +92,9 @@ for c in 'git push origin r1-x' 'git fetch origin' 'cd x && git  push -u origin 
   expect deny B4 "$c"
   case "$out" in *park*) ;; *) fail "B4 the denial says to park the step: $out";; esac
 done
+expect deny B4 "git commit -m \\\"it's done\\\"; git push origin r1-x; echo 'ok'"
+expect deny B4 "grep \\\"'\\\" x ; git push origin feature-x ; echo \\\"'\\\""
+expect deny B4 "git log #'\\ngit push origin r1-x\\n#'"
 expect none B4 'grep -rn \"git push\" scripts'
 expect none B4 'git commit -m \"R1: push button\"'
 
