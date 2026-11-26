@@ -73,8 +73,9 @@ The kit's `structure-check.sh` reads this section: the file warning and cap numb
 ## Git
 
 - **Main branch:** {{MAIN}} (protected: Claude pushes it only through `protected-push.sh`, which asks every time) · **origin:** {{OWN_PRIVATE | OWN_PUBLIC | SHARED_WITH_OTHERS}} (decides whether pushing a work branch asks; `/kickoff` checks it)
-- **Free branches** (Claude pushes them without asking, like its work branches; every other branch and every tag is protected): {{FREE_BRANCHES, test or dev branches in backticks such as `dev` or `demo`, never the main branch, a production or a release branch; default "none"}}
-- **Branches that publish or deploy** (production, releases; also denied as text, which is what holds in a cloud session): {{PUBLISH_BRANCHES, in backticks, default "none"}}
+- **Free branches** (Claude pushes them without asking, like its work branches; every other branch and every tag is protected): {{FREE_BRANCHES, test or dev branches in backticks such as `dev` or `demo`, or a pattern `<prefix>/*` such as `ux/*` (every branch under it); never the main branch, a production or a release branch; default "none"}}
+- **Branches that publish or deploy** (production, releases; also denied as text, which is what holds in a cloud session): {{PUBLISH_BRANCHES, in backticks, names or `<prefix>/*`; default "none"}}
+- **Own remotes** (besides origin: where free and work branches may go, each the user's own private repo): {{OWN_REMOTES, remote names in backticks such as `personal`; default "none"}}
 - **Push guard:** {{PUSH_GUARD, "installed" (`push-guard.sh install`), or "not installed: <the hook in its place>, so every push asks"; in a husky repo, a team-tracked `.husky/pre-push` would replace it}}
 - **Branch convention from collaborators, if any:** {{BRANCH_CONVENTION, default none}}
 - **Cloud remote** (only with `cloud_sync: on`, `core/git.md` › Cloud sync): {{CLOUD_REMOTE, default "`origin`"; a separate private remote only when origin is shared with other people, also set in the repo's local git config `jacquard.cloudRemote`}}

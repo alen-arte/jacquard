@@ -28,7 +28,7 @@
       "Bash(git fetch)",
       "Bash(git fetch origin)",
       "Bash(git fetch origin *)",
-      "{{PUSH_ALLOW_RULES, origin the user's own and private: \"Bash(git push origin *)\", \"Bash(git push -u origin *)\"; public or shared with others: none, so every push asks}}",
+      "{{PUSH_ALLOW_RULES, for origin and each project.md › Git › Own remote that is the user's own and private: \"Bash(git push <remote> *)\", \"Bash(git push -u <remote> *)\"; public or shared with others: none, so every push there asks}}",
       "Edit(/{{LOCAL_FOLDER}}/**)",
       "Edit(~/repos/jacquard-personal/projects/{{PROJECT_SLUG}}/**)",
       "{{CHECK_COMMANDS_AS_BASH_RULES}}"

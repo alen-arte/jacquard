@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+- **Each project's own push rules** (R75, `core/git.md` › Push): nothing about a project is written in the kit; each repo declares its rules in `project.md` › Git, and the push guard reads, validates and pins them.
+  - Free branches take patterns, `<prefix>/*` (every branch under it, at any depth), such as `ux/*`. One `*`, last, after a `/`; never one that overlaps the main branch, `master` or a branch that publishes, in either direction and in any case. Publish entries follow the same grammar.
+  - **Own remotes** (new line, such as `personal`), plus the cloud remote (`git config jacquard.cloudRemote`): the stub pins each with its URL, and free and work branches go without asking only to origin and those, at that URL. To any other remote or a URL, or after a `pushurl` or `insteadOf` added later, every branch is protected. Before, the guard looked only at the branch.
+  - The plain push is `git push [-u] <remote> <branch>` and `<branch>:<branch>` with the same name, for those remotes; `push-guard.sh check <remote>` says whether a remote is the project's. A new pattern or remote takes `install --widen`, whose refusal lists the remotes and their URLs. `/kickoff` and `/jacquard-update` add the allow rules for each own remote that is private and the user's own.
+- `tests/scripts/run.sh` runs each test with `sh`, so a new test file needs no exec bit.
+
 ## 0.2.16
 - **Closing data on every closed item** (`core/docs-system.md` › Closing an item): the commit that marks an item 🚀 or ✅ writes `level · reviews · findings B/M/m · rounds · rework`, exact counts, "not recorded" when unknown; items closed together each get their own line, marked `(batch)`. One severity scale for every review (`core/review.md` › Running a review: Blocker, Major, Minor; Suggestions uncounted). Fix commits start `R12 fix:` (`core/git.md` › Commits). The Away report's summary names what was parked (`Parked: R#…`). New decision rows name their batch or release next to the date.
 - **`/retro` scope without arguments:** the last milestone is the last complete group of the roadmap (the archiving's definition); a roadmap with no groups that close (iterations and PRs) starts after the last pull request merged into the main branch. It says which scope it took.
