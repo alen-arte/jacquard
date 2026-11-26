@@ -111,9 +111,9 @@ case "$cmd" in *"$nl"*) ;; *)
       *) decide deny "The push guard here is out of date or worked around: $why. Do not retry: say so to the user (the fix is /jacquard-update, which runs push-guard.sh install)." ;;
     esac
   fi
-  if printf '%s\n' "$cmd" | grep -Eqx "${kit}protected-push\\.sh [A-Za-z0-9._-]+ [A-Za-z0-9._/-]+"; then
+  if printf '%s\n' "$cmd" | grep -Eqx "${kit}protected-push\\.sh [^[:space:]]+ [^[:space:]]+" &&
+     { set -f; set -- $cmd; remote_ok "$2" && dest_ref "$3" >/dev/null; }; then
     away && decide deny "$park"
-    set -f; set -- $cmd
     decide ask "This pushes $3 to $2, a protected destination (the main branch, a branch that is not free, or a tag). Approve only if the user asked for exactly this push."
   fi ;;
 esac

@@ -8,6 +8,7 @@
 set -f
 PATH=/usr/bin:/bin
 export PATH
+export LC_ALL=C   # bytes, not characters: names are ASCII, so an accented letter never passes a [A-Za-z] test
 [ -r /proc/self/status ] || { echo "✗ protected-push.sh: this system has no /proc, so the push guard cannot see this script run the push: push it from your terminal" >&2; exit 1; }
 # Only by its real path: a link elsewhere would also load the common.sh beside the link
 real="$(readlink -f "$0" 2>/dev/null)"

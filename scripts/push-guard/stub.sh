@@ -25,7 +25,7 @@ read_values() {
   main="${main:-main}"
   free="$(branches_on 'Free branches\*\*')"; free="${free% }"
   publish="$(branches_on 'Branches that publish or deploy\*\*')$(branches_on 'Branches only the user pushes')"
-  git check-ref-format --branch "$main" >/dev/null 2>&1 || die "project.md › Git names an unusual main branch: $(printf '%s' "$main" | plain)"
+  branch_ok "$main" || die "project.md › Git names an unusual main branch: $(printf '%s' "$main" | plain)"
   for p in $publish; do
     entry_ok "$p" || die "project.md › Git: unusual branch that publishes $(printf '%s' "$p" | plain)"
     work_branch "$(lower "$(one_of "$p")")" &&

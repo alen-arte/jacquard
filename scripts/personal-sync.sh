@@ -36,7 +36,7 @@ for f in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply index
   [ ! -e "$gd/$f" ] || die "the personal layer has an operation half done ($f): finish it first; nothing done"
 done
 remote="$(git config --get branch.main.remote || echo origin)"
-case "$remote" in .|-*|*[!A-Za-z0-9._-]*) die "unusual remote for the layer's main: nothing done" ;; esac
+remote_ok "$remote" || die "unusual remote for the layer's main: nothing done"
 git remote get-url "$remote" >/dev/null 2>&1 || die "the personal layer has no remote $remote: nothing done"
 private_remote
 # what is compared before pushing must come from the repo that was checked
